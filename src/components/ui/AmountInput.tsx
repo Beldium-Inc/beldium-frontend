@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency, formatCurrencyAmount } from "@/utils";
+import { formatCurrency, formatCurrencyAmount } from "@/src/utils";
 import { Form, Input } from "antd";
 import { useState } from "react";
 

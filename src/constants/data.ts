@@ -1,4 +1,4 @@
-import { Transaction } from "@/types";
+import { Transaction } from "@/src/types";
 
 export const TRANSACTIONS:Transaction[] = [
   {

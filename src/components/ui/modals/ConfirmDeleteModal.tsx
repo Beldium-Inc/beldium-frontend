@@ -58,7 +58,7 @@ export default function ConfirmDeleteModal({
         <div
           className={clsx(
             "mt-6 flex w-full gap-3",
-            showCancel ? "justify-between" : "justify-center"
+            showCancel ? "justify-between" : "justify-center",
           )}
         >
           <Button

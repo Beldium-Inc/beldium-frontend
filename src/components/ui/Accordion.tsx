@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { FaqType } from "@/types";
+import { FaqType } from "@/src/types";
 import Image from "next/image";
 import clsx from "clsx";
 
@@ -35,7 +35,7 @@ const Accordion = ({ items = [] }: AccordionProps) => {
               src={`/assets/icons/chevron-icon.svg`}
               className={clsx(
                 "w-5 h-5 transition-transform duration-300",
-                openIndex === index ? "rotate-270" : "rotate-90"
+                openIndex === index ? "rotate-270" : "rotate-90",
               )}
               width={24}
               height={24}

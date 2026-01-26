@@ -1,5 +1,5 @@
-import { FIAT_CURRENCIES } from "@/constants";
-import { DateValuePiece } from "@/types";
+import { FIAT_CURRENCIES } from "@/src/constants";
+import { DateValuePiece } from "@/src/types";
 import dayjs from "dayjs";
 
 export function formatCurrency(

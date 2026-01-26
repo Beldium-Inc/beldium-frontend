@@ -1,6 +1,6 @@
 "use client";
 
-import { COUNTRIES } from "@/constants";
+import { COUNTRIES } from "@/src/constants";
 import { Select } from "antd";
 import Image from "next/image";
 import clsx from "clsx";

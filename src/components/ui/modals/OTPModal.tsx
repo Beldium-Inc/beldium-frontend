@@ -1,6 +1,6 @@
-import CustomModal from "@/components/ui/modals/CustomModal";
+import CustomModal from "@/src/components/ui/modals/CustomModal";
 import { Form } from "antd";
-import { useUIStore } from "@/store/ui/ui.store";
+import { useUIStore } from "@/src/store/ui/ui.store";
 import OtpInputField from "../OtpInputField";
 
 const OTPModal = ({

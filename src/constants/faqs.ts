@@ -1,4 +1,4 @@
-import { FaqType } from "@/types";
+import { FaqType } from "@/src/types";
 
 export const faqs: FaqType[] = [
   // Collateral
