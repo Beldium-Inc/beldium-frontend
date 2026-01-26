@@ -2,7 +2,6 @@ import { useUIStore } from "@/src/store/ui/ui.store";
 import { Onboard } from "./Onboard";
 import { useOnboardingStore } from "./onboarding.store";
 import { StepOne } from "./steps/StepOne";
-import { StepThree } from "./steps/StepThree";
 import { StepTwo } from "./steps/StepTwo";
 
 export function OnboardingWizard() {
