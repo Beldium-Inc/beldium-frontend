@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Poppins, Bungee } from "next/font/google";
 import "antd/dist/reset.css";
-import "@/styles/global.css";
-import "@/lib/nprogress";
+import "@/src/styles/global.css";
+import "@/src/lib/nprogress";
 import NProgressProvider from "./NProgressProvider";
 import AntProviders from "./AntProvider";
-import { ReactQueryProvider } from "@/providers/ReactQueryProvider";
+import { ReactQueryProvider } from "@/src/providers/ReactQueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

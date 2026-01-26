@@ -9,9 +9,9 @@ import {
   MenuOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { useUIStore } from "@/store/ui/ui.store";
-import Breadcrumbs from "./Breadcrumbs";
+import { useUIStore } from "@/src/store/ui/ui.store";
 import Link from "next/link";
+import Breadcrumbs from "./Breadcrumbs";
 
 export default function Header() {
   const { openMobileSidebar, sidebarCollapsed, toggleSidebar } = useUIStore();

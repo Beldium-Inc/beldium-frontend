@@ -1,4 +1,4 @@
-import { normalizePath } from "@/utils";
+import { normalizePath } from "@/src/utils";
 
 
 describe("normalizePath", () => {

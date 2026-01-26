@@ -1,7 +1,7 @@
 "use client";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Login } from "@/features/login/Login";
-import { OnboardingWizard } from "@/features/onboarding/OnboardingWizard";
+import DashboardLayout from "@/src/components/layouts/DashboardLayout";
+import { Login } from "@/src/features/login/Login";
+import { OnboardingWizard } from "@/src/features/onboarding/OnboardingWizard";
 import { Carousel } from "antd";
 import Image from "next/image";
 

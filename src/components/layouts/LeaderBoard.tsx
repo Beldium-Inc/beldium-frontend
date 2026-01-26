@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { BellOutlined, UserOutlined } from "@ant-design/icons";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency, formatDate } from "@/src/utils";
 import Image from "next/image";
 import Link from "next/link";
 

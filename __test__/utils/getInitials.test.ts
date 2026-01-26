@@ -1,4 +1,4 @@
-import { getInitials } from "@/utils";
+import { getInitials } from "@/src/utils";
 
 
 describe("getInitials", () => {

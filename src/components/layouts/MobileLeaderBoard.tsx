@@ -1,7 +1,7 @@
 "use client";
 
 import { Drawer } from "antd";
-import { useUIStore } from "@/store/ui/ui.store";
+import { useUIStore } from "@/src/store/ui/ui.store";
 import Sidebar from "./Sidebar";
 import LeaderBoard from "./LeaderBoard";
 

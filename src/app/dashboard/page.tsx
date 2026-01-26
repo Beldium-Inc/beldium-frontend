@@ -1,6 +1,5 @@
 "use client";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { getTimeGreeting } from "@/utils";
+import { getTimeGreeting } from "@/src/utils";
 import { Button, Card } from "antd";
 import Link from "next/link";
 

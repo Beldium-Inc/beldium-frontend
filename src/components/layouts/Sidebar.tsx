@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useUIStore } from "@/store/ui/ui.store";
-import { AppRoutes } from "@/constants/routes";
+import { useUIStore } from "@/src/store/ui/ui.store";
+import { AppRoutes } from "@/src/constants/routes";
 import { UserOutlined } from "@ant-design/icons";
-import { normalizePath } from "@/utils";
+import { normalizePath } from "@/src/utils";
 import Image from "next/image";
 
 export default function Sidebar({ isMobile }: { isMobile: boolean }) {

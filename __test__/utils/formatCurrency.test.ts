@@ -1,4 +1,5 @@
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatCurrencyAmount } from "@/src/utils";
+
 
 describe("formatCurrency", () => {
   it("formats a number as USD by default", () => {

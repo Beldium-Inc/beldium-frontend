@@ -1,5 +1,5 @@
 
-import { formatDate } from "@/utils";
+import { formatDate } from "@/src/utils";
 import dayjs from "dayjs";
 
 describe("formatDate", () => {
