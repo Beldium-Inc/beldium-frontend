@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --text: #1a201d;
+  --primary: #101E3D;
+  --secondary: #D3E4FE;
+  --colorLink: #2563EB;
+  --colorSuccess: #B0E2CD;
+  --colorError: #F87171;
+  --colorWarning: #FBBF24;
+  --light-secondary:#D3E4FE;
+   --font-sans: var(--font-poppins);
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-light-secondary: var(--light-secondary);
+  --color-colorLink: var(--colorLink);
+  --color-success: var(--colorSuccess);
+  --color-error: var(--colorError);
+  --color-warning: var(--colorWarning);
+  --font-bungee: var(--font-bungee);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.mobile-sidebar .ant-drawer-content-wrapper {
+  width: 260px !important;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ant-input-otp {
+  justify-content: space-between;
+}
+
+.ant-input-otp input {
+  width: 48px;
+  height: 52px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.ant-input-otp input:focus {
+  border-color: var(--ant-color-primary);
+  box-shadow: 0 0 0 2px rgba(255, 165, 3, 0.15);
+}
+
+/* NProgress styles */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: #101E3D; /* monexay Design primary */
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #101E3D, 0 0 5px #1f3360;
+  opacity: 1;
+  transform: rotate(3deg) translate(0px, -4px);
+}
