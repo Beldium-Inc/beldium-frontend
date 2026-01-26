@@ -1,8 +1,6 @@
 "use client";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { OnboardingWizard } from "@/features/onboarding/OnboardingWizard";
+import { OnboardingWizard } from "@/src/features/onboarding/OnboardingWizard";
 import { Carousel } from "antd";
-import Image from "next/image";
 
 export default function Page() {
   return (

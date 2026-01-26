@@ -1,9 +1,6 @@
 "use client";
-import DashboardLayout from "@/src/components/layouts/DashboardLayout";
 import { Login } from "@/src/features/login/Login";
-import { OnboardingWizard } from "@/src/features/onboarding/OnboardingWizard";
 import { Carousel } from "antd";
-import Image from "next/image";
 
 export default function Home() {
   // throw new Error("Render error test");

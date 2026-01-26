@@ -1,6 +1,6 @@
 // Step1.tsx
-import errorMsg from "@/components/ui/errorMsg";
-import { PasswordRules } from "@/components/ui/PasswordRules";
+import errorMsg from "@/src/components/ui/errorMsg";
+import { PasswordRules } from "@/src/components/ui/PasswordRules";
 import { Input, Button, Form } from "antd";
 import { Rule } from "antd/es/form";
 import Image from "next/image";

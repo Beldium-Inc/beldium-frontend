@@ -18,7 +18,7 @@ export function PasswordRules({ password }: Props) {
         <li
           key={rule.label}
           className={`${
-            rule.valid ? "text-green-600 bg-secondary" : "text-gray-400"
+            rule.valid ? "text-green-600 bg-green-100" : "text-gray-400"
           } border border-green text-xs p-1 rounded-xl`}
         >
           {rule.valid ? "✔" : "✖"} {rule.label}

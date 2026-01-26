@@ -1,4 +1,4 @@
-import { useUIStore } from "@/store/ui/ui.store";
+import { useUIStore } from "@/src/store/ui/ui.store";
 import { Onboard } from "./Onboard";
 import { useOnboardingStore } from "./onboarding.store";
 import { StepOne } from "./steps/StepOne";

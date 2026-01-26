@@ -1,16 +1,10 @@
 // Step1.tsx
-import { AmountInput } from "@/components/ui/AmountInput";
-import { CountrySelect } from "@/components/ui/CountrySelect";
-import { COUNTRIES } from "@/constants";
-import { Input, Button, Form, Checkbox, Modal } from "antd";
+import { Button, Form } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useOnboardingStore } from "../onboarding.store";
 import clsx from "clsx";
-import NotificationModal from "@/components/ui/modals/NotificationModal";
-import { useUIStore } from "@/store/ui/ui.store";
-import OtpInputField from "@/components/ui/OtpInputField";
+import OtpInputField from "@/src/components/ui/OtpInputField";
 
 export function StepOne({
   data,
