@@ -7,7 +7,7 @@ export const RESET_PASSWORD_ROUTE = "/auth/reset-password";
 
 // Dashboard Routes
 export const DASHBOARD_ROUTE = "/dashboard";
-export const PROFILE_ROUTE = "profile";
+export const PROFILE_ROUTE = "/profile";
 
 // Nested Dashboard Routes
 export const TRANSACTION_DETAILS = "/txn/:id";

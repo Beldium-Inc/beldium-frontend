@@ -3,24 +3,11 @@ import { AccountBookOutlined, DashboardOutlined, HomeOutlined, SettingOutlined, 
 export const AppRoutes = [
   {
     key: 'home',
-    label: 'Home',
+    label: 'Dashboard',
     href: '/dashboard',
     icon: HomeOutlined,
   },
   
-  {
-    key: 'rate',
-    label: 'Rates',
-    href: '/dashboard/rate',
-    icon: AccountBookOutlined,
-  },
-
-    {
-    key: 'transactions',
-    label: 'Transactions',
-    href: '/dashboard/transactions',
-    icon: SwapOutlined,
-  },
   {
     key: 'profile',
     label: 'Profile',

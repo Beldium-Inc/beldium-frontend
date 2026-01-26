@@ -5,6 +5,7 @@ import { Input, Button, Form } from "antd";
 import { Rule } from "antd/es/form";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const phoneRules: Rule[] = [
@@ -18,6 +19,7 @@ const phoneRules: Rule[] = [
 export function Login() {
   const [form] = Form.useForm();
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
   const handleSubmit = (values: any) => {
     console.log("login Data:", values);
@@ -75,7 +77,13 @@ export function Login() {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
+            <Button
+              type="primary"
+              onClick={() => router.push("/dashboard")}
+              htmlType="submit"
+              block
+              size="large"
+            >
               Login
               <Image
                 src="/assets/icons/arrow-white-icon.svg"
