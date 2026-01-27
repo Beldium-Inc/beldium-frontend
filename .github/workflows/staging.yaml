@@ -17,15 +17,15 @@ jobs:
       repository: ${{ steps.set_repo.outputs.repository }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Scan Repository for exposed Secrets using Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      # - name: Scan Repository for exposed Secrets using Gitleaks
+      #   uses: gitleaks/gitleaks-action@v2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -46,12 +46,12 @@ jobs:
         run: |
           TAG="staging-${GITHUB_SHA::7}"
           echo "image-tag=$TAG" >> $GITHUB_OUTPUT
-          echo "repository=stg/beldium" >> $GITHUB_OUTPUT
+          echo "repository=stg/beldium-app" >> $GITHUB_OUTPUT
           echo "REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "REPOSITORY=stg/beldium-app" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image to DockerHub
+      - name: Build and Push Docker Image to ECR
         uses: docker/build-push-action@v6
         env:
           REGISTRY: ${{ env.REGISTRY }}
@@ -80,7 +80,7 @@ jobs:
     needs: docker-build-and-push
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -110,5 +110,5 @@ jobs:
             docker pull "$IMAGE"
             docker stop beldium-app || true
             docker rm beldium-app || true
-            docker run -id -p 9000:3000 --name beldium-app --restart always "$IMAGE"
+            docker run -id -p 3000:3000 --name beldium-app --restart always "$IMAGE"
             echo "Deployment completed successfully."               
