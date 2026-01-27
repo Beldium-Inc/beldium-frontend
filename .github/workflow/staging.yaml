@@ -1,0 +1,114 @@
+name: "Staging Deployment for beldium app"
+on:
+  push:
+    branches:
+      - snapshot
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - snapshot
+  workflow_dispatch:
+jobs:
+  docker-build-and-push:
+    name: "Docker Build and Push"
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.set_repo.outputs.image-tag }}
+      repository: ${{ steps.set_repo.outputs.repository }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan Repository for exposed Secrets using Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Docker tag and repository
+        id: set_repo
+        run: |
+          TAG="staging-${GITHUB_SHA::7}"
+          echo "image-tag=$TAG" >> $GITHUB_OUTPUT
+          echo "repository=stg/beldium" >> $GITHUB_OUTPUT
+          echo "REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "REPOSITORY=stg/beldium-app" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image to DockerHub
+        uses: docker/build-push-action@v6
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+          TAG: ${{ env.TAG }}            
+        with:
+          context: .
+          platforms: linux/x86_64
+          load: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Push Docker image
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+          TAG: ${{ env.TAG }}
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.TAG }}
+
+  deploy-staging:
+    name: "Deploy to Staging"
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Execute remote SSH commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            echo "Deploying to staging environment..."
+            REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+            REPOSITORY="${{ needs.docker-build-and-push.outputs.repository }}"
+            TAG="${{ needs.docker-build-and-push.outputs.image-tag }}"
+            IMAGE="$REGISTRY/$REPOSITORY:$TAG"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REGISTRY
+            docker pull "$IMAGE"
+            docker stop beldium-app || true
+            docker rm beldium-app || true
+            docker run -id -p 9000:3000 --name beldium-app --restart always "$IMAGE"
+            echo "Deployment completed successfully."               
