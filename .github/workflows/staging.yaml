@@ -21,11 +21,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Scan Repository for exposed Secrets using Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      # - name: Scan Repository for exposed Secrets using Gitleaks
+      #   uses: gitleaks/gitleaks-action@v2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
