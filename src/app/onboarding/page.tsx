@@ -1,9 +1,7 @@
 "use client";
 import { ProfileOnboardWizard } from "@/src/features/onboard/ProfileOnboardWizard";
-import {
-  Form,
-} from "antd";
-
+import Image from "next/image";
+import { Form } from "antd";
 
 const steps = [
   { id: 1, title: "Miner Identity", status: "completed" },
@@ -19,7 +17,7 @@ export default function Page() {
   const [form] = Form.useForm();
 
   return (
-    <div className=" relative w-full h-screen flex justify-between items-center">
+    <div className="relative w-full h-screen flex justify-between items-center">
       {/* left panel */}
       <div className="hidden lg:block text-primary w-1/2 h-screen bg-gradient-to-tl from-slate-400 from-0% via-sky-50 via-50% to-slate-50 to-100% rounded-2xl">
         <div className="flex flex-col items-center justify-center h-full w-full  p-25">
@@ -74,8 +72,10 @@ export default function Page() {
       </div>
 
       {/* right panel  */}
-      <div className="w-full lg:w-1/2 lg:p-10 h-screen flex justify-center items-center overflow-y-scroll">
-       <ProfileOnboardWizard/>
+      <div className="w-full h-screen lg:w-1/2 flex flex-col gap-6 justify-center overflow-y-scroll py-15">
+        
+
+        <ProfileOnboardWizard />
       </div>
     </div>
   );
