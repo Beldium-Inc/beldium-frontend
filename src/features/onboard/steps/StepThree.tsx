@@ -3,6 +3,8 @@ import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form, Radio, Select, DatePicker } from "antd";
 import Image from "next/image";
 import Link from "next/link";
+import MobileTimeline from "../component/MobileTimeline";
+import Logo from "../component/Logo";
 
 export function StepThree({
   data,
@@ -19,15 +21,21 @@ export function StepThree({
     onNext();
   };
   return (
-    <div className="w-full md:w-3/4 py-10 px-5 flex flex-col gap-6">
-      <Button type="text" onClick={onBack}>
-              <Image
-                src="/assets/icons/arrow-icon.svg"
-                height={24}
-                width={24}
-                alt="logo"
-              /> Back
-            </Button>
+    <div className="flex flex-col gap-6">
+      <Logo />
+      <div>
+        <MobileTimeline />
+
+        <Button type="text" onClick={onBack}>
+          <Image
+            src="/assets/icons/arrow-icon.svg"
+            height={24}
+            width={24}
+            alt="logo"
+          />
+          Back
+        </Button>
+      </div>
       <div className="">
         <h5 className="title">Mining Operation Profile</h5>
         <p className="small-text">Tell us what you do </p>
@@ -85,7 +93,7 @@ export function StepThree({
 
           <Form.Item
             label="License Issue Date"
-            name="date"
+            name="licenseIssueDate"
             rules={[
               {
                 required: true,
@@ -96,29 +104,31 @@ export function StepThree({
             <DatePicker style={{ width: "100%" }} placeholder="Select date" />
           </Form.Item>
 
-          <div className="flex items-center gap-10">
-            <Form.Item>
-             
-              <Button
-                onClick={handleSubmit}
-                type="primary"
-                htmlType="submit"
-                block
-                size="large"
-              >
-                Save and Continue
-                <Image
-                  src="/assets/icons/arrow-white-icon.svg"
-                  height={20}
-                  width={20}
-                  alt="logo"
-                />
-              </Button>
-            </Form.Item>
-
-            <p className="text-sm">
-              <Link href="/">Save and Exit</Link>
-            </p>
+          <div className="md:flex items-center gap-10">
+            <div>
+              <Form.Item>
+                <Button
+                  onClick={handleSubmit}
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  size="large"
+                >
+                  Save and Continue
+                  <Image
+                    src="/assets/icons/arrow-white-icon.svg"
+                    height={20}
+                    width={20}
+                    alt="logo"
+                  />
+                </Button>
+              </Form.Item>
+            </div>
+            <div>
+              <p className="text-sm flex justify-center md:block">
+                <Link href="/">Save and Exit</Link>
+              </p>
+            </div>
           </div>
         </Form>
       </div>

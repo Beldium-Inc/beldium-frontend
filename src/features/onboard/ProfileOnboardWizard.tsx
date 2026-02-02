@@ -2,8 +2,9 @@ import { useUIStore } from "@/src/store/ui/ui.store";
 import { useProfileOnboardStore } from "./profileOnboard.store";
 import { StepOne } from "./steps/StepOne";
 import { StepTwo } from "./steps/StepTwo";
-import { StepThree } from "./steps/StepThress";
+import { StepThree } from "./steps/StepThree";
 import { StepFour } from "./steps/StepFour";
+import { StepComplete } from "./steps/StepComplete";
 
 
 export function ProfileOnboardWizard() {
@@ -25,6 +26,7 @@ export function ProfileOnboardWizard() {
       {step === 2 && <StepTwo data={data} onNext={next} onBack={back} />}
       {step === 3 && <StepThree data={data} onNext={next} onBack={back} />}
       {step === 4 && <StepFour data={data} onNext={next} onBack={back} />}
+      {step === 5 && <StepComplete data={data} onNext={next} onBack={back} />}
     </div>
   );
 }
