@@ -6,6 +6,10 @@ import { Rule } from "antd/es/form";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { signup } from "./api";
+import { showToast } from "@/src/store/toast.store";
+import { useOnboardingStore } from "./onboarding.store";
+import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 
 const phoneRules: Rule[] = [
   { required: true, message: errorMsg("Primary phone number is required") },
@@ -15,13 +19,60 @@ const phoneRules: Rule[] = [
   },
 ];
 
-export function Onboard({ data, onNext }: { data: any; onNext: any }) {
+type OnboardFormValues = {
+  companyName: string;
+  phone: string;
+  email: string;
+  password: string;
+};
+
+type OnboardingData = {
+  name: string;
+  email: string;
+  preferences: string[];
+  role?: "miner" | "partner";
+};
+
+export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => void }) {
   const [form] = Form.useForm();
   const [password, setPassword] = useState("");
+  const { setData } = useOnboardingStore();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (values: any) => {
-    console.log("Registration Data:", values);
-    onNext();
+  const handleSubmit = async (values: OnboardFormValues) => {
+    try {
+      setLoading(true);
+      const roleValue =
+        (data?.role === "miner" && "Miner") ||
+        (data?.role === "partner" && "Compliance") ||
+        "Miner";
+
+      const payload = {
+        email: values.email,
+        password: values.password,
+        company_name: values.companyName,
+        phone_number: values.phone,
+        device_token: "string",
+        device_type: "web" as const,
+        role: roleValue as "Miner" | "Compliance",
+      };
+
+      await signup(payload);
+      setData({ email: values.email });
+      showToast("Sign up successful. Check your email for the 6-digit code.", "success");
+      onNext();
+    } catch (error: unknown) {
+      let msg = "Sign up failed. Please try again.";
+      if (typeof error === "object" && error && "response" in error) {
+        const e = error as { response?: { data?: { message?: string } } };
+        msg = e.response?.data?.message || msg;
+      } else if (error instanceof Error) {
+        msg = error.message || msg;
+      }
+      showToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="w-full py-10 flex flex-col gap-6">
@@ -128,7 +179,7 @@ export function Onboard({ data, onNext }: { data: any; onNext: any }) {
           <PasswordRules password={password} />
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
+            <Button type="primary" htmlType="submit" block size="large" loading={loading}>
               Create Account
               <Image
                 src="/assets/icons/arrow-white-icon.svg"
@@ -139,8 +190,9 @@ export function Onboard({ data, onNext }: { data: any; onNext: any }) {
             </Button>
           </Form.Item>
         </Form>
+        <LoadingOverlay visible={loading} message="Creating your account..." />
         <p className="text-sm">
-          Already have an account?. <Link href="/">Login</Link>
+          Already have an account?. <Link href="/login">Login</Link>
         </p>
       </div>
     </div>
