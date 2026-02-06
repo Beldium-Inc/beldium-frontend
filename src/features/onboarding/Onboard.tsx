@@ -57,6 +57,8 @@ export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => 
         role: roleValue as "Miner" | "Compliance",
       };
 
+      console.log("Signup Payload:", payload);
+
       await signup(payload);
       setData({ email: values.email });
       showToast("Sign up successful. Check your email for the 6-digit code.", "success");

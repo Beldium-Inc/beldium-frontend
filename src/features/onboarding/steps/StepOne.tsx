@@ -139,7 +139,7 @@ export function StepOne({
           size="large"
           onClick={handleResend}
           disabled={!canResend}
-          className="text-sm!"
+          className="text-sm! h-auto! whitespace-normal! py-3!"
           loading={resending}
         >
           {`Didn’t receive a code? Resend in ${timeLeft || 30} seconds`}

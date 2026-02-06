@@ -4,20 +4,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export function VerifySuccess({
-  onContinue,
   onBack,
 }: {
-  onContinue: () => void;
   onBack: () => void;
 }) {
   const router = useRouter();
 
   return (
     <div className="w-full py-10 flex flex-col gap-6">
-      <div className="w-full flex mb-8 justify-between items-center">
-        <Button type="text" onClick={onBack}>
+      <div className="w-full flex mb-8 justify-center items-center">
+        {/* <Button type="text" onClick={onBack}>
           <Image src="/assets/icons/arrow-icon.svg" height={24} width={24} alt="back" />
-        </Button>
+        </Button> */}
         <Image src="/assets/images/logo.png" height={36} width={36} alt="logo" />
       </div>
 
@@ -34,7 +32,6 @@ export function VerifySuccess({
           className="w-full max-w-sm"
           onClick={() => {
             router.push("/login");
-            onContinue();
           }}
         >
           Okay, continue

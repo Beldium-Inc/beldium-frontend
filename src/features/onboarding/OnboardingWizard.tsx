@@ -23,7 +23,7 @@ export function OnboardingWizard() {
       {step === 1 && <RoleSelection onNext={next} />}
       {step === 2 && <Onboard data={data} onNext={next} />}
       {step === 3 && <StepOne data={data} onNext={next} onBack={back} />}
-      {step === 4 && <VerifySuccess onContinue={() => setStep(1)} onBack={back} />}
+      {step === 4 && <VerifySuccess onBack={back} />}
     </div>
   );
 }

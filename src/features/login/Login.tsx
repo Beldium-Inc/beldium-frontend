@@ -22,7 +22,9 @@ export function Login() {
   const handleSubmit = async (values: LoginFormValues) => {
     try {
       setLoading(true);
-      const res = await login({ email: values.email, password: values.password });
+      const payload = { email: values.email, password: values.password };
+      console.log("Login Payload:", payload);
+      const res = await login(payload);
       const access = res?.data?.access;
       const refresh = res?.data?.refresh;
       if (access) localStorage.setItem("accessToken", access);
@@ -31,10 +33,20 @@ export function Login() {
       try {
         const userRes = await getUser();
         const completed = userRes?.data?.has_completed_onboarding;
+        const role = userRes?.data?.role; // "Miner" | "Compliance"
+
         if (completed) {
-          router.push("/dashboard");
+          if (role === "Compliance") {
+            router.push("/compliancedashboard");
+          } else {
+            router.push("/dashboard");
+          }
         } else {
-          router.push("/onboarding");
+          if (role === "Compliance") {
+            router.push("/complianceonboarding");
+          } else {
+            router.push("/onboarding");
+          }
         }
       } catch {
         router.push("/dashboard");
