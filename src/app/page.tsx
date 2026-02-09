@@ -2,11 +2,30 @@
 import { OnboardingWizard } from "@/src/features/onboarding/OnboardingWizard";
 import { Carousel } from "antd";
 import { useOnboardingStore } from "@/src/features/onboarding/onboarding.store";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   // throw new Error("Render error test");
   const { step } = useOnboardingStore();
   const showCarousel = step !== 1;
+  const router = useRouter();
+
+  useEffect(() => {
+    const guard = async () => {
+      const access = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      if (access) {
+        router.replace("/onboarding");
+        return;
+      }
+      const hasRegistered =
+        typeof window !== "undefined" ? localStorage.getItem("hasRegistered") === "true" : false;
+      if (hasRegistered) {
+        router.replace("/login");
+      }
+    };
+    guard();
+  }, [router]);
   return (
     <div className="relative w-full h-screen flex justify-between items-center">
       {showCarousel && (

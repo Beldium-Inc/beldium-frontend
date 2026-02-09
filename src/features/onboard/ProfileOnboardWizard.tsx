@@ -4,6 +4,8 @@ import { StepOne } from "./steps/StepOne";
 import { StepTwo } from "./steps/StepTwo";
 import { StepThree } from "./steps/StepThree";
 import { StepFour } from "./steps/StepFour";
+import { StepFive } from "./steps/StepFive";
+import { StepSix } from "./steps/StepSix";
 import { StepComplete } from "./steps/StepComplete";
 
 
@@ -15,18 +17,16 @@ export function ProfileOnboardWizard() {
     setStep(step + 1);
     closeAlertModal();
   };
-  const back = () => {
-    setStep(step - 1);
-    closeAlertModal();
-  };
 
   return (
     <div className="w-full px-10 lg:px-16 xl:px-36 min-h-[550px]">
       {step === 1 && <StepOne data={data} onNext={next} />}
-      {step === 2 && <StepTwo data={data} onNext={next} onBack={back} />}
-      {step === 3 && <StepThree data={data} onNext={next} onBack={back} />}
-      {step === 4 && <StepFour data={data} onNext={next} onBack={back} />}
-      {step === 5 && <StepComplete data={data} onNext={next} onBack={back} />}
+      {step === 2 && <StepTwo data={data} onNext={next} />}
+      {step === 3 && <StepThree data={data} onNext={next} />}
+      {step === 4 && <StepFour data={data} onNext={next} />}
+      {step === 5 && <StepFive data={data} onNext={next} />}
+      {step === 6 && <StepSix data={data} onNext={next} />}
+      {step === 7 && <StepComplete data={data} onNext={next} />}
     </div>
   );
 }

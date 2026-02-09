@@ -48,3 +48,10 @@ export async function getUser() {
   const { data } = await authApi.get("/user/get_user");
   return data;
 }
+
+export async function minerOnboarding(formData: FormData) {
+  const { data } = await authApi.post("/user/miner_onboarding", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}

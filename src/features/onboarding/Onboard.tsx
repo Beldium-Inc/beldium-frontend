@@ -61,6 +61,9 @@ export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => 
 
       await signup(payload);
       setData({ email: values.email });
+      if (typeof window !== "undefined") {
+        localStorage.setItem("hasRegistered", "true");
+      }
       showToast("Sign up successful. Check your email for the 6-digit code.", "success");
       onNext();
     } catch (error: unknown) {

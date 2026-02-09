@@ -27,9 +27,9 @@ export function ProfileOnboard({
   onNext,
   onBack,
 }: {
-  data: any;
-  onNext: any;
-  onBack: any;
+  data: unknown;
+  onNext: () => void;
+  onBack: () => void;
 }) {
   const [form] = Form.useForm();
   return (

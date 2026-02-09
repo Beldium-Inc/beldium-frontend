@@ -1,10 +1,9 @@
-import React from 'react';
-
-
-const totalSteps = 5;
-const currentStep = 4;
+import React from "react";
+import { useProfileOnboardStore } from "../profileOnboard.store";
 
 function MobileTimeline() {
+  const { step, totalSteps } = useProfileOnboardStore();
+  const currentStep = step;
   return (
     <div className="flex items-center gap-4 lg:hidden">
      

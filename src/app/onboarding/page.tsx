@@ -1,20 +1,75 @@
 "use client";
 import { ProfileOnboardWizard } from "@/src/features/onboard/ProfileOnboardWizard";
-import Image from "next/image";
-import { Form } from "antd";
+import { useProfileOnboardStore } from "@/src/features/onboard/profileOnboard.store";
+import { useEffect, useState } from "react";
+import { getUser } from "@/src/features/onboarding/api";
+import { useRouter } from "next/navigation";
+import { Spin } from "antd";
 
-const steps = [
-  { id: 1, title: "Miner Identity", status: "completed" },
-  { id: 2, title: "Mining Operation Profile", status: "completed" },
-  { id: 3, title: "Licensing & Regulatory Status", status: "active" },
-  { id: 4, title: "Environmental & ESG Readiness", status: "pending" },
-  { id: 5, title: "Production & Supply Signals", status: "pending" },
-  { id: 6, title: "Compliance Support Opt-In", status: "pending" },
-  { id: 7, title: "Declaration & Authority", status: "pending" },
+const titles = [
+  "Miner Identity",
+  "Mining Operation Profile",
+  "Licensing & Regulatory Status",
+  "Environmental & ESG Readiness",
+  "Production & Supply Signals",
+  "Compliance Support Opt-In",
+  "Declaration & Authority",
 ];
 
 export default function Page() {
-  const [form] = Form.useForm();
+  const { step, setStep } = useProfileOnboardStore();
+  const router = useRouter();
+  const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await getUser();
+        const completed = Boolean(res?.data?.has_completed_onboarding);
+        const profile = res?.data?.profile || null;
+        if (completed) {
+          const role = res?.data?.role;
+          if (role === "Compliance") {
+            router.replace("/compliancedashboard");
+          } else {
+            router.replace("/dashboard");
+          }
+        } else {
+          if (!profile) {
+            setStep(1);
+            return;
+          }
+          const current = String(profile?.miner_profile_onboarding_step || "");
+          const order = [
+            "miner_identity",
+            "mining_operation_profile",
+            "licensing_regulatory_status",
+            "environmental_esg",
+            "production_supply_signals",
+            "compliance_support_opt_in",
+            "declaration_authority",
+          ];
+          const idx = order.indexOf(current);
+          if (current === "declaration_authority") {
+            setStep(7);
+          } else if (idx >= 0) {
+            setStep(idx + 2);
+          } else {
+            setStep(1);
+          }
+        }
+      } catch {
+        setStep(1);
+      }
+      setBooting(false);
+    };
+    init();
+  }, [setStep, router]);
+  const steps = titles.map((title, i) => {
+    const id = i + 1;
+    const status = id < step ? "completed" : id === step ? "active" : "pending";
+    return { id, title, status };
+  });
 
   return (
     <div className="relative w-full h-screen flex justify-between items-center">
@@ -23,20 +78,14 @@ export default function Page() {
         <div className="flex flex-col items-center justify-center h-full w-full  p-25">
           <div className="rounded-xl w-full shawdow1 transparent p-2  shadow-sm ">
             <div className="w-full  flex flex-col gap-6 p-6 bg-white rounded-2xl">
-              {/* Title */}
-              <h2 className="mb-6  text-sm font-semibold">
-                Complete Your Profile
-              </h2>
+              <h2 className="mb-6  text-sm font-semibold">Complete Your Profile</h2>
 
-              {/* Timeline */}
               <div className="relative">
-                {/* Vertical line */}
                 <div className="absolute left-[11px] top-0 h-full w-px bg-gray-200" />
 
                 <div className="space-y-6">
                   {steps.map((step) => (
                     <div key={step.id} className="flex items-start gap-4">
-                      {/* Indicator */}
                       <div className="relative z-10">
                         {step.status === "completed" && (
                           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0f172a] text-white">
@@ -55,11 +104,8 @@ export default function Page() {
                         )}
                       </div>
 
-                      {/* Content */}
                       <div>
-                        <p className="text-[11px] text-gray-400">
-                          Step {step.id}
-                        </p>
+                        <p className="text-[11px] text-gray-400">Step {step.id}</p>
                         <p className="text-sm text-gray-900">{step.title}</p>
                       </div>
                     </div>
@@ -73,9 +119,13 @@ export default function Page() {
 
       {/* right panel  */}
       <div className="w-full h-screen lg:w-1/2 flex flex-col gap-6 justify-center overflow-y-scroll py-15">
-        
-
-        <ProfileOnboardWizard />
+        {booting ? (
+          <div className="w-full flex justify-center items-center">
+            <Spin size="small" />
+          </div>
+        ) : (
+          <ProfileOnboardWizard />
+        )}
       </div>
     </div>
   );

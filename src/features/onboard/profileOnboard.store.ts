@@ -14,7 +14,7 @@ interface OnboardingState {
 
 export const useProfileOnboardStore = create<OnboardingState>((set) => ({
   step: 1,
-  totalSteps: 5,
+  totalSteps: 7,
   data: { name: "", email: "", preferences: [] },
   setStep: (step) => set({ step }),
   setData: (newData) => set((state) => ({ data: { ...state.data, ...newData } })),
