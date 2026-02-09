@@ -24,7 +24,7 @@ export function StepRegBodies({
       const formData = new FormData();
       formData.append("onboarding_step", "regulatory_bodies_interface");
       const bodies = (values.regulatoryBodies as string[]) || [];
-      formData.append("regulatory_body_interface", bodies.join(", "));
+      formData.append("regulatory_body_interface", JSON.stringify(bodies));
       await complianceOnboarding(formData);
       showToast("Saved regulatory bodies interface", "success");
       onNext();
@@ -63,7 +63,6 @@ export function StepRegBodies({
             <div>
               <Form.Item>
                 <Button
-                  onClick={() => form.submit()}
                   type="primary"
                   htmlType="submit"
                   block

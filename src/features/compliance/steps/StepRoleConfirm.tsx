@@ -24,17 +24,10 @@ export function StepRoleConfirm({
     try {
       setLoading(true);
       const accepted = Array.isArray(values.agree) && values.agree.includes("agree");
-      {
-        const formData = new FormData();
-        formData.append("onboarding_step", "role_confirmation");
-        formData.append("role_confirmation", String(Boolean(accepted)));
-        await complianceOnboarding(formData);
-      }
-      {
-        const completeData = new FormData();
-        completeData.append("onboarding_step", "completed");
-        await complianceOnboarding(completeData);
-      }
+      const formData = new FormData();
+      formData.append("onboarding_step", "role_confirmation");
+      formData.append("role_confirmation", String(Boolean(accepted)));
+      await complianceOnboarding(formData);
       showToast("Application submitted", "success");
       router.replace("/compliancedashboard");
     } catch (error: unknown) {
@@ -73,7 +66,6 @@ export function StepRoleConfirm({
             <div>
               <Form.Item>
                 <Button
-                  onClick={() => form.submit()}
                   type="primary"
                   htmlType="submit"
                   block

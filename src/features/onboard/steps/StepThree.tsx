@@ -199,7 +199,6 @@ export function StepThree({
             <div>
               <Form.Item>
                 <Button
-                  onClick={() => form.submit()}
                   type="primary"
                   htmlType="submit"
                   block

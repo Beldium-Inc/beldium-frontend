@@ -27,9 +27,6 @@ export function StepComplete({
       const agree = Boolean(values.agree);
       formData.append("agree_to_terms", agree ? "true" : "false");
       await minerOnboarding(formData);
-      const fin = new FormData();
-      fin.append("onboarding_step", "completed");
-      await minerOnboarding(fin);
       showToast("Submission received. We will contact you within 72 hours.", "success");
       router.push("/dashboard");
     } catch (error: unknown) {
@@ -62,7 +59,7 @@ export function StepComplete({
           <div className={clsx("mt-3 flex w-full gap-3")}>
             <Button
               type="primary"
-              onClick={() => form.submit()}
+              htmlType="submit"
               className={clsx("w-full py-5! text-white")}
             >
               Submit for review

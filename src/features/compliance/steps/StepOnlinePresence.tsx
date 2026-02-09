@@ -69,7 +69,6 @@ export function StepOnlinePresence({
             <div>
               <Form.Item>
                 <Button
-                  onClick={() => form.submit()}
                   type="primary"
                   htmlType="submit"
                   block
