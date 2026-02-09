@@ -55,3 +55,10 @@ export async function minerOnboarding(formData: FormData) {
   });
   return data;
 }
+
+export async function complianceOnboarding(formData: FormData) {
+  const { data } = await authApi.post("/user/compliance_onboarding", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
