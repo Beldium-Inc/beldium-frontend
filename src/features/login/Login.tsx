@@ -1,27 +1,68 @@
 // Step1.tsx
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form } from "antd";
-import { Rule } from "antd/es/form";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
+import { login, getUser } from "@/src/features/onboarding/api";
+import { showToast } from "@/src/store/toast.store";
 
-const phoneRules: Rule[] = [
-  { required: true, message: errorMsg("Primary phone number is required") },
-  {
-    pattern: /^[0-9]{10,15}$/,
-    message: errorMsg("Phone number must be 10–15 digits"),
-  },
-];
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
 export function Login() {
   const [form] = Form.useForm();
-  const [password, setPassword] = useState("");
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (values: any) => {
-    console.log("login Data:", values);
+  const handleSubmit = async (values: LoginFormValues) => {
+    try {
+      setLoading(true);
+      const payload = { email: values.email, password: values.password };
+      console.log("Login Payload:", payload);
+      const res = await login(payload);
+      const access = res?.data?.access;
+      const refresh = res?.data?.refresh;
+      if (access) localStorage.setItem("accessToken", access);
+      if (refresh) localStorage.setItem("refreshToken", refresh);
+      showToast("Login successful", "success");
+      try {
+        const userRes = await getUser();
+        const completed = userRes?.data?.has_completed_onboarding;
+        const role = userRes?.data?.role; // "Miner" | "Compliance"
+
+        if (completed) {
+          if (role === "Compliance") {
+            router.push("/compliancedashboard");
+          } else {
+            router.push("/dashboard");
+          }
+        } else {
+          if (role === "Compliance") {
+            router.push("/complianceonboarding");
+          } else {
+            router.push("/onboarding");
+          }
+        }
+      } catch {
+        router.push("/dashboard");
+      }
+    } catch (error: unknown) {
+      let msg = "Login failed. Please check your credentials.";
+      if (typeof error === "object" && error && "response" in error) {
+        const e = error as { response?: { data?: { message?: string } } };
+        msg = e.response?.data?.message || msg;
+      } else if (error instanceof Error) {
+        msg = error.message || msg;
+      }
+      showToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="w-full md:w-3/4 py-10 px-5 flex flex-col gap-6">
@@ -70,7 +111,6 @@ export function Login() {
           >
             <Input.Password
               placeholder="Enter password"
-              onChange={(e) => setPassword(e.target.value)}
               className="py-3!"
             />
           </Form.Item>
@@ -78,10 +118,10 @@ export function Login() {
           <Form.Item>
             <Button
               type="primary"
-              onClick={() => router.push("/dashboard")}
               htmlType="submit"
               block
               size="large"
+              loading={loading}
             >
               Login
               <Image
@@ -93,9 +133,10 @@ export function Login() {
             </Button>
           </Form.Item>
         </Form>
+        <LoadingOverlay visible={loading} message="Logging you in..." />
 
         <p className="text-sm">
-          You don't have an account?. <Link href="/register">Register</Link>
+          You don&apos;t have an account?. <Link href="/register">Register</Link>
         </p>
       </div>
     </div>

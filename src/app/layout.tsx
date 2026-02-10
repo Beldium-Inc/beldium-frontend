@@ -3,9 +3,11 @@ import { Geist, Poppins, Bungee, Inter } from "next/font/google";
 import "antd/dist/reset.css";
 import "@/src/styles/global.css";
 import "@/src/lib/nprogress";
+import "@/src/lib/AxiosInterceptor";
 import NProgressProvider from "./NProgressProvider";
 import AntProviders from "./AntProvider";
 import { ReactQueryProvider } from "@/src/providers/ReactQueryProvider";
+import ToastContainer from "@/src/components/ui/ToastContainer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,7 +50,10 @@ export default function RootLayout({
       >
         <ReactQueryProvider>
           <AntProviders>
-            <NProgressProvider>{children}</NProgressProvider>
+            <NProgressProvider>
+              {children}
+              <ToastContainer />
+            </NProgressProvider>
           </AntProviders>
         </ReactQueryProvider>
       </body>
