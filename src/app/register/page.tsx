@@ -31,7 +31,10 @@ export default function Page() {
       }
       const hasRegistered =
         typeof window !== "undefined" ? localStorage.getItem("hasRegistered") === "true" : false;
-      if (hasRegistered) {
+      const allowRegistration = 
+        typeof window !== "undefined" ? sessionStorage.getItem("allowRegistration") === "true" : false;
+
+      if (hasRegistered && !allowRegistration) {
         router.replace("/login");
       }
     };
