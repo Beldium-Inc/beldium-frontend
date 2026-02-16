@@ -27,9 +27,23 @@ export function Login() {
       const res = await login(payload);
       const access = res?.data?.access;
       const refresh = res?.data?.refresh;
-      if (access) localStorage.setItem("accessToken", access);
-      if (refresh) localStorage.setItem("refreshToken", refresh);
+      if (access) {
+        sessionStorage.setItem("accessToken", access);
+        const expiresAt = Date.now() + 3600 * 1000; // 1 hour expiration
+        sessionStorage.setItem("tokenExpiration", String(expiresAt));
+        localStorage.removeItem("accessToken"); // Clean up local storage
+      }
+      if (refresh) {
+        sessionStorage.setItem("refreshToken", refresh);
+        localStorage.removeItem("refreshToken"); // Clean up local storage
+      }
       showToast("Login successful", "success");
+      
+      // Ensure token is set before calling getUser
+      if (!access && !sessionStorage.getItem("accessToken")) {
+         throw new Error("Authentication failed: No access token received");
+      }
+
       try {
         const userRes = await getUser();
         const completed = userRes?.data?.has_completed_onboarding;

@@ -13,8 +13,21 @@ export default function Home() {
 
   useEffect(() => {
     const guard = async () => {
-      const access = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      // Clean up localStorage if found (migration/fix)
+      if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }
+
+      const access = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
       if (access) {
+        // Optional: Check expiration here too
+        const expiresAt = sessionStorage.getItem("tokenExpiration");
+        if (expiresAt && Date.now() > Number(expiresAt)) {
+           sessionStorage.clear();
+           // Let it fall through to show landing page
+           return;
+        }
         router.replace("/onboarding");
         return;
       }

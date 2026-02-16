@@ -3,8 +3,19 @@ import { authApi, publicApi } from "./axiosInstance";
 
 authApi.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token && config.headers) {
+    // Check for expiration
+    const expiresAt = sessionStorage.getItem("tokenExpiration");
+    if (expiresAt && Date.now() > Number(expiresAt)) {
+      sessionStorage.clear();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      return Promise.reject(new Error("Token expired"));
+    }
+
+    const token = sessionStorage.getItem("accessToken");
+    if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -14,15 +25,20 @@ authApi.interceptors.request.use(
 
 authApi.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError & { config?: any }) => {
-    const originalRequest = error.config;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any; // Cast to any to access _retry property
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (originalRequest && error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = sessionStorage.getItem("refreshToken");
         if (!refreshToken) {
+          // Clear session and redirect if no refresh token
+          sessionStorage.clear();
+          if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+             window.location.href = "/login";
+          }
           return Promise.reject(error);
         }
 
@@ -30,13 +46,19 @@ authApi.interceptors.response.use(
           token: refreshToken,
         });
 
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
+        sessionStorage.setItem("accessToken", data.accessToken);
+        sessionStorage.setItem("refreshToken", data.refreshToken);
+        // Reset expiration on refresh
+        const expiresAt = Date.now() + 3600 * 1000;
+        sessionStorage.setItem("tokenExpiration", String(expiresAt));
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return authApi(originalRequest);
       } catch (refreshError) {
-        // logout();
+        sessionStorage.clear();
+        if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       }
     }

@@ -37,6 +37,7 @@ export default function Page() {
         } else {
           if (!profile) {
             setStep(1);
+            setBooting(false);
             return;
           }
           const current = String(profile?.miner_profile_onboarding_step || "");
