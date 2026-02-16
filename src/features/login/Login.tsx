@@ -14,10 +14,21 @@ type LoginFormValues = {
   password: string;
 };
 
+import { useOnboardingStore } from "@/src/features/onboarding/onboarding.store";
+
+// ... existing imports ...
+
 export function Login() {
   const [form] = Form.useForm();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const handleRegisterClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    sessionStorage.setItem("allowRegistration", "true");
+    useOnboardingStore.getState().setStep(1);
+    router.push("/register");
+  };
 
   const handleSubmit = async (values: LoginFormValues) => {
     try {
@@ -150,7 +161,10 @@ export function Login() {
         <LoadingOverlay visible={loading} message="Logging you in..." />
 
         <p className="text-sm">
-          You don&apos;t have an account?. <Link href="/register">Register</Link>
+          You don&apos;t have an account?.{" "}
+          <a href="/register" onClick={handleRegisterClick} className="text-blue-600 hover:underline">
+            Register
+          </a>
         </p>
       </div>
     </div>
