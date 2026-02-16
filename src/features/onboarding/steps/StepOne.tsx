@@ -39,7 +39,7 @@ export function StepOne({
         return;
       }
       setVerifying(true);
-      await verifyAccount({ email: data?.email, verification_code: code });
+      await verifyAccount({ email: data?.email?.toLowerCase(), verification_code: code });
       showToast("Account verified successfully", "success");
       onNext();
     } catch (error: unknown) {
