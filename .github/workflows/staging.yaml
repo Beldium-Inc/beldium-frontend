@@ -51,6 +51,13 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "REPOSITORY=stg/beldium-app" >> $GITHUB_ENV
 
+      - name: Write env from secrets
+        id: creds
+        run: |
+          echo "${{ secrets.STG_ENV }}" > .env
+        env:
+          STG_ENV:  ${{ secrets.STG_ENV }}
+
       - name: Build and Push Docker Image to ECR
         uses: docker/build-push-action@v6
         env:

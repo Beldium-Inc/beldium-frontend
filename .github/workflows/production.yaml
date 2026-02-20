@@ -43,12 +43,19 @@ jobs:
       - name: Set Docker tag and repository
         id: set_repo
         run: |
-          TAG="staging-${GITHUB_SHA::7}"
+          TAG="production-${GITHUB_SHA::7}"
           echo "image-tag=$TAG" >> $GITHUB_OUTPUT
           echo "repository=prod/beldium-app" >> $GITHUB_OUTPUT
           echo "REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "REPOSITORY=prod/beldium-app" >> $GITHUB_ENV
+
+      - name: Write env from secrets
+        id: creds
+        run: |
+          echo "${{ secrets.PROD_ENV }}" > .env
+        env:
+          PROD_ENV:  ${{ secrets.PROD_ENV }}
 
       - name: Build and Push Docker Image to ECR
         uses: docker/build-push-action@v6
