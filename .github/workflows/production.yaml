@@ -43,7 +43,7 @@ jobs:
       - name: Set Docker tag and repository
         id: set_repo
         run: |
-          TAG="staging-${GITHUB_SHA::7}"
+          TAG="production-${GITHUB_SHA::7}"
           echo "image-tag=$TAG" >> $GITHUB_OUTPUT
           echo "repository=prod/beldium-app" >> $GITHUB_OUTPUT
           echo "REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
