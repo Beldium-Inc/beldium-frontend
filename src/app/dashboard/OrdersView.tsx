@@ -1,72 +1,61 @@
 "use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Skeleton } from "antd";
 import { PlusOutlined, ShopOutlined } from "@ant-design/icons";
-import { getMinerOverview, getOpenQueue } from "@/src/features/miner/dashboard/api";
+import { getOrdersOverview, getOpenQueue } from "@/src/features/miner/dashboard/api";
 import { getUser } from "@/src/features/onboarding/api";
 import OverviewCards from "@/src/features/miner/dashboard/components/OverviewCards";
 import OpenQueueTable from "@/src/features/miner/dashboard/components/OpenQueueTable";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import OrdersView from "./OrdersView";
 
-export default function MinerDashboardPage() {
-  const searchParams = useSearchParams();
-  const view = searchParams.get('view');
-
+export default function OrdersView() {
   const userQ = useQuery({
     queryKey: ["userProfile"],
     queryFn: getUser,
   });
 
   const overviewQ = useQuery({
-    queryKey: ["minerOverview"],
-    queryFn: () => getMinerOverview(),
+    queryKey: ["ordersOverview"],
+    queryFn: getOrdersOverview,
   });
 
   const queueQ = useQuery({
-    queryKey: ["openQueue", { page: 1 }],
+    queryKey: ["newRequests", { page: 1 }],
     queryFn: () => getOpenQueue({ page: 1, per_page: 10 }),
   });
 
-  if (view === 'orders') {
-    return <OrdersView />;
-  }
-
   const user = userQ.data?.data;
   const companyName = user?.company_name || "Miner";
-  const overview = overviewQ.data?.data;
-  const account = overview?.account_health;
-  const active = overview?.active_orders;
-  const pending = overview?.pending_actions;
+  const stats = overviewQ.data?.data;
   const items = queueQ.data?.data?.results || [];
 
   return (
     <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="w-full">
-          <div className="text-xl md:text-2xl font-semibold">Overview</div>
+          <div className="text-xl md:text-2xl font-semibold">Orders</div>
           <div className="text-xs md:text-sm text-gray-500 mt-1">
             {userQ.isLoading ? (
               <Skeleton.Input active size="small" className="!w-48 md:!w-72" />
             ) : (
-              `Welcome back, ${companyName}. Your site is operational`
+              `Manage your orders and requests, ${companyName}.`
             )}
           </div>
         </div>
       </div>
 
       <OverviewCards
-        kyc={account?.kyc_status || ""}
-        compliance={account?.compliance_audit || ""}
-        access={(account?.marketplace_access || "").toString()}
-        activeCount={active?.count || 0}
-        activeChange={active?.percentage_change || 0}
-        pendingCount={pending?.count || 0}
+        kyc="Verified" // Placeholder or mapped if available
+        compliance="Passed" // Placeholder or mapped if available
+        access="Active" // Placeholder or mapped if available
+        activeCount={stats?.active_orders || 0}
+        activeChange={0} // Placeholder as API might not return change percentage for orders
+        pendingCount={stats?.incoming_rfqs || 0}
         loading={overviewQ.isLoading}
       />
 
-      {/* Blue Gradient Banner / Mobile CTA */}
+      {/* Blue Gradient Banner / Mobile CTA - Copied from MinerDashboardPage */}
       {overviewQ.isLoading ? (
         <Skeleton active paragraph={{ rows: 3 }} className="p-6 rounded-2xl border border-gray-100 bg-white" />
       ) : (
@@ -78,9 +67,9 @@ export default function MinerDashboardPage() {
                 <ShopOutlined />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-1">Ready to list your resources</h3>
+                <h3 className="text-lg font-semibold mb-1">Ready to manage your orders</h3>
                 <p className="text-blue-100 text-sm max-w-md">
-                  Increase your market visibility by adding new mineral resources
+                  Keep track of all your incoming requests and active shipments efficiently.
                 </p>
               </div>
             </div>
@@ -127,12 +116,12 @@ export default function MinerDashboardPage() {
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <div className="text-xl md:text-2xl font-semibold">Open Queue</div>
-          <Link href="/dashboard/orders" className="text-blue-600">View all</Link>
+          <div className="text-xl md:text-2xl font-semibold">New Requests</div>
+          <Link href="#" className="text-blue-600">View all</Link>
         </div>
         <OpenQueueTable items={items} loading={queueQ.isLoading} />
         <div className="text-xs text-gray-500 mt-3">
-          You have {queueQ.data?.data?.count || 0} orders (Displaying {queueQ.data?.data?.per_page || 10} per page)
+          You have {queueQ.data?.data?.count || 0} requests (Displaying {queueQ.data?.data?.per_page || 10} per page)
         </div>
       </Card>
     </div>

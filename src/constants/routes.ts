@@ -1,18 +1,48 @@
-import { AccountBookOutlined, DashboardOutlined, HomeOutlined, SettingOutlined, SwapOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  AppstoreOutlined,
+  CodeSandboxOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
+  UnorderedListOutlined,
+  WalletOutlined,
+} from "@ant-design/icons";
 
 export const AppRoutes = [
   {
-    key: 'home',
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: HomeOutlined,
+    key: "overview",
+    label: "Overview",
+    href: "/dashboard",
+    icon: AppstoreOutlined,
   },
-  
   {
-    key: 'profile',
-    label: 'Profile',
-    href: '/dashboard/profile',
-    icon: UserOutlined,
+    key: "listings",
+    label: "Listings",
+    href: "/dashboard/listings",
+    icon: UnorderedListOutlined,
+  },
+  {
+    key: "orders",
+    label: "Orders",
+    href: "/dashboard?view=orders",
+    icon: CodeSandboxOutlined,
+  },
+  {
+    key: "wallet",
+    label: "Wallet",
+    href: "/dashboard/wallet",
+    icon: WalletOutlined,
+  },
+  {
+    key: "compliance",
+    label: "Compliance",
+    href: "/dashboard/compliance",
+    icon: SafetyCertificateOutlined,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/dashboard/settings",
+    icon: SettingOutlined,
   },
 ];
 
