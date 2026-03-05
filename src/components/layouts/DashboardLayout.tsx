@@ -24,7 +24,7 @@ export default function DashboardLayout({
       {/* Main */}
       <div className="flex flex-col flex-1 lg:px-0">
         <Header />
-        <main className="flex-1 overflow-y-scroll p-6">{children}</main>
+        <main className="flex-1 overflow-y-scroll py-6 px-0 md:p-6">{children}</main>
       </div>
     </div>
   );
