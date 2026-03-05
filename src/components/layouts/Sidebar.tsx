@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useUIStore } from "@/src/store/ui/ui.store";
 import { AppRoutes } from "@/src/constants/routes";
-import { UserOutlined } from "@ant-design/icons";
+import { UserOutlined, CustomerServiceOutlined, LogoutOutlined } from "@ant-design/icons";
 import { normalizePath } from "@/src/utils";
 import Image from "next/image";
+import { Button } from "antd";
 
 export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const view = searchParams.get('view');
   const router = useRouter();
   const { sidebarCollapsed, closeMobileSidebar } = useUIStore();
 
@@ -18,7 +21,7 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
     <aside
       className={clsx(
         "relative min-h-screen bg-white flex flex-col transition-all duration-300 ease-in-out",
-        sidebarCollapsed ? "w-20" : "w-64",
+        sidebarCollapsed ? "w-20" : "w-64 lg:w-56 xl:w-64",
       )}
     >
       {/* Logo */}
@@ -51,10 +54,20 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
       <nav className="flex-1 pl-4 py-4 flex flex-col gap-4">
         {AppRoutes.map((item) => {
           const currentPath = normalizePath(pathname);
-          const itemPath = normalizePath(item.href);
-
-          const isActive =
-            currentPath === itemPath || currentPath.endsWith(`${itemPath}/`);
+          const itemPath = normalizePath(item.href.split('?')[0]);
+          const isOrders = item.key === 'orders';
+          
+          let isActive = false;
+          if (isOrders) {
+             isActive = view === 'orders';
+          } else {
+             // For non-orders, ensure we are not in orders view if on dashboard root
+             if (item.href === '/dashboard' && view === 'orders') {
+               isActive = false;
+             } else {
+               isActive = currentPath === itemPath || currentPath.endsWith(`${itemPath}/`);
+             }
+          }
 
           const Icon = item.icon;
 
@@ -83,14 +96,45 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
         })}
       </nav>
 
-      {/* Logout */}
-      <Link
-        href="/"
-        className="flex gap-4 items-center px-6 py-4 text-red-700 hover:bg-slate-100"
-      >
-        <UserOutlined />
-        {!sidebarCollapsed && "Log out"}
-      </Link>
+      {/* Logout - moved up and enhanced */}
+      <div className="px-4 pb-2">
+        <Link
+          href="/"
+          className={clsx(
+            "flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors",
+            sidebarCollapsed && "justify-center px-2"
+          )}
+        >
+          <LogoutOutlined className="text-lg" />
+          {!sidebarCollapsed && <span className="font-medium">Logout</span>}
+        </Link>
+      </div>
+
+      {/* Support Card */}
+      {!sidebarCollapsed && (
+        <div className="mx-4 mb-4 p-4 rounded-xl bg-teal-600 text-white relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white/20">
+                <CustomerServiceOutlined />
+              </span>
+              <span className="font-medium text-xs tracking-wider">SUPPORT</span>
+            </div>
+            <p className="text-sm mb-3 font-medium">
+              Need assistance with your mining permits?
+            </p>
+            <Button 
+              block 
+              className="bg-white text-teal-800 border-none font-medium h-9 hover:bg-gray-100! hover:text-teal-900!"
+            >
+              Contact Expert
+            </Button>
+          </div>
+          {/* Background decoration circles */}
+          <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-white/10" />
+          <div className="absolute bottom-8 -left-4 w-16 h-16 rounded-full bg-white/10" />
+        </div>
+      )}
     </aside>
   );
 }
