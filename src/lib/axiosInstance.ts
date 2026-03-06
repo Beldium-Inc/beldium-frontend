@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://stg-api.beldium.com";
+const PROD_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||  "https://api.beldium.com"
+const STAGING_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://stg-api.beldium.com"
+
+const BASE_URL = PROD_BASE_URL
 
 // Public API (no token needed)
 export const publicApi = axios.create({
