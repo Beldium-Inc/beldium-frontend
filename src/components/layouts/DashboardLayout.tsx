@@ -1,8 +1,6 @@
 "use client";
 
 import Header from "./Header";
-import LeaderBoard from "./LeaderBoard";
-import MobileLeaderBoard from "./MobileLeaderBoard";
 import MobileSidebar from "./MobileSidebar";
 import Sidebar from "./Sidebar";
 
@@ -22,9 +20,9 @@ export default function DashboardLayout({
       <MobileSidebar />
 
       {/* Main */}
-      <div className="flex flex-col flex-1 lg:px-0">
+      <div className="flex flex-col flex-1 min-w-0 lg:px-0">
         <Header />
-        <main className="flex-1 overflow-y-scroll py-6 px-0 md:p-6">{children}</main>
+        <main className="flex-1 min-w-0 overflow-y-scroll py-6 px-0 md:p-6">{children}</main>
       </div>
     </div>
   );
