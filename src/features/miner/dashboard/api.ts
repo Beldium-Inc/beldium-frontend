@@ -114,6 +114,53 @@ export type OrderHistoryResponse = {
   };
 };
 
+export type OrderTransaction = {
+  id: string;
+  order_id: string;
+  payment_reference: string;
+  created_at: string;
+  transaction_code: string;
+  amount: string;
+  payment_method: string;
+  payment_status: string;
+  paid_at: string;
+};
+
+export type OrderDetail = {
+  id: string;
+  buyer: string;
+  miner: string;
+  transactions: OrderTransaction[];
+  amount_paid: string;
+  balance: string;
+  created_at: string;
+  updated_at: string;
+  order_number: number;
+  order_code: string;
+  mineral_type: string | null;
+  grade: string | null;
+  agreed_tonnage: string;
+  agreed_price: string;
+  total_value: string;
+  subtotal: string;
+  shipping_cost: string;
+  export_tariffs: string;
+  currency: string;
+  shipment_status: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  archived: boolean;
+  dispute_flag: boolean;
+  status: string;
+  rfq: string;
+};
+
+export type OrderDetailResponse = {
+  status: string;
+  data: OrderDetail;
+  message: string | null;
+};
+
 export async function getMinerOverview() {
   const { data } = await authApi.get<MinerOverview>("/miner/dashboard/dashboard_overview/");
   return data;
@@ -142,5 +189,10 @@ export async function getOpenQueue(params?: { page?: number; per_page?: number }
   const { data } = await authApi.get<OpenQueueResponse>("/miner/dashboard/new_requests/", {
     params,
   });
+  return data;
+}
+
+export async function getOrderDetail(id: string) {
+  const { data } = await authApi.get<OrderDetailResponse>(`/miner/dashboard/${id}/detail/`);
   return data;
 }

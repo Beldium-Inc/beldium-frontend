@@ -10,6 +10,12 @@ import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
 import { minerOnboarding } from "@/src/features/onboarding/api";
 
+const ESG_DOCUMENTATION_STATUS = {
+  COMPLETED: "completed",
+  IN_PROGRESS: "in_progress",
+  NOT_YET_INITIATED: "not_yet_initiated",
+} as const;
+
 export function StepFour({
   data,
   onNext,
@@ -89,14 +95,43 @@ export function StepFour({
           >
             <Radio.Group>
               <div className="w-full flex flex-col gap-3">
-                <Radio value="EIA completed">EIA completed</Radio>
-                <Radio value="EIA in progress">EIA in progress</Radio>
-                <Radio value="Not yet initiated">Not yet initiated</Radio>
+                <Radio value={ESG_DOCUMENTATION_STATUS.COMPLETED}>
+                  EIA completed
+                </Radio>
+                <Radio value={ESG_DOCUMENTATION_STATUS.IN_PROGRESS}>
+                  EIA in progress
+                </Radio>
+                <Radio value={ESG_DOCUMENTATION_STATUS.NOT_YET_INITIATED}>
+                  Not yet initiated
+                </Radio>
               </div>
             </Radio.Group>
           </Form.Item>
 
-          <Form.Item label="Environmental & Compliance Documents">
+          <Form.Item
+            label="Environmental & Compliance Documents"
+            dependencies={["environmentalDocumentation"]}
+            rules={[
+              ({ getFieldValue }) => ({
+                validator: async () => {
+                  const status = String(
+                    getFieldValue("environmentalDocumentation") || ""
+                  );
+                  const requiresDocument =
+                    status === ESG_DOCUMENTATION_STATUS.COMPLETED ||
+                    status === ESG_DOCUMENTATION_STATUS.IN_PROGRESS;
+                  if (!requiresDocument || envDoc) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error(
+                      "Please upload your environmental compliance document"
+                    )
+                  );
+                },
+              }),
+            ]}
+          >
             <Upload.Dragger
               beforeUpload={(file) => {
                 setEnvDoc(file);
