@@ -1,129 +1,114 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Skeleton } from "antd";
-import { PlusOutlined, ShopOutlined } from "@ant-design/icons";
-import { getOrdersOverview, getOpenQueue } from "@/src/features/miner/dashboard/api";
-import { getUser } from "@/src/features/onboarding/api";
-import OverviewCards from "@/src/features/miner/dashboard/components/OverviewCards";
-import OpenQueueTable from "@/src/features/miner/dashboard/components/OpenQueueTable";
-import Link from "next/link";
+import { 
+  getOrdersOverview, 
+  getOpenQueue, 
+  getActiveOrders, 
+  getOrderHistory 
+} from "@/src/features/miner/dashboard/api";
+import OrdersStatsCards from "@/src/features/miner/orders/components/StatsCards";
+import NewRequestsList from "@/src/features/miner/orders/components/NewRequestsList";
+import ActiveOrdersTable from "@/src/features/miner/orders/components/ActiveOrdersTable";
+import OrderHistoryView from "@/src/features/miner/orders/components/OrderHistoryView";
+import MobileScrollableTabs from "@/src/features/miner/orders/components/MobileScrollableTabs";
 
 export default function OrdersView() {
-  const userQ = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: getUser,
-  });
+  const [activeTab, setActiveTab] = useState<'new_requests' | 'active_orders' | 'history'>('new_requests');
+  const [page, setPage] = useState(1);
 
+  // Queries
   const overviewQ = useQuery({
     queryKey: ["ordersOverview"],
     queryFn: getOrdersOverview,
   });
 
-  const queueQ = useQuery({
-    queryKey: ["newRequests", { page: 1 }],
-    queryFn: () => getOpenQueue({ page: 1, per_page: 10 }),
+  const newRequestsQ = useQuery({
+    queryKey: ["newRequests", { page }],
+    queryFn: () => getOpenQueue({ page, per_page: 10 }),
+    enabled: activeTab === 'new_requests',
   });
 
-  const user = userQ.data?.data;
-  const companyName = user?.company_name || "Miner";
+  const activeOrdersQ = useQuery({
+    queryKey: ["activeOrders", { page }],
+    queryFn: () => getActiveOrders({ page, per_page: 10 }),
+    enabled: activeTab === 'active_orders',
+  });
+
+  const historyQ = useQuery({
+    queryKey: ["orderHistory", { page }],
+    queryFn: () => getOrderHistory({ page, per_page: 10 }),
+    enabled: activeTab === 'history',
+  });
+
+  // Derived Data
   const stats = overviewQ.data?.data;
-  const items = queueQ.data?.data?.results || [];
+  const newRequests = newRequestsQ.data?.data?.results || [];
+  const activeOrders = activeOrdersQ.data?.data?.results || [];
+  const history = historyQ.data?.data?.results || [];
+
+  const handleTabChange = (tab: 'new_requests' | 'active_orders' | 'history') => {
+    setActiveTab(tab);
+    setPage(1); // Reset page on tab change
+  };
 
   return (
     <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full overflow-x-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="w-full">
-          <div className="text-xl md:text-2xl font-semibold">Orders</div>
-          <div className="text-xs md:text-sm text-gray-500 mt-1">
-            {userQ.isLoading ? (
-              <Skeleton.Input active size="small" className="!w-48 md:!w-72" />
-            ) : (
-              `Manage your orders and requests, ${companyName}.`
-            )}
-          </div>
-        </div>
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Orders</h1>
+        <p className="text-xs md:text-sm text-gray-500">Track and manage buyer transactions.</p>
       </div>
 
-      <OverviewCards
-        kyc="Verified" // Placeholder or mapped if available
-        compliance="Passed" // Placeholder or mapped if available
-        access="Active" // Placeholder or mapped if available
-        activeCount={stats?.active_orders || 0}
-        activeChange={0} // Placeholder as API might not return change percentage for orders
-        pendingCount={stats?.incoming_rfqs || 0}
+      {/* Stats Cards */}
+      <OrdersStatsCards
+        incomingRfqs={stats?.incoming_rfqs || 0}
+        activeOrders={stats?.active_orders || 0}
+        compliancePending={stats?.compliance_pending || 0}
+        completedOrders={stats?.completed_orders || 0}
         loading={overviewQ.isLoading}
       />
 
-      {/* Blue Gradient Banner / Mobile CTA - Copied from MinerDashboardPage */}
-      {overviewQ.isLoading ? (
-        <Skeleton active paragraph={{ rows: 3 }} className="p-6 rounded-2xl border border-gray-100 bg-white" />
-      ) : (
-        <>
-          {/* Desktop/Tablet Banner */}
-          <div className="hidden lg:flex rounded-xl md:rounded-2xl bg-gradient-to-r from-blue-900 to-teal-500 p-5 md:p-8 text-white flex-col md:flex-row items-center justify-between shadow-lg relative overflow-hidden gap-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start md:items-center gap-4 relative z-10 w-full md:w-auto text-center sm:text-left">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl shrink-0 mx-auto sm:mx-0">
-                <ShopOutlined />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Ready to manage your orders</h3>
-                <p className="text-blue-100 text-sm max-w-md">
-                  Keep track of all your incoming requests and active shipments efficiently.
-                </p>
-              </div>
-            </div>
-            
-            <div className="relative z-10 w-full md:w-auto flex justify-center md:justify-end">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<PlusOutlined />}
-                className="bg-teal-900 border-none hover:!bg-teal-950 font-medium h-10 px-6 w-full sm:w-auto"
-              >
-                Create new mineral listing
-              </Button>
-            </div>
+      {/* Tabs & Content */}
+      <MobileScrollableTabs
+        activeTab={activeTab}
+        onTabChange={(id) => handleTabChange(id as 'new_requests' | 'active_orders' | 'history')}
+        tabs={[
+          { id: 'new_requests', label: 'New Requests', badgeCount: stats?.incoming_rfqs || 0 },
+          { id: 'active_orders', label: 'Active Orders', badgeCount: stats?.active_orders || 0 },
+          { id: 'history', label: 'Order History' },
+        ]}
+      >
+        {activeTab === 'new_requests' && (
+          <NewRequestsList 
+            items={newRequests} 
+            loading={newRequestsQ.isLoading} 
+          />
+        )}
 
-            {/* Decorative circles */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
-          </div>
+        {activeTab === 'active_orders' && (
+          <ActiveOrdersTable 
+            items={activeOrders} 
+            loading={activeOrdersQ.isLoading}
+            total={activeOrdersQ.data?.data?.count}
+            page={page}
+            perPage={10}
+            onPageChange={setPage}
+          />
+        )}
 
-          {/* Mobile CTA Only - Enhanced with gradient background */}
-          <div className="lg:hidden w-full rounded-xl bg-gradient-to-r from-blue-900 to-teal-500 p-4 shadow-md relative overflow-hidden">
-            <div className="relative z-10 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
-                  <ShopOutlined />
-                </div>
-                <div className="text-white font-medium text-sm">List your resources</div>
-              </div>
-              <Button 
-                type="primary" 
-                size="middle" 
-                icon={<PlusOutlined />}
-                className="bg-white text-blue-900 border-none font-bold h-9 px-4 rounded-lg shadow-sm hover:!bg-gray-100"
-              >
-                Create
-              </Button>
-            </div>
-            {/* Minimal decorative circles for mobile */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
-          </div>
-        </>
-      )}
-
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xl md:text-2xl font-semibold">New Requests</div>
-          <Link href="#" className="text-blue-600">View all</Link>
-        </div>
-        <OpenQueueTable items={items} loading={queueQ.isLoading} />
-        <div className="text-xs text-gray-500 mt-3">
-          You have {queueQ.data?.data?.count || 0} requests (Displaying {queueQ.data?.data?.per_page || 10} per page)
-        </div>
-      </Card>
+        {activeTab === 'history' && (
+          <OrderHistoryView 
+            items={history} 
+            loading={historyQ.isLoading}
+            total={historyQ.data?.data?.count}
+            page={page}
+            perPage={10}
+            onPageChange={setPage}
+          />
+        )}
+      </MobileScrollableTabs>
     </div>
   );
 }

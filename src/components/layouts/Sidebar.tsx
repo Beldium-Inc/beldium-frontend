@@ -59,13 +59,15 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
           
           let isActive = false;
           if (isOrders) {
-             isActive = view === 'orders';
+             // Active if view is orders OR we are in a sub-route of orders (like order details)
+             isActive = view === 'orders' || currentPath.includes('/dashboard/orders');
           } else {
              // For non-orders, ensure we are not in orders view if on dashboard root
              if (item.href === '/dashboard' && view === 'orders') {
                isActive = false;
              } else {
-               isActive = currentPath === itemPath || currentPath.endsWith(`${itemPath}/`);
+               // Standard path matching, but exclude if we are in orders sub-route
+               isActive = (currentPath === itemPath || currentPath.endsWith(`${itemPath}/`)) && !currentPath.includes('/dashboard/orders');
              }
           }
 

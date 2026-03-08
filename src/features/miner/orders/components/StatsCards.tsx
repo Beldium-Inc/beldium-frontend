@@ -1,34 +1,26 @@
 import { Card, Skeleton } from "antd";
-import {
-  CodeSandboxOutlined,
-  CheckCircleOutlined,
-  WarningOutlined,
-  FileTextOutlined,
-  ArrowRightOutlined,
-} from "@ant-design/icons";
+import { ArrowRightOutlined, AuditOutlined, SyncOutlined, SafetyCertificateOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
 type Props = {
-  newRequests: number;
+  incomingRfqs: number;
   activeOrders: number;
-  actionRequired: number;
-  completed: number;
+  compliancePending: number;
+  completedOrders: number;
   loading?: boolean;
 };
 
-export default function StatsCards({
-  newRequests,
+export default function OrdersStatsCards({
+  incomingRfqs,
   activeOrders,
-  actionRequired,
-  completed,
+  compliancePending,
+  completedOrders,
   loading,
 }: Props) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="rounded-xl border-none shadow-sm">
-            <Skeleton active paragraph={{ rows: 1 }} />
-          </Card>
+          <Skeleton.Button key={i} active className="!w-full !h-32 !rounded-xl" />
         ))}
       </div>
     );
@@ -37,79 +29,64 @@ export default function StatsCards({
   const cards = [
     {
       title: "New Request(s)",
-      count: newRequests,
-      desc: "Awaiting review",
-      icon: <FileTextOutlined />,
-      bg: "bg-blue-100",
+      count: incomingRfqs,
+      subtitle: "Awaiting review",
+      icon: <AuditOutlined className="text-xl" />,
+      bg: "bg-blue-50",
       text: "text-blue-600",
       border: "border-blue-100",
-      iconBg: "bg-white",
     },
     {
       title: "Active orders",
       count: activeOrders,
-      desc: "In progress",
-      icon: <CodeSandboxOutlined />,
+      subtitle: "In progress",
+      icon: <SyncOutlined className="text-xl" />,
       bg: "bg-white",
-      text: "text-gray-800",
+      text: "text-gray-600",
       border: "border-gray-200",
-      iconBg: "bg-white border border-gray-200",
     },
     {
       title: "Require Action",
-      count: actionRequired,
-      desc: "Compliance or logistics needed",
-      icon: <WarningOutlined />,
-      bg: "bg-orange-100",
+      count: compliancePending,
+      subtitle: "Compliance or logistics needed",
+      icon: <SafetyCertificateOutlined className="text-xl" />,
+      bg: "bg-orange-50",
       text: "text-orange-600",
       border: "border-orange-100",
-      iconBg: "bg-white",
     },
     {
       title: "Completed",
-      count: completed,
-      desc: "Successfully fulfilled",
-      icon: <CheckCircleOutlined />,
-      bg: "bg-green-100",
+      count: completedOrders,
+      subtitle: "Successfully fulfilled",
+      icon: <CheckCircleOutlined className="text-xl" />,
+      bg: "bg-green-50",
       text: "text-green-600",
       border: "border-green-100",
-      iconBg: "bg-white",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-      {cards.map((card, idx) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map((card, index) => (
         <div
-          key={idx}
-          className={`p-5 rounded-xl border ${card.border} ${card.bg} shadow-sm relative overflow-hidden transition-all hover:shadow-md flex flex-col justify-between h-[140px]`}
+          key={index}
+          className={`${card.bg} border ${card.border} rounded-xl p-5 flex flex-col justify-between h-32 relative overflow-hidden transition-all hover:shadow-md cursor-pointer group`}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between z-10">
             <div className="flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-full ${card.iconBg} flex items-center justify-center ${card.text}`}>
-                {card.icon}
-              </span>
-              <span className="font-medium text-gray-700 text-sm md:text-base">
-                {card.title}
+              <div className={`${card.text}`}>{card.icon}</div>
+              <span className={`font-medium ${card.text.replace('600', '700')}`}>
+                {card.count} {card.title}
               </span>
             </div>
           </div>
           
-          <div>
-            <div className="mb-1">
-              <span className="text-3xl md:text-4xl font-semibold text-gray-900">
-                {card.count}
-              </span>
+          <div className="z-10 flex items-center justify-between mt-auto">
+            <span className="text-xs text-gray-500 font-medium">{card.subtitle}</span>
+            <div className={`w-8 h-8 rounded-full bg-white/50 flex items-center justify-center ${card.text} opacity-0 group-hover:opacity-100 transition-opacity`}>
+               <ArrowRightOutlined />
             </div>
-            
-            <p className="text-xs text-gray-500">
-              {card.desc}
-            </p>
           </div>
-
-          <button className="absolute bottom-4 right-4 w-8 h-8 rounded-full bg-white/50 hover:bg-white flex items-center justify-center text-gray-500 transition-colors shadow-sm">
-            <ArrowRightOutlined className="-rotate-45 text-xs" />
-          </button>
         </div>
       ))}
     </div>

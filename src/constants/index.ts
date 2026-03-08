@@ -34,3 +34,5 @@ export const COUNTRIES = [
 
 
 export const FLAG_CDN = "https://flagcdn.com/w20/ng.png"
+
+export const DEFAULT_CURRENCY_SYMBOL = "₦";
