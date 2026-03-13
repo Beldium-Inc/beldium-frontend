@@ -17,7 +17,7 @@ export const AppRoutes = [
   {
     key: "listings",
     label: "Listings",
-    href: "/dashboard/listings",
+    href: "/dashboard?view=listings",
     icon: UnorderedListOutlined,
   },
   {
@@ -45,4 +45,3 @@ export const AppRoutes = [
     icon: SettingOutlined,
   },
 ];
-

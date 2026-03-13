@@ -56,14 +56,18 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
           const currentPath = normalizePath(pathname);
           const itemPath = normalizePath(item.href.split('?')[0]);
           const isOrders = item.key === 'orders';
+          const isListings = item.key === 'listings';
           
           let isActive = false;
           if (isOrders) {
              // Active if view is orders OR we are in a sub-route of orders (like order details)
              isActive = view === 'orders' || currentPath.includes('/dashboard/orders');
+          } else if (isListings) {
+             // Active if listings view is selected
+             isActive = view === 'listings';
           } else {
              // For non-orders, ensure we are not in orders view if on dashboard root
-             if (item.href === '/dashboard' && view === 'orders') {
+             if (item.href === '/dashboard' && (view === 'orders' || view === 'listings')) {
                isActive = false;
              } else {
                // Standard path matching, but exclude if we are in orders sub-route
