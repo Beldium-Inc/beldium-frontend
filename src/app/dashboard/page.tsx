@@ -9,6 +9,8 @@ import OpenQueueTable from "@/src/features/miner/dashboard/components/OpenQueueT
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import OrdersView from "./OrdersView";
+import ListingView from "./ListingView";
+import CreateListingView from "./CreateListingView";
 
 export default function MinerDashboardPage() {
   const searchParams = useSearchParams();
@@ -31,6 +33,12 @@ export default function MinerDashboardPage() {
 
   if (view === 'orders') {
     return <OrdersView />;
+  }
+  if (view === 'listings') {
+    return <ListingView />;
+  }
+  if (view === 'create_listing') {
+    return <CreateListingView />;
   }
 
   const user = userQ.data?.data;
@@ -91,6 +99,7 @@ export default function MinerDashboardPage() {
                 size="large" 
                 icon={<PlusOutlined />}
                 className="bg-teal-900 border-none hover:!bg-teal-950 font-medium h-10 px-6 w-full sm:w-auto"
+                onClick={() => location.assign('/dashboard?view=create_listing')}
               >
                 Create new mineral listing
               </Button>
@@ -115,6 +124,7 @@ export default function MinerDashboardPage() {
                 size="middle" 
                 icon={<PlusOutlined />}
                 className="bg-white text-blue-900 border-none font-bold h-9 px-4 rounded-lg shadow-sm hover:!bg-gray-100"
+                onClick={() => location.assign('/dashboard?view=create_listing')}
               >
                 Create
               </Button>
