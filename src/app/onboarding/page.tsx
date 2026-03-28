@@ -3,7 +3,7 @@ import { ProfileOnboardWizard } from "@/src/features/onboard/ProfileOnboardWizar
 import { useProfileOnboardStore } from "@/src/features/onboard/profileOnboard.store";
 import { useEffect, useState } from "react";
 import { getUser } from "@/src/features/onboarding/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spin } from "antd";
 
 const titles = [
@@ -19,9 +19,14 @@ const titles = [
 export default function Page() {
   const { step, setStep } = useProfileOnboardStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
+    const requestedStep = Number(searchParams.get("step"));
+    const hasExplicitStep =
+      Number.isInteger(requestedStep) && requestedStep >= 1 && requestedStep <= 7;
+
     const init = async () => {
       try {
         const res = await getUser();
@@ -35,6 +40,12 @@ export default function Page() {
             router.replace("/dashboard");
           }
         } else {
+          if (hasExplicitStep) {
+            setStep(requestedStep);
+            setBooting(false);
+            return;
+          }
+
           if (!profile) {
             setStep(1);
             setBooting(false);
@@ -65,7 +76,7 @@ export default function Page() {
       setBooting(false);
     };
     init();
-  }, [setStep, router]);
+  }, [setStep, router, searchParams]);
   const steps = titles.map((title, i) => {
     const id = i + 1;
     const status = id < step ? "completed" : id === step ? "active" : "pending";

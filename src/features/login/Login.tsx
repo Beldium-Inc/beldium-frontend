@@ -2,7 +2,6 @@
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form } from "antd";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
@@ -34,7 +33,6 @@ export function Login() {
     try {
       setLoading(true);
       const payload = { email: values.email, password: values.password };
-      console.log("Login Payload:", payload);
       const res = await login(payload);
       const access = res?.data?.access;
       const refresh = res?.data?.refresh;

@@ -20,6 +20,30 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel
 
+## API Environment
+
+The app resolves the API base URL in this order:
+
+1. `NEXT_PUBLIC_API_URL`
+2. `NEXT_PUBLIC_APP_ENV`
+3. Staging fallback
+
+Use `.env.local` to switch environments:
+
+```bash
+NEXT_PUBLIC_APP_ENV=staging
+```
+
+```bash
+NEXT_PUBLIC_APP_ENV=production
+```
+
+If you need a custom backend URL, set:
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.beldium.com
+```
+
 ## Monexay folder structure
 ## 📁 Project Folder Structure
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Poppins, Bungee, Inter } from "next/font/google";
+import { Geist, Poppins, Bungee } from "next/font/google";
 import "antd/dist/reset.css";
 import "@/src/styles/global.css";
 import "@/src/lib/nprogress";
@@ -49,20 +49,14 @@ export const metadata: Metadata = {
   },
 };
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["500"],
-  variable: "--font-inter",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning
+    <html lang="en" suppressHydrationWarning>
+      <body
         className={`${geistSans.variable} ${poppins.variable} ${bungee.variable} antialiased`}
       >
         <ReactQueryProvider>
