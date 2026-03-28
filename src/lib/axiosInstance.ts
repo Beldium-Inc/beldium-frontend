@@ -1,9 +1,34 @@
 import axios from "axios";
 
-const PROD_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||  "https://api.beldium.com"
-const STAGING_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://stg-api.beldium.com"
+const STAGING_BASE_URL = "https://stg-api.beldium.com";
+const PRODUCTION_BASE_URL = "https://api.beldium.com";
+const DEV_PROXY_BASE_URL = "/api";
 
-const BASE_URL = PROD_BASE_URL
+const getBaseUrl = () => {
+  const useDevProxy =
+    process.env.NEXT_PUBLIC_USE_API_PROXY === "true" ||
+    process.env.NODE_ENV === "development";
+
+  if (useDevProxy) {
+    return DEV_PROXY_BASE_URL;
+  }
+
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  switch (process.env.NEXT_PUBLIC_APP_ENV?.toLowerCase()) {
+    case "production":
+    case "prod":
+      return PRODUCTION_BASE_URL;
+    case "staging":
+    case "stage":
+    default:
+      return STAGING_BASE_URL;
+  }
+};
+
+const BASE_URL = getBaseUrl();
 
 // Public API (no token needed)
 export const publicApi = axios.create({

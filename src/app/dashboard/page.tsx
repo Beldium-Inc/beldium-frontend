@@ -48,6 +48,15 @@ export default function MinerDashboardPage() {
   const active = overview?.active_orders;
   const pending = overview?.pending_actions;
   const items = queueQ.data?.data?.results || [];
+  const shouldShowComplianceBanner =
+    !userQ.isLoading &&
+    (
+      user == null ||
+      user?.role == null ||
+      user?.has_completed_onboarding == null ||
+      user?.profile?.compliance_profile_onboarding_step == null
+    );
+  const complianceBannerHref = "/onboarding?step=4";
 
   return (
     <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full overflow-x-hidden">
@@ -71,6 +80,8 @@ export default function MinerDashboardPage() {
         activeCount={active?.count || 0}
         activeChange={active?.percentage_change || 0}
         pendingCount={pending?.count || 0}
+        showComplianceBanner={shouldShowComplianceBanner}
+        complianceBannerHref={complianceBannerHref}
         loading={overviewQ.isLoading}
       />
 

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useToastStore, Toast } from "@/src/store/toast.store";
 import clsx from "clsx";
@@ -29,7 +29,13 @@ function ToastItem({ toast }: { toast: Toast }) {
 
 export default function ToastContainer() {
   const toasts = useToastStore((s) => s.toasts);
-  if (typeof window === "undefined") return null;
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  if (!mounted) return null;
 
   return createPortal(
     <div className="fixed top-4 right-4 z-[1000]">
