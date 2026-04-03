@@ -22,6 +22,7 @@ const getApiOrigin = () => {
 const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
+  skipTrailingSlashRedirect: true,
   turbopack: {
     root: process.cwd(),
   },
