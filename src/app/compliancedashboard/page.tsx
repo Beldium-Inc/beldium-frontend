@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import {
   CheckCircleOutlined,
   CloseOutlined,
   ClockCircleOutlined,
+  DownOutlined,
   DownloadOutlined,
   EnvironmentOutlined,
   EyeOutlined,
@@ -22,10 +23,15 @@ import {
   FolderOpenOutlined,
   FileImageOutlined,
   FilePdfOutlined,
+  IdcardOutlined,
   InfoCircleOutlined,
+  LockOutlined,
   LogoutOutlined,
+  LoginOutlined,
   MailOutlined,
+  PhoneOutlined,
   SafetyCertificateOutlined,
+  SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
   SolutionOutlined,
@@ -64,7 +70,11 @@ import {
 import { showToast } from "@/src/store/toast.store";
 
 type DashboardPersona = "admin" | "compliance";
-type ComplianceView = "dashboard" | "reviews";
+type ComplianceView =
+  | "dashboard"
+  | "reviews"
+  | "profile"
+  | "compliance-profile";
 
 type NavItem = {
   label: string;
@@ -116,11 +126,15 @@ function getComplianceNavItems(view: ComplianceView): NavItem[] {
     {
       label: "Dashboard",
       icon: <AppstoreOutlined />,
-      active: view === "dashboard",
+      active: view !== "reviews",
     },
     {
       label: "Open Task Pool",
       icon: <FolderOpenOutlined />,
+    },
+    {
+      label: "Partner directory",
+      icon: <ApartmentOutlined />,
     },
     {
       label: "Reviews",
@@ -134,6 +148,102 @@ function getComplianceNavItems(view: ComplianceView): NavItem[] {
     },
   ];
 }
+
+const complianceProfileCard = {
+  name: "David Obi",
+  role: "Compliance Officer",
+  email: "david.obi@nmca.gov.ng",
+  phone: "+234 803 456 7890",
+  department: "Compliance & Regulatory",
+  joinedLabel: "Joined January 15, 2026",
+  avatarSrc: "/assets/images/get-started.jpg",
+};
+
+const complianceSecuritySettings = [
+  {
+    title: "Two-Factor Authentication",
+    description: "Add an extra layer of security to your account",
+    icon: <SafetyOutlined />,
+    tone: "blue" as const,
+    statusLabel: "Enabled",
+  },
+  {
+    title: "Last Login",
+    description: "Today at 9:32 AM",
+    icon: <LoginOutlined />,
+    tone: "neutral" as const,
+  },
+  {
+    title: "Password",
+    description: "Last changed 3 weeks ago",
+    icon: <LockOutlined />,
+    tone: "neutral" as const,
+    actionLabel: "Change",
+  },
+];
+
+const compliancePermissions = [
+  { label: "View miner submissions", granted: true },
+  { label: "Review compliance documents", granted: true },
+  { label: "Flag non-compliant miners", granted: true },
+  { label: "Manage team members", granted: false },
+  { label: "Modify verification rules", granted: false },
+];
+
+const complianceInstitutionProfile = {
+  title: "Compliance Profile",
+  subtitle: "Institutional regulatory identity and compliance authority overview",
+  roleLabel: "Compliance Officer",
+  actingLabel: "You are acting under this institution",
+  institutionName: "Nigerian Mineral Compliance Authority",
+  jurisdiction: "Federal Nigeria",
+  mineralsCovered: ["Lithium"],
+  complianceDomains: ["Environmental", "Safety", "ESG", "Mining"],
+  renewalNotice: {
+    title: "License Renewal Due",
+    description:
+      "Your institutional license expires in 45 days. Initiate renewal process.",
+    actionLabel: "Take action",
+  },
+  overviewCards: [
+    {
+      title: "Total miners",
+      value: "247",
+      footnote: "Registered",
+      footnoteClassName: "text-[#7a8291]",
+    },
+    {
+      title: "Under review",
+      value: "42",
+      footnote: "In Progress",
+      footnoteClassName: "text-[#ea9b2e]",
+    },
+    {
+      title: "Compliance ready",
+      value: "198",
+      footnote: "Verified",
+      footnoteClassName: "text-[#1ea43b]",
+    },
+    {
+      title: "Action required",
+      value: "7",
+      footnote: "Urgent",
+      footnoteClassName: "text-[#ef2f32]",
+    },
+  ],
+  teamMembers: [
+    { name: "Ayo Bakare", role: "Super Admin", status: "Active" },
+    { name: "Nkechi Okoro", role: "Compliance Officer", status: "Active" },
+    { name: "Chidi Anyaegbu", role: "Reviewer", status: "Active" },
+    { name: "Ibrahim Musa", role: "Admin", status: "Active" },
+  ],
+  verificationItems: [
+    { label: "Verification Status", value: "Active", tone: "green" as const },
+    { label: "Last Verified", value: "March 15, 2026" },
+    { label: "Next Review", value: "April 30, 2026" },
+    { label: "Audit Status", value: "Up to date", tone: "green" as const },
+  ],
+};
 
 const iconToneStyles = {
   blue: "bg-[#e9f0ff] text-[#4a80ff]",
@@ -1297,7 +1407,36 @@ function OnlineToggle() {
   );
 }
 
-function DashboardTopBar({ persona }: { persona: DashboardPersona }) {
+function DashboardTopBar({
+  persona,
+  onMenuNavigate,
+}: {
+  persona: DashboardPersona;
+  onMenuNavigate?: () => void;
+}) {
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const roleLabel = persona === "admin" ? "Admin" : complianceProfileCard.role;
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return undefined;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isProfileMenuOpen]);
+
   return (
     <header className="border-b border-[#e9edf5] bg-white/95 backdrop-blur">
       <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-8">
@@ -1347,24 +1486,99 @@ function DashboardTopBar({ persona }: { persona: DashboardPersona }) {
 
           <div className="hidden h-12 w-px bg-[#e4e7ee] lg:block" />
 
-          <div className="flex items-center gap-3 rounded-full bg-[#f5f7fb] px-3 py-2">
-            <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white shadow-sm">
-              <Image
-                src="/assets/images/get-started.jpg"
-                alt="David Obi"
-                fill
-                className="object-cover"
-                sizes="48px"
-              />
-            </div>
-            <div className="leading-tight">
-              <div className="text-[16px] font-semibold text-[#1f2635]">
-                David Obi
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              type="button"
+              onClick={() =>
+                persona === "compliance"
+                  ? setIsProfileMenuOpen((current) => !current)
+                  : undefined
+              }
+              aria-expanded={persona === "compliance" ? isProfileMenuOpen : undefined}
+              aria-haspopup={persona === "compliance" ? "menu" : undefined}
+              className={classNames(
+                "flex items-center gap-3 rounded-full border px-3 py-2 text-left transition-colors",
+                persona === "compliance"
+                  ? "border-[#edf1f7] bg-[#f5f7fb] hover:border-[#dfe5ef] hover:bg-white"
+                  : "border-transparent bg-[#f5f7fb]",
+              )}
+            >
+              <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white shadow-sm">
+                <Image
+                  src={complianceProfileCard.avatarSrc}
+                  alt={complianceProfileCard.name}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
               </div>
-              <div className="mt-1 text-[14px] text-[#7a8291]">
-                {persona === "admin" ? "Admin" : "Compliance"}
+              <div className="leading-tight">
+                <div className="text-[16px] font-semibold text-[#1f2635]">
+                  {complianceProfileCard.name}
+                </div>
+                <div className="mt-1 text-[14px] text-[#7a8291]">{roleLabel}</div>
               </div>
-            </div>
+              {persona === "compliance" ? (
+                <DownOutlined
+                  className={classNames(
+                    "ml-2 text-[14px] text-[#4f5664] transition-transform",
+                    isProfileMenuOpen && "rotate-180",
+                  )}
+                />
+              ) : null}
+            </button>
+
+            {persona === "compliance" && isProfileMenuOpen ? (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-30 w-[310px] overflow-hidden rounded-[20px] border border-[#e1e6ef] bg-white shadow-[0_30px_60px_-34px_rgba(16,30,61,0.38)]">
+                <div className="border-b border-[#edf1f7] px-5 py-4">
+                  <div className="text-[16px] font-semibold text-[#1f2635]">
+                    {complianceProfileCard.name}
+                  </div>
+                  <div className="mt-1 text-[14px] text-[#6f7786]">
+                    {complianceProfileCard.role}
+                  </div>
+                  <div className="mt-1 text-[14px] text-[#7f8796]">
+                    {complianceProfileCard.email}
+                  </div>
+                </div>
+
+                <div className="p-2">
+                  <Link
+                    href="/compliancedashboard?persona=compliance&view=profile"
+                    onClick={() => {
+                      onMenuNavigate?.();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#333a48] transition-colors hover:bg-[#f7f9fc]"
+                  >
+                    <UserOutlined className="text-[18px] text-[#4f5664]" />
+                    View my profile
+                  </Link>
+                  <Link
+                    href="/compliancedashboard?persona=compliance&view=compliance-profile"
+                    onClick={() => {
+                      onMenuNavigate?.();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#333a48] transition-colors hover:bg-[#f7f9fc]"
+                  >
+                    <ApartmentOutlined className="text-[18px] text-[#4f5664]" />
+                    View compliance profile
+                  </Link>
+                </div>
+
+                <div className="border-t border-[#edf1f7] p-2">
+                  <Link
+                    href="/"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#ef2f32] transition-colors hover:bg-[#fff5f5]"
+                  >
+                    <LogoutOutlined className="text-[18px]" />
+                    Logout
+                  </Link>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1453,6 +1667,549 @@ function PageHero({
           </>
         )}
       </Link>
+    </div>
+  );
+}
+
+function ProfileStatusBanner({
+  tone,
+  icon,
+  label,
+}: {
+  tone: "green" | "blue";
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <div
+      className={classNames(
+        "inline-flex w-full items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-[15px] font-medium",
+        tone === "green"
+          ? "border border-[#caebd1] bg-[#ebfaef] text-[#1ea43b]"
+          : "border border-[#dce7ff] bg-[#eef4ff] text-[#2661d8]",
+      )}
+    >
+      {icon}
+      {label}
+    </div>
+  );
+}
+
+function ProfileInfoRow({
+  icon,
+  value,
+}: {
+  icon: ReactNode;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 text-[16px] text-[#4b5260]">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4f7fb] text-[18px] text-[#5f6880]">
+        {icon}
+      </span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
+function ProfileActionButton({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="inline-flex h-14 w-full items-center justify-center rounded-[16px] bg-[#14244a] px-5 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+      style={primaryActionStyle}
+    >
+      {label}
+    </button>
+  );
+}
+
+function SecuritySettingRow({
+  title,
+  description,
+  icon,
+  tone,
+  statusLabel,
+  actionLabel,
+}: {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  tone: "blue" | "neutral";
+  statusLabel?: string;
+  actionLabel?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-4 rounded-[24px] border border-[#e8ecf4] bg-white px-5 py-5 shadow-[0_24px_40px_-36px_rgba(16,30,61,0.45)] sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-4">
+        <span
+          className={classNames(
+            "flex h-14 w-14 items-center justify-center rounded-[18px] text-[24px]",
+            tone === "blue"
+              ? "bg-[#eef4ff] text-[#2661d8]"
+              : "bg-[#f4f6fa] text-[#4f5664]",
+          )}
+        >
+          {icon}
+        </span>
+        <div>
+          <div className="text-[18px] font-medium text-[#2a2f39]">{title}</div>
+          <div className="mt-1 text-[15px] text-[#6f7786]">{description}</div>
+        </div>
+      </div>
+
+      {statusLabel ? (
+        <span className="inline-flex items-center justify-center rounded-[14px] border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+          {statusLabel}
+        </span>
+      ) : null}
+
+      {actionLabel ? (
+        <button
+          type="button"
+          className="inline-flex h-14 items-center justify-center rounded-[16px] bg-[#14244a] px-7 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+          style={primaryActionStyle}
+        >
+          {actionLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function PermissionStatusPill({ granted }: { granted: boolean }) {
+  return (
+    <span
+      className={classNames(
+        "inline-flex items-center justify-center rounded-[14px] px-4 py-2 text-[15px] font-medium",
+        granted
+          ? "border border-[#caebd1] bg-[#ebfaef] text-[#1ea43b]"
+          : "border border-[#e5e8ef] bg-[#f6f7fa] text-[#8a92a1]",
+      )}
+    >
+      {granted ? "Granted" : "Not Granted"}
+    </span>
+  );
+}
+
+function PermissionRow({
+  label,
+  granted,
+}: {
+  label: string;
+  granted: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-4 rounded-[22px] border border-[#e8ecf4] bg-white px-5 py-5 shadow-[0_24px_40px_-36px_rgba(16,30,61,0.45)] sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-[18px] text-[#2a2f39]">{label}</div>
+      <PermissionStatusPill granted={granted} />
+    </div>
+  );
+}
+
+function ComplianceProfileView() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+          My Profile
+        </h1>
+        <p className="mt-2 max-w-[780px] text-[15px] text-[#7a8291]">
+          Personal account information, security settings, and activity history
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.64fr)]">
+        <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-[0_18px_36px_-28px_rgba(16,30,61,0.55)]">
+              <Image
+                src={complianceProfileCard.avatarSrc}
+                alt={complianceProfileCard.name}
+                fill
+                className="object-cover"
+                sizes="96px"
+              />
+            </div>
+            <div className="mt-6 text-[32px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
+              {complianceProfileCard.name}
+            </div>
+            <div className="mt-1 text-[18px] text-[#6f7786]">
+              {complianceProfileCard.role}
+            </div>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <ProfileStatusBanner
+              tone="green"
+              icon={<CheckCircleOutlined />}
+              label="Verified Institution"
+            />
+            <ProfileStatusBanner
+              tone="blue"
+              icon={<SafetyOutlined />}
+              label="2FA Enabled"
+            />
+          </div>
+
+          <div className="mt-8 space-y-4">
+            <ProfileInfoRow
+              icon={<MailOutlined />}
+              value={complianceProfileCard.email}
+            />
+            <ProfileInfoRow
+              icon={<PhoneOutlined />}
+              value={complianceProfileCard.phone}
+            />
+            <ProfileInfoRow
+              icon={<IdcardOutlined />}
+              value={complianceProfileCard.department}
+            />
+            <ProfileInfoRow
+              icon={<CalendarOutlined />}
+              value={complianceProfileCard.joinedLabel}
+            />
+          </div>
+
+          <div className="my-8 h-px bg-[#edf1f7]" />
+
+          <div className="space-y-4">
+            <ProfileActionButton label="Edit profile" />
+            <ProfileActionButton label="Change password" />
+          </div>
+        </section>
+
+        <div className="space-y-6">
+          <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+                <SafetyOutlined />
+              </span>
+              Security Settings
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {complianceSecuritySettings.map((item) => (
+                <SecuritySettingRow
+                  key={item.title}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                  tone={item.tone}
+                  statusLabel={item.statusLabel}
+                  actionLabel={item.actionLabel}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+                <SolutionOutlined />
+              </span>
+              Permissions
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {compliancePermissions.map((permission) => (
+                <PermissionRow
+                  key={permission.label}
+                  label={permission.label}
+                  granted={permission.granted}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComplianceDomainChip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-[#b9ceff] bg-[#eef4ff] px-4 py-2 text-[15px] font-medium text-[#2661d8]">
+      {label}
+    </span>
+  );
+}
+
+function ComplianceInstitutionBadge({
+  icon,
+  label,
+}: {
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-[12px] border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+      {icon}
+      {label}
+    </span>
+  );
+}
+
+function ComplianceSectionHeading({
+  icon,
+  title,
+}: {
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
+        {icon}
+      </span>
+      <h2 className="text-[18px] font-semibold text-[#2a2f39]">{title}</h2>
+    </div>
+  );
+}
+
+function ComplianceOverviewCard({
+  title,
+  value,
+  footnote,
+  footnoteClassName,
+}: {
+  title: string;
+  value: string;
+  footnote: string;
+  footnoteClassName: string;
+}) {
+  return (
+    <div className="rounded-[18px] border border-[#edf1f7] bg-[#fbfcfe] px-5 py-4">
+      <div className="text-[12px] font-medium uppercase tracking-[0.05em] text-[#b0b6c2]">
+        {title}
+      </div>
+      <div className="mt-3 text-[24px] font-semibold text-[#2a2f39]">{value}</div>
+      <div className={classNames("mt-1 text-[14px]", footnoteClassName)}>
+        {footnote}
+      </div>
+    </div>
+  );
+}
+
+function ComplianceTeamStatus({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+      {label}
+    </span>
+  );
+}
+
+function ComplianceVerificationValue({
+  value,
+  tone,
+}: {
+  value: string;
+  tone?: "green";
+}) {
+  if (tone === "green") {
+    return (
+      <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+        {value}
+      </span>
+    );
+  }
+
+  return <span className="text-[16px] font-medium text-[#2a2f39]">{value}</span>;
+}
+
+function ComplianceInstitutionProfileView() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+          {complianceInstitutionProfile.title}
+        </h1>
+        <p className="mt-2 max-w-[780px] text-[15px] text-[#7a8291]">
+          {complianceInstitutionProfile.subtitle}
+        </p>
+
+        <div className="mt-5 inline-flex flex-wrap items-center gap-3 rounded-[14px] border border-[#dce3ef] bg-white px-4 py-3 text-[15px] text-[#7a8291]">
+          <span className="font-medium text-[#5b6472]">
+            Role: {complianceInstitutionProfile.roleLabel}
+          </span>
+          <span className="text-[#c0c5cf]">•</span>
+          <span>{complianceInstitutionProfile.actingLabel}</span>
+        </div>
+      </div>
+
+      <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center gap-5">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#ff3e72] text-[54px] font-semibold italic leading-none text-white">
+              in
+            </div>
+            <div>
+              <div className="text-[24px] font-semibold text-[#2a2f39]">
+                {complianceInstitutionProfile.institutionName}
+              </div>
+              <div className="mt-2 text-[18px] text-[#6f7786]">
+                {complianceInstitutionProfile.jurisdiction}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-3 xl:items-end">
+            <ComplianceInstitutionBadge
+              icon={<CheckCircleOutlined />}
+              label="Verified Institution"
+            />
+            <ComplianceInstitutionBadge
+              icon={<SafetyOutlined />}
+              label="License: Valid"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[24px] border border-[#f4dfb4] bg-[#fffaf1] px-6 py-5 shadow-[0_20px_40px_-36px_rgba(208,152,35,0.55)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="mt-1 text-[20px] text-[#df8b19]">
+              <WarningFilled />
+            </span>
+            <div>
+              <div className="text-[16px] font-medium text-[#d58219]">
+                {complianceInstitutionProfile.renewalNotice.title}
+              </div>
+              <div className="mt-1 text-[15px] text-[#e3a24b]">
+                {complianceInstitutionProfile.renewalNotice.description}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 text-[15px] font-medium text-[#d58219]"
+          >
+            {complianceInstitutionProfile.renewalNotice.actionLabel}
+            <ArrowRightOutlined />
+          </button>
+        </div>
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.03fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <ComplianceSectionHeading
+              icon={<SafetyCertificateOutlined />}
+              title="Regulatory Authority"
+            />
+
+            <div className="mt-8">
+              <div className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
+                Minerals Covered
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {complianceInstitutionProfile.mineralsCovered.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center rounded-full border border-[#e1e5ee] bg-[#f8fafc] px-4 py-2 text-[15px] text-[#5b6472]"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <div className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
+                Compliance Domains
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {complianceInstitutionProfile.complianceDomains.map((item) => (
+                  <ComplianceDomainChip key={item} label={item} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <ComplianceSectionHeading
+              icon={<UsergroupAddOutlined />}
+              title="Team Overview"
+            />
+
+            <div className="mt-8 overflow-hidden rounded-[22px] border border-[#e8ecf4]">
+              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_160px] bg-[#fbfcfe] px-5 py-5 text-[15px] font-medium text-[#2f3541]">
+                <span>Name</span>
+                <span>Role</span>
+                <span>Status</span>
+              </div>
+
+              {complianceInstitutionProfile.teamMembers.map((member) => (
+                <div
+                  key={member.name}
+                  className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_160px] items-center border-t border-[#edf1f7] px-5 py-5 text-[15px] text-[#4b5260]"
+                >
+                  <span>{member.name}</span>
+                  <span>{member.role}</span>
+                  <span>
+                    <ComplianceTeamStatus label={member.status} />
+                  </span>
+                </div>
+              ))}
+
+              <div className="flex justify-center border-t border-[#edf1f7] px-4 py-5">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-[12px] border border-[#e1e5ee] bg-[#f7f8fb] px-5 py-3 text-[14px] font-medium text-[#5f6675] transition-colors hover:bg-white"
+                >
+                  View full team
+                  <ArrowRightOutlined />
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <ComplianceSectionHeading
+              icon={<SolutionOutlined />}
+              title="Compliance Overview"
+            />
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {complianceInstitutionProfile.overviewCards.map((item) => (
+                <ComplianceOverviewCard
+                  key={item.title}
+                  title={item.title}
+                  value={item.value}
+                  footnote={item.footnote}
+                  footnoteClassName={item.footnoteClassName}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+            <ComplianceSectionHeading
+              icon={<SafetyOutlined />}
+              title="Verification & Integrity"
+            />
+
+            <div className="mt-8 space-y-6">
+              {complianceInstitutionProfile.verificationItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between gap-4 border-b border-[#f0f3f8] pb-5 last:border-b-0 last:pb-0"
+                >
+                  <span className="text-[16px] text-[#a0a7b5]">{item.label}</span>
+                  <ComplianceVerificationValue
+                    value={item.value}
+                    tone={item.tone}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2733,9 +3490,17 @@ export default function ComplianceDashboardPage() {
   const persona: DashboardPersona =
     personaParam === "compliance" ? "compliance" : "admin";
   const complianceView: ComplianceView =
-    persona === "compliance" && complianceViewParam === "reviews"
-      ? "reviews"
-      : "dashboard";
+    persona !== "compliance"
+      ? "dashboard"
+      : complianceViewParam === "reviews"
+        ? "reviews"
+        : complianceViewParam === "compliance-profile"
+          ? "compliance-profile"
+        : complianceViewParam === "profile"
+          ? "profile"
+          : "dashboard";
+  const isComplianceProfileSurface =
+    complianceView === "profile" || complianceView === "compliance-profile";
   const [now, setNow] = useState(() => Date.now());
   const [selectedReview, setSelectedReview] =
     useState<ComplianceReviewSelection | null>(null);
@@ -2783,21 +3548,30 @@ export default function ComplianceDashboardPage() {
     queryKey: ["complianceDashboardSummary"],
     queryFn: getComplianceDashboardSummary,
     initialData: DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
-    enabled: persona === "compliance" && hasAccessToken,
+    enabled:
+      persona === "compliance" &&
+      !isComplianceProfileSurface &&
+      hasAccessToken,
     retry: false,
   });
   const complianceQueueQ = useQuery({
     queryKey: ["complianceReviewQueue", { page: 1 }],
     queryFn: () => getComplianceReviewQueue({ page: 1, per_page: 10 }),
     initialData: DEFAULT_COMPLIANCE_REVIEW_QUEUE,
-    enabled: persona === "compliance" && hasAccessToken,
+    enabled:
+      persona === "compliance" &&
+      !isComplianceProfileSurface &&
+      hasAccessToken,
     retry: false,
   });
   const complianceMyTasksQ = useQuery({
     queryKey: ["complianceMyTasks", { page: 1 }],
     queryFn: () => getComplianceMyTasks({ page: 1, per_page: 10 }),
     initialData: DEFAULT_COMPLIANCE_MY_TASKS,
-    enabled: persona === "compliance" && hasAccessToken,
+    enabled:
+      persona === "compliance" &&
+      !isComplianceProfileSurface &&
+      hasAccessToken,
     retry: false,
   });
   const selectedReviewDetailQ = useQuery({
@@ -2986,6 +3760,13 @@ export default function ComplianceDashboardPage() {
         ? "claim"
       : undefined;
 
+  const resetCompliancePanels = () => {
+    setSelectedReview(null);
+    setOpenedMinerDetail(null);
+    setClaimConflictTask(null);
+    setClaimConflictLoggedAt(null);
+  };
+
   const openReviewPanel = (selection: ComplianceReviewSelection | null) => {
     if (!selection) {
       return;
@@ -2999,9 +3780,7 @@ export default function ComplianceDashboardPage() {
       return;
     }
 
-    setOpenedMinerDetail(null);
-    setClaimConflictTask(null);
-    setClaimConflictLoggedAt(null);
+    resetCompliancePanels();
     setSelectedReview(selection);
   };
 
@@ -3063,7 +3842,8 @@ export default function ComplianceDashboardPage() {
     });
   };
 
-  const showMinerDetailView = Boolean(openedMinerDetail);
+  const showMinerDetailView =
+    Boolean(openedMinerDetail) && !isComplianceProfileSurface;
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-[#202534]">
@@ -3071,7 +3851,11 @@ export default function ComplianceDashboardPage() {
         <DashboardSidebar persona={persona} complianceView={complianceView} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <DashboardTopBar persona={persona} />
+          <DashboardTopBar
+            key={`${persona}-${complianceView}`}
+            persona={persona}
+            onMenuNavigate={resetCompliancePanels}
+          />
 
           <main className="flex-1 px-4 py-6 sm:px-6 xl:px-8">
             <div className="mx-auto max-w-[1600px] space-y-6">
@@ -3083,12 +3867,19 @@ export default function ComplianceDashboardPage() {
                   isLoading={complianceMinerDetailQ.isLoading}
                   onBack={() => setOpenedMinerDetail(null)}
                 />
+              ) : persona === "admin" ? (
+                <>
+                  <PageHero persona={persona} complianceView={complianceView} />
+                  <AdminDashboardView metrics={adminMetrics} rows={adminRows} />
+                </>
+              ) : complianceView === "compliance-profile" ? (
+                <ComplianceInstitutionProfileView />
+              ) : complianceView === "profile" ? (
+                <ComplianceProfileView />
               ) : (
                 <>
                   <PageHero persona={persona} complianceView={complianceView} />
-                  {persona === "admin" ? (
-                    <AdminDashboardView metrics={adminMetrics} rows={adminRows} />
-                  ) : complianceView === "reviews" ? (
+                  {complianceView === "reviews" ? (
                     <ComplianceReviewsView rows={complianceReviewRows} />
                   ) : (
                     <ComplianceDashboardView
@@ -3110,7 +3901,7 @@ export default function ComplianceDashboardPage() {
         </div>
       </div>
 
-      {persona === "compliance" && selectedReview ? (
+      {persona === "compliance" && !isComplianceProfileSurface && selectedReview ? (
         <ComplianceReviewDrawer
           selection={selectedReview}
           detail={selectedReviewDetailQ.data}
@@ -3122,7 +3913,7 @@ export default function ComplianceDashboardPage() {
         />
       ) : null}
 
-      {claimConflictTask && claimConflictLoggedAt ? (
+      {!isComplianceProfileSurface && claimConflictTask && claimConflictLoggedAt ? (
         <ComplianceClaimConflictModal
           minerCode={claimConflictTask.minerCode}
           loggedAt={claimConflictLoggedAt}
