@@ -103,7 +103,7 @@ jobs:
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
+          host: ${{ secrets.STG_HOST || secrets.HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
           port: 22
@@ -113,9 +113,10 @@ jobs:
             REPOSITORY="${{ needs.docker-build-and-push.outputs.repository }}"
             TAG="${{ needs.docker-build-and-push.outputs.image-tag }}"
             IMAGE="$REGISTRY/$REPOSITORY:$TAG"
+            CONTAINER_NAME="beldium-app-staging"
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REGISTRY
             docker pull "$IMAGE"
-            docker stop beldium-app || true
-            docker rm beldium-app || true
-            docker run -id -p 3000:3000 --name beldium-app --restart always "$IMAGE"
+            docker stop "$CONTAINER_NAME" || true
+            docker rm "$CONTAINER_NAME" || true
+            docker run -id -p 3000:3000 --name "$CONTAINER_NAME" --restart always "$IMAGE"
             echo "Deployment completed successfully."               
