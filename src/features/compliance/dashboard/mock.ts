@@ -64,6 +64,69 @@ export type ComplianceCaseCard = {
   cta: string;
 };
 
+export type ComplianceRuleCategory = {
+  id: string;
+  title: string;
+  description: string;
+  activeRules: number;
+  icon: "environmental" | "framework" | "community" | "trade";
+};
+
+export type ComplianceRuleRow = {
+  id: string;
+  name: string;
+  version: string;
+  category: string;
+  description: string;
+  triggerCondition: string;
+  conditions: Array<{
+    field: string;
+    operator: string;
+    value: string;
+    unit: string;
+  }>;
+  action: string;
+  severityLabel: "Low" | "Medium" | "High";
+  scope: string;
+  status: StatusBadge;
+};
+
+export type ComplianceThresholdCard = {
+  id: string;
+  title: string;
+  value: string;
+  unit: string;
+  automatedAction: string;
+  automatedActionTone: StatusTone;
+  summary: string;
+  updatedBy: string;
+  icon: "frequency" | "volume";
+};
+
+export type ComplianceRiskRuleCard = {
+  id: string;
+  title: string;
+  severityLabel: string;
+  severityTone: StatusTone;
+  trigger: string;
+  action: string;
+  active: boolean;
+};
+
+export type ComplianceDocumentRequirementRow = {
+  id: string;
+  documentType: string;
+  required: string;
+  expiryRule: string;
+  status: StatusBadge;
+};
+
+export type ComplianceDataControlCard = {
+  id: string;
+  title: string;
+  value: string;
+};
+
 export const ADMIN_METRICS: DashboardMetric[] = [
   {
     title: "Total Miners Onboarded",
@@ -272,5 +335,275 @@ export const COMPLIANCE_CASE_CARDS: ComplianceCaseCard[] = [
     priority: { label: "Critical", tone: "amber" },
     progress: 60,
     cta: "Resume verification",
+  },
+];
+
+export const COMPLIANCE_RULE_CATEGORIES: ComplianceRuleCategory[] = [
+  {
+    id: "eia",
+    title: "Environmental Impact Assessments (EIAs)",
+    description: "Rules enforcing Environmental Impact Assessments (EIAs)",
+    activeRules: 7,
+    icon: "environmental",
+  },
+  {
+    id: "esg",
+    title: "ESG Framework Design & Reporting",
+    description:
+      "Requirements for environmental, social, and governance reporting",
+    activeRules: 7,
+    icon: "framework",
+  },
+  {
+    id: "community",
+    title: "Community & Social Impact Advisory",
+    description: "Rules governing community and social impact",
+    activeRules: 7,
+    icon: "community",
+  },
+  {
+    id: "trade",
+    title: "Export & Trade Documentation",
+    description:
+      "Rules regulating mineral export documentation and authorization",
+    activeRules: 7,
+    icon: "trade",
+  },
+];
+
+export const COMPLIANCE_ACTIVE_RULE_ROWS: ComplianceRuleRow[] = [
+  {
+    id: "rule-1",
+    name: "EIA Required",
+    version: "v3",
+    category: "Environmental",
+    description:
+      "Ensures Environmental Impact Assessment is submitted for qualifying operations",
+    triggerCondition: "Missing EIA document",
+    conditions: [
+      {
+        field: "EIA Submission Status",
+        operator: "is missing",
+        value: "1",
+        unit: "Submission",
+      },
+    ],
+    action: "Auto flag miner",
+    severityLabel: "High",
+    scope: "All Jurisdiction",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "rule-2",
+    name: "High Production without EIA",
+    version: "v3",
+    category: "Environmental",
+    description:
+      "Flags miners producing above approved levels without a valid EIA on file",
+    triggerCondition: "Production > 100 tons annually",
+    conditions: [
+      {
+        field: "Production Volume",
+        operator: ">",
+        value: "100",
+        unit: "Tons",
+      },
+    ],
+    action: "High Risk Flag",
+    severityLabel: "High",
+    scope: "Federal Only",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "rule-3",
+    name: "Safety Documentation Expiry",
+    version: "v3",
+    category: "Safety",
+    description:
+      "Creates an early warning when safety documentation approaches expiry",
+    triggerCondition: "November 16, 2014",
+    conditions: [
+      {
+        field: "Permit Expiry Date",
+        operator: "expires within",
+        value: "30",
+        unit: "Days",
+      },
+    ],
+    action: "Issue Warning",
+    severityLabel: "Medium",
+    scope: "State Level",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "rule-4",
+    name: "Export License Validation",
+    version: "v3",
+    category: "Export",
+    description:
+      "Checks export documentation timelines before any outbound mineral transfer",
+    triggerCondition: "Safety document expires in 14 days",
+    conditions: [
+      {
+        field: "Permit Expiry Date",
+        operator: "expires within",
+        value: "14",
+        unit: "Days",
+      },
+    ],
+    action: "Missing or expired export document",
+    severityLabel: "Medium",
+    scope: "All Jurisdiction",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "rule-5",
+    name: "Worker Safety Training",
+    version: "v3",
+    category: "Safety",
+    description:
+      "Alerts the reviewer when required safety training records are out of date",
+    triggerCondition: "Training records > 12 months old",
+    conditions: [
+      {
+        field: "Worker Safety Training Age",
+        operator: ">",
+        value: "12",
+        unit: "Months",
+      },
+    ],
+    action: "Warning Notification",
+    severityLabel: "Low",
+    scope: "Pilot Phase",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "rule-6",
+    name: "Environmental Permit Verification",
+    version: "v3",
+    category: "Export",
+    description:
+      "Escalates expiring environmental permit issues to the compliance officer",
+    triggerCondition: "Permit expiry detected",
+    conditions: [
+      {
+        field: "Permit Expiry Date",
+        operator: "expires within",
+        value: "7",
+        unit: "Days",
+      },
+    ],
+    action: "Escalate to Compliance Officer",
+    severityLabel: "High",
+    scope: "All Jurisdiction",
+    status: { label: "Active", tone: "green" },
+  },
+];
+
+export const COMPLIANCE_THRESHOLD_CARDS: ComplianceThresholdCard[] = [
+  {
+    id: "reporting-frequency",
+    title: "Production Reporting Frequency",
+    value: "30",
+    unit: "days",
+    automatedAction: "Active",
+    automatedActionTone: "green",
+    summary: "Issue compliance warning",
+    updatedBy: "Last updated by Admin O. Bello, Oct 12",
+    icon: "frequency",
+  },
+  {
+    id: "high-production-threshold",
+    title: "High Production Threshold",
+    value: "99",
+    unit: "tons",
+    automatedAction: "High",
+    automatedActionTone: "red",
+    summary: "Require Environmental Impact Assessment",
+    updatedBy: "Last updated by Admin O. Bello, Oct 12",
+    icon: "volume",
+  },
+];
+
+export const COMPLIANCE_RISK_RULE_CARDS: ComplianceRiskRuleCard[] = [
+  {
+    id: "missing-license",
+    title: "Missing Regulatory License",
+    severityLabel: "High Risk",
+    severityTone: "red",
+    trigger: "Miner submission without valid mining license.",
+    action: "Block submission and flag miner.",
+    active: true,
+  },
+  {
+    id: "expired-permit",
+    title: "Expired Environmental Permit",
+    severityLabel: "High Risk",
+    severityTone: "red",
+    trigger: "Miner submission without valid mining license.",
+    action: "Block submission and flag miner.",
+    active: true,
+  },
+  {
+    id: "overdue-esg-high",
+    title: "Overdue ESG Report",
+    severityLabel: "High Risk",
+    severityTone: "amber",
+    trigger: "Miner submission without valid mining license.",
+    action: "Block submission and flag miner.",
+    active: true,
+  },
+  {
+    id: "overdue-esg-medium",
+    title: "Overdue ESG Report",
+    severityLabel: "Medium Risk",
+    severityTone: "amber",
+    trigger: "ESG report not submitted within deadline.",
+    action: "Compliance warning and follow-up required.",
+    active: true,
+  },
+];
+
+export const COMPLIANCE_DOCUMENT_REQUIREMENT_ROWS: ComplianceDocumentRequirementRow[] = [
+  {
+    id: "mining-license",
+    documentType: "Mining License",
+    required: "Yes",
+    expiryRule: "Annual Renewal",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "environmental-impact-assessment",
+    documentType: "Environmental Impact Assessment",
+    required: "Yes",
+    expiryRule: "Every 3 years",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "safety-compliance-certificate",
+    documentType: "Safety Compliance Certificate",
+    required: "Optional",
+    expiryRule: "2 years",
+    status: { label: "Active", tone: "green" },
+  },
+  {
+    id: "export-permit",
+    documentType: "Export Permit",
+    required: "Yes",
+    expiryRule: "Per shipment",
+    status: { label: "Active", tone: "green" },
+  },
+];
+
+export const COMPLIANCE_DATA_CONTROL_CARDS: ComplianceDataControlCard[] = [
+  {
+    id: "allowed-file-formats",
+    title: "Allowed File Formats",
+    value: "PDF, JPG, PNG",
+  },
+  {
+    id: "maximum-file-size",
+    title: "Maximum File Size",
+    value: "20 MB",
   },
 ];

@@ -11,18 +11,22 @@ import {
   AppstoreOutlined,
   ArrowRightOutlined,
   BellOutlined,
+  CheckOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   CloseOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
   DownOutlined,
   DownloadOutlined,
+  EditOutlined,
   EnvironmentOutlined,
   EyeOutlined,
   FileSearchOutlined,
   FolderOpenOutlined,
   FileImageOutlined,
   FilePdfOutlined,
+  GlobalOutlined,
   IdcardOutlined,
   InfoCircleOutlined,
   LockOutlined,
@@ -30,6 +34,8 @@ import {
   LoginOutlined,
   MailOutlined,
   PhoneOutlined,
+  PlusOutlined,
+  RiseOutlined,
   SafetyCertificateOutlined,
   SafetyOutlined,
   SearchOutlined,
@@ -41,9 +47,21 @@ import {
 } from "@ant-design/icons";
 import {
   type ComplianceAlert,
+  type ComplianceDataControlCard,
+  type ComplianceDocumentRequirementRow,
+  type ComplianceRiskRuleCard,
+  type ComplianceRuleCategory,
+  type ComplianceRuleRow,
+  type ComplianceThresholdCard,
   type DashboardMetric,
   type StatusBadge,
   type TrendDirection,
+  COMPLIANCE_ACTIVE_RULE_ROWS,
+  COMPLIANCE_DATA_CONTROL_CARDS,
+  COMPLIANCE_DOCUMENT_REQUIREMENT_ROWS,
+  COMPLIANCE_RISK_RULE_CARDS,
+  COMPLIANCE_RULE_CATEGORIES,
+  COMPLIANCE_THRESHOLD_CARDS,
 } from "@/src/features/compliance/dashboard/mock";
 import {
   DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
@@ -73,6 +91,8 @@ type DashboardPersona = "admin" | "compliance";
 type ComplianceView =
   | "dashboard"
   | "reviews"
+  | "settings"
+  | "documents-data-controls"
   | "profile"
   | "compliance-profile";
 
@@ -126,7 +146,7 @@ function getComplianceNavItems(view: ComplianceView): NavItem[] {
     {
       label: "Dashboard",
       icon: <AppstoreOutlined />,
-      active: view !== "reviews",
+      active: view === "dashboard",
     },
     {
       label: "Open Task Pool",
@@ -285,6 +305,19 @@ const statusStyles: Record<
     dot: "bg-[#db2777]",
   },
 };
+
+const settingsMenuOptions = [
+  {
+    view: "settings" as const,
+    label: "Verification Rules & Thresholds",
+    description: "Manage automated rule evaluation and thresholds.",
+  },
+  {
+    view: "documents-data-controls" as const,
+    label: "Documents & Data Controls",
+    description: "Configure document requirements and file policies.",
+  },
+];
 
 const primaryActionStyle = {
   color: "#ffffff",
@@ -1409,14 +1442,27 @@ function OnlineToggle() {
 
 function DashboardTopBar({
   persona,
+  complianceView,
   onMenuNavigate,
 }: {
   persona: DashboardPersona;
+  complianceView?: ComplianceView;
   onMenuNavigate?: () => void;
 }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const settingsMenuRef = useRef<HTMLDivElement | null>(null);
   const roleLabel = persona === "admin" ? "Admin" : complianceProfileCard.role;
+  const isSettingsSurface =
+    complianceView === "settings" ||
+    complianceView === "documents-data-controls";
+  const settingsButtonClassName = classNames(
+    "flex h-12 w-12 items-center justify-center rounded-full border text-[20px] transition-colors",
+    isSettingsSurface || isSettingsMenuOpen
+      ? "border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b] shadow-[0_18px_30px_-26px_rgba(30,164,59,0.65)]"
+      : "border-[#eceef4] bg-[#f9fafc] text-[#2a3142] hover:bg-white",
+  );
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
@@ -1436,6 +1482,34 @@ function DashboardTopBar({
 
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [isProfileMenuOpen]);
+
+  useEffect(() => {
+    if (!isSettingsMenuOpen) {
+      return undefined;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        settingsMenuRef.current &&
+        !settingsMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsSettingsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isSettingsMenuOpen]);
+
+  const handleProfileMenuToggle = () => {
+    if (persona !== "compliance") {
+      return;
+    }
+
+    setIsProfileMenuOpen((current) => !current);
+    setIsSettingsMenuOpen(false);
+  };
 
   return (
     <header className="border-b border-[#e9edf5] bg-white/95 backdrop-blur">
@@ -1469,12 +1543,51 @@ function DashboardTopBar({
             Pilot Phase
           </span>
 
-          <button
-            type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[20px] text-[#2a3142] transition-colors hover:bg-white"
-          >
-            <SettingOutlined />
-          </button>
+          <div className="relative" ref={settingsMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSettingsMenuOpen((current) => !current);
+                setIsProfileMenuOpen(false);
+              }}
+              aria-label="Open settings menu"
+              aria-expanded={isSettingsMenuOpen}
+              aria-haspopup="menu"
+              className={settingsButtonClassName}
+            >
+              <SettingOutlined />
+            </button>
+
+            {isSettingsMenuOpen ? (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-30 w-[340px] overflow-hidden rounded-[20px] border border-[#e1e6ef] bg-white p-2 shadow-[0_30px_60px_-34px_rgba(16,30,61,0.38)]">
+                {settingsMenuOptions.map((item) => (
+                  <Link
+                    key={item.view}
+                    href={`/compliancedashboard?persona=${persona}&view=${item.view}`}
+                    onClick={() => {
+                      onMenuNavigate?.();
+                      setIsSettingsMenuOpen(false);
+                      setIsProfileMenuOpen(false);
+                    }}
+                    aria-current={complianceView === item.view ? "page" : undefined}
+                    className={classNames(
+                      "block rounded-[16px] px-4 py-3 transition-colors",
+                      complianceView === item.view
+                        ? "bg-[#eef4ff]"
+                        : "hover:bg-[#f7f9fc]",
+                    )}
+                  >
+                    <div className="text-[15px] font-medium text-[#2f3541]">
+                      {item.label}
+                    </div>
+                    <div className="mt-1 text-[13px] leading-5 text-[#7a8291]">
+                      {item.description}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
           <button
             type="button"
@@ -1489,11 +1602,7 @@ function DashboardTopBar({
           <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
-              onClick={() =>
-                persona === "compliance"
-                  ? setIsProfileMenuOpen((current) => !current)
-                  : undefined
-              }
+              onClick={handleProfileMenuToggle}
               aria-expanded={persona === "compliance" ? isProfileMenuOpen : undefined}
               aria-haspopup={persona === "compliance" ? "menu" : undefined}
               className={classNames(
@@ -2211,6 +2320,2290 @@ function ComplianceInstitutionProfileView() {
         </div>
       </div>
     </div>
+  );
+}
+
+const compactToneStyles: Record<StatusBadge["tone"], string> = {
+  green: "border border-[#caebd1] bg-[#ebfaef] text-[#1ea43b]",
+  amber: "border border-[#f6dfb3] bg-[#fff7e7] text-[#df8b19]",
+  red: "border border-[#f6d2d3] bg-[#fff1f2] text-[#ef2f32]",
+  slate: "border border-[#e4e8f0] bg-[#f7f9fc] text-[#7a8291]",
+  mint: "border border-[#c9efe5] bg-[#ebfbf5] text-[#119c78]",
+  cyan: "border border-[#d8ecf4] bg-[#eff8fb] text-[#2387a3]",
+  rose: "border border-[#f8d7e6] bg-[#fff0f7] text-[#db2777]",
+};
+
+function CompactStatusTag({
+  label,
+  tone,
+  uppercase = false,
+}: {
+  label: string;
+  tone: StatusBadge["tone"];
+  uppercase?: boolean;
+}) {
+  return (
+    <span
+      className={classNames(
+        "inline-flex items-center justify-center rounded-[10px] px-3 py-1.5 text-[12px] font-semibold",
+        uppercase && "uppercase tracking-[0.05em]",
+        compactToneStyles[tone],
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function ComplianceSettingsBreadcrumbs({
+  currentLabel,
+}: {
+  currentLabel: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[15px] text-[#8a92a1]">
+      <span>Settings</span>
+      <ArrowRightOutlined className="text-[12px]" />
+      <span className="font-medium text-[#5d6675]">{currentLabel}</span>
+    </div>
+  );
+}
+
+function ComplianceRuleCategoryIcon({
+  icon,
+}: {
+  icon: ComplianceRuleCategory["icon"];
+}) {
+  const sharedClassName =
+    "flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#f7f9fc] text-[22px] text-[#2e3441]";
+
+  switch (icon) {
+    case "environmental":
+      return (
+        <span className={sharedClassName}>
+          <EnvironmentOutlined />
+        </span>
+      );
+    case "framework":
+      return (
+        <span className={sharedClassName}>
+          <SafetyOutlined />
+        </span>
+      );
+    case "community":
+      return (
+        <span className={sharedClassName}>
+          <GlobalOutlined />
+        </span>
+      );
+    case "trade":
+    default:
+      return (
+        <span className={sharedClassName}>
+          <FileSearchOutlined />
+        </span>
+      );
+  }
+}
+
+function ComplianceRuleCategoryCard({
+  category,
+}: {
+  category: ComplianceRuleCategory;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[#dde3ed] bg-white p-4 shadow-[0_18px_36px_-34px_rgba(16,30,61,0.38)]">
+      <div className="flex items-start gap-4">
+        <ComplianceRuleCategoryIcon icon={category.icon} />
+        <div className="min-w-0">
+          <div className="text-[15px] font-semibold text-[#2a2f39]">
+            {category.title}
+          </div>
+          <div className="mt-2 text-[13px] leading-5 text-[#8a92a1]">
+            {category.description}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 inline-flex items-center gap-2 text-[13px] text-[#a0a7b5]">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#1fb538]" />
+        <span>{category.activeRules} active rules</span>
+      </div>
+    </div>
+  );
+}
+
+function ComplianceSettingsTable({
+  rows,
+  onEditRule,
+}: {
+  rows: ComplianceRuleRow[];
+  onEditRule: (ruleId: string) => void;
+}) {
+  return (
+    <section className="rounded-[32px] border border-[#e4e9f1] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+          <AppstoreOutlined />
+        </span>
+        Active Compliance Rules
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-[20px] border border-[#dde3ed]">
+        <div className="overflow-x-auto">
+          <table className="min-w-[1120px] w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="bg-[#f8fafc] text-[15px] font-medium text-[#2f3541]">
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Rule Name</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Category</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">
+                  Trigger Condition
+                </th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Action</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Status</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4 text-right">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr
+                  key={row.id}
+                  className={classNames(
+                    "text-[15px] text-[#5d6675]",
+                    index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
+                  )}
+                >
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <div className="font-semibold text-[#2a2f39]">{row.name}</div>
+                    <div className="mt-1 text-[12px] text-[#9aa1af]">
+                      {row.version}
+                    </div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    {row.category}
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <div className="max-w-[250px] truncate">
+                      {row.triggerCondition}
+                    </div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <div className="max-w-[230px] truncate">{row.action}</div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <CompactStatusTag
+                      label={row.status.label}
+                      tone={row.status.tone}
+                    />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => onEditRule(row.id)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dde3ed] bg-white text-[16px] text-[#6f7786] transition-colors hover:bg-[#f8fafc]"
+                    >
+                      <EditOutlined />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex flex-col gap-4 border-t border-[#edf1f7] px-5 py-4 text-[14px] text-[#8a92a1] sm:flex-row sm:items-center sm:justify-between">
+          <span>(Displaying {rows.length} per page)</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#dde3ed] bg-white px-4 text-[#7a8291]"
+            >
+              <ArrowLeftOutlined />
+              Previous
+            </button>
+            {[1, 2, 3, 8, 9, 10].map((page, index) => (
+              <button
+                key={`${page}-${index}`}
+                type="button"
+                className={classNames(
+                  "inline-flex h-10 min-w-10 items-center justify-center rounded-[10px] border px-3 text-[14px]",
+                  page === 1
+                    ? "border-[#dce3ef] bg-[#f7f9fc] text-[#2a2f39]"
+                    : "border-transparent bg-transparent text-[#7a8291]",
+                )}
+              >
+                {page}
+              </button>
+            ))}
+            <span className="px-1 text-[#a0a7b5]">...</span>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#dde3ed] bg-white px-4 text-[#2f3541]"
+            >
+              Next
+              <ArrowRightOutlined />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ComplianceDocumentRequirementsTable({
+  rows,
+  onEditDocument,
+}: {
+  rows: ComplianceDocumentRequirementRow[];
+  onEditDocument: () => void;
+}) {
+  return (
+    <section className="rounded-[32px] border border-[#e4e9f1] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+          <FileSearchOutlined />
+        </span>
+        Compliance Document Requirements
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-[20px] border border-[#dde3ed]">
+        <div className="overflow-x-auto">
+          <table className="min-w-[980px] w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="bg-[#f8fafc] text-[15px] font-medium text-[#2f3541]">
+                <th className="border-b border-[#e5e9f1] px-4 py-4">
+                  Document Type
+                </th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Required</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Expiry Rule</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4">Status</th>
+                <th className="border-b border-[#e5e9f1] px-4 py-4 text-right">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr
+                  key={row.id}
+                  className={classNames(
+                    "text-[15px] text-[#5d6675]",
+                    index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
+                  )}
+                >
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <div className="font-semibold text-[#2a2f39]">
+                      {row.documentType}
+                    </div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    {row.required}
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    {row.expiryRule}
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5">
+                    <CompactStatusTag
+                      label={row.status.label}
+                      tone={row.status.tone}
+                    />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-5 text-right">
+                    <button
+                      type="button"
+                      onClick={onEditDocument}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dde3ed] bg-white text-[16px] text-[#6f7786] transition-colors hover:bg-[#f8fafc]"
+                    >
+                      <EditOutlined />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ComplianceDataControlCardView({
+  card,
+}: {
+  card: ComplianceDataControlCard;
+}) {
+  return (
+    <div className="rounded-[28px] border border-[#e7ebf2] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <div className="text-[18px] font-medium text-[#3a4150]">{card.title}</div>
+      <div className="mt-5 h-px bg-[#edf1f7]" />
+      <div className="mt-6 text-[42px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
+        {card.value}
+      </div>
+    </div>
+  );
+}
+
+function ComplianceThresholdCardView({
+  card,
+}: {
+  card: ComplianceThresholdCard;
+}) {
+  return (
+    <div className="rounded-[28px] border border-[#e7ebf2] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#f4f7fb] text-[20px] text-[#677080]">
+            {card.icon === "frequency" ? <ClockCircleOutlined /> : <RiseOutlined />}
+          </span>
+          <div className="text-[18px] font-medium text-[#2a2f39]">
+            {card.title}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dde3ed] bg-white text-[16px] text-[#6f7786] transition-colors hover:bg-[#f8fafc]"
+        >
+          <EditOutlined />
+        </button>
+      </div>
+
+      <div className="mt-6 rounded-[18px] bg-[#f7f9fc] px-5 py-6">
+        <span className="text-[56px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
+          {card.value}
+        </span>
+        <span className="ml-2 text-[22px] text-[#8a92a1]">{card.unit}</span>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#9aa1af]">
+        <span className="font-medium uppercase tracking-[0.06em] text-[#adb4c0]">
+          Automated Action:
+        </span>
+        <CompactStatusTag
+          label={card.automatedAction}
+          tone={card.automatedActionTone}
+          uppercase
+        />
+      </div>
+
+      <div className="mt-4 text-[16px] text-[#4f5664]">{card.summary}</div>
+
+      <div className="mt-6 h-px bg-[#edf1f7]" />
+
+      <div className="mt-4 text-[12px] uppercase tracking-[0.05em] text-[#b0b6c2]">
+        {card.updatedBy}
+      </div>
+    </div>
+  );
+}
+
+function ComplianceRiskRuleCardView({
+  card,
+}: {
+  card: ComplianceRiskRuleCard;
+}) {
+  const toneClassName =
+    card.severityTone === "red"
+      ? "border-[#f3d1d2] bg-[#fff7f7]"
+      : "border-[#f0dfbf] bg-[#fffaf2]";
+  const iconToneClassName =
+    card.severityTone === "red"
+      ? "bg-[#fff0f1] text-[#ef2f32]"
+      : "bg-[#fff6e3] text-[#df8b19]";
+
+  return (
+    <div
+      className={classNames(
+        "rounded-[24px] border p-5 shadow-[0_24px_50px_-44px_rgba(16,30,61,0.4)]",
+        toneClassName,
+      )}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span
+            className={classNames(
+              "flex h-12 w-12 items-center justify-center rounded-[16px] text-[22px]",
+              iconToneClassName,
+            )}
+          >
+            <WarningFilled />
+          </span>
+          <div>
+            <div className="text-[18px] font-medium text-[#2a2f39]">
+              {card.title}
+            </div>
+            <div className="mt-2">
+              <CompactStatusTag
+                label={card.severityLabel}
+                tone={card.severityTone}
+                uppercase
+              />
+            </div>
+          </div>
+        </div>
+
+        {card.active ? (
+          <span className="mt-1 h-3 w-3 rounded-full bg-[#1fb538]" />
+        ) : null}
+      </div>
+
+      <div className="mt-6">
+        <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#b0b6c2]">
+          Trigger
+        </div>
+        <div className="mt-3 text-[17px] leading-7 text-[#505869]">
+          {card.trigger}
+        </div>
+      </div>
+
+      <div className="mt-6 h-px bg-[rgba(160,167,181,0.22)]" />
+
+      <div className="mt-6">
+        <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#b0b6c2]">
+          Action
+        </div>
+        <div className="mt-3 text-[17px] leading-7 text-[#505869]">
+          {card.action}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type CreateRuleDraft = {
+  ruleName: string;
+  category: string;
+  description: string;
+  conditions: CreateRuleCondition[];
+  actionType: string;
+  severity: string;
+  ruleScope: string;
+  reviewNotes: string;
+  notifyOfficer: boolean;
+  createAuditLog: boolean;
+};
+
+type CreateRuleCondition = {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+  unit: string;
+};
+
+type CreateRuleDraftField = keyof Omit<CreateRuleDraft, "conditions">;
+type CreateRuleValidationField = CreateRuleDraftField | "conditions";
+
+const CREATE_RULE_STEP_COPY = [
+  "Define compliance evaluation criteria",
+  "Define compliance evaluation criteria",
+  "Define compliance evaluation criteria",
+] as const;
+
+const CREATE_RULE_CATEGORY_OPTIONS = [
+  "Environmental",
+  "ESG",
+  "Community",
+  "Export",
+  "Safety",
+] as const;
+
+const CREATE_RULE_TRIGGER_OPTIONS = [
+  "Production Volume",
+  "Permit Expiry Date",
+  "EIA Submission Status",
+  "ESG Reporting Deadline",
+  "Worker Safety Training Age",
+] as const;
+
+const CREATE_RULE_OPERATOR_OPTIONS = [
+  ">",
+  "<",
+  "=",
+  "is missing",
+  "expires within",
+] as const;
+
+const CREATE_RULE_UNIT_OPTIONS = [
+  "Tons",
+  "Days",
+  "Percent",
+  "Months",
+  "Submission",
+] as const;
+
+const CREATE_RULE_ACTION_OPTIONS = [
+  "Auto flag miner",
+  "High Risk Flag",
+  "Issue Warning",
+  "Escalate to Compliance Officer",
+  "Block submission and notify team",
+] as const;
+
+const CREATE_RULE_SEVERITY_OPTIONS = [
+  "Low",
+  "Medium",
+  "High",
+] as const;
+
+const CREATE_RULE_SCOPE_OPTIONS = [
+  "All Jurisdiction",
+  "Federal Only",
+  "State Level",
+  "Pilot Phase",
+] as const;
+
+type DocumentRuleDraft = {
+  documentName: string;
+  description: string;
+  applicableMinerals: string;
+  applicableJurisdiction: string;
+  allowedFileFormats: string;
+  maximumFileSize: string;
+  mandatoryMetadata: {
+    issueDate: boolean;
+    issuingAuthority: boolean;
+    expiryDate: boolean;
+    documentNumber: boolean;
+  };
+  expiryType: string;
+  validityPeriodYears: string;
+  expiryActions: {
+    sendRenewalReminder: boolean;
+    flagMiner: boolean;
+    blockNewSubmissions: boolean;
+  };
+};
+
+type DocumentRuleValidationField = "documentName";
+
+const DOCUMENT_RULE_JURISDICTION_OPTIONS = [
+  "Federal",
+  "State",
+  "All Jurisdiction",
+] as const;
+
+const DOCUMENT_RULE_EXPIRY_TYPE_OPTIONS = [
+  "Fixed validity period",
+  "Per shipment",
+  "No expiry",
+  "Custom review cycle",
+] as const;
+
+const INITIAL_DOCUMENT_RULE_DRAFT: DocumentRuleDraft = {
+  documentName: "Mining License",
+  description: "Official license authorizing mineral extraction activities",
+  applicableMinerals: "Lithium",
+  applicableJurisdiction: "Federal",
+  allowedFileFormats: "PDF, JPG, PNG",
+  maximumFileSize: "20 MB",
+  mandatoryMetadata: {
+    issueDate: true,
+    issuingAuthority: true,
+    expiryDate: true,
+    documentNumber: false,
+  },
+  expiryType: "Fixed validity period",
+  validityPeriodYears: "1",
+  expiryActions: {
+    sendRenewalReminder: true,
+    flagMiner: true,
+    blockNewSubmissions: false,
+  },
+};
+
+const INITIAL_CREATE_RULE_DRAFT: CreateRuleDraft = {
+  ruleName: "",
+  category: "",
+  description: "",
+  conditions: [
+    {
+      id: "condition-1",
+      field: "",
+      operator: ">",
+      value: "",
+      unit: "Tons",
+    },
+  ],
+  actionType: "",
+  severity: "",
+  ruleScope: "All Jurisdiction",
+  reviewNotes: "",
+  notifyOfficer: true,
+  createAuditLog: true,
+};
+
+const CREATE_RULE_FIELD_LABELS: Record<CreateRuleValidationField, string> = {
+  ruleName: "Rule Name",
+  category: "Compliance Category",
+  description: "Rule Description",
+  conditions: "Rule Conditions",
+  actionType: "Automated Action",
+  severity: "Risk Level",
+  ruleScope: "Rule Scope",
+  reviewNotes: "Review Notes",
+  notifyOfficer: "Notify Assigned Officer",
+  createAuditLog: "Create Audit Log",
+};
+
+function formatCreateRuleCondition(condition: CreateRuleCondition) {
+  return [condition.field, condition.operator, condition.value, condition.unit]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function createDraftFromRuleRow(rule: ComplianceRuleRow): CreateRuleDraft {
+  return {
+    ruleName: rule.name,
+    category: rule.category,
+    description: rule.description,
+    conditions:
+      rule.conditions.length > 0
+        ? rule.conditions.map((condition, index) => ({
+            ...condition,
+            id: `${rule.id}-condition-${index + 1}`,
+          }))
+        : [
+            {
+              id: `${rule.id}-condition-1`,
+              field: "",
+              operator: ">",
+              value: "",
+              unit: "Tons",
+            },
+          ],
+    actionType: rule.action,
+    severity: rule.severityLabel,
+    ruleScope: rule.scope,
+    reviewNotes: "",
+    notifyOfficer: true,
+    createAuditLog: true,
+  };
+}
+
+function createRuleRowFromDraft(
+  draft: CreateRuleDraft,
+  options?: {
+    id?: string;
+    version?: string;
+    status?: StatusBadge;
+  },
+): ComplianceRuleRow {
+  return {
+    id: options?.id ?? `mock-rule-${Date.now()}`,
+    name: draft.ruleName,
+    version: options?.version ?? "v1",
+    category: draft.category,
+    description: draft.description,
+    triggerCondition: draft.conditions
+      .map((condition) => formatCreateRuleCondition(condition))
+      .filter(Boolean)
+      .join(" • "),
+    conditions: draft.conditions.map((condition, index) => ({
+      ...condition,
+      id: `${options?.id ?? "mock-rule"}-condition-${index + 1}`,
+    })),
+    action: draft.actionType,
+    severityLabel:
+      draft.severity === "High" || draft.severity === "Medium"
+        ? draft.severity
+        : "Low",
+    scope: draft.ruleScope,
+    status:
+      options?.status ?? {
+        label: "Draft",
+        tone: "cyan",
+      },
+  };
+}
+
+function CreateRuleFieldLabel({
+  label,
+  required = false,
+}: {
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block text-[16px] font-medium text-[#2a2f39]">
+      {label} {required ? <span className="text-[#ef2f32]">*</span> : null}
+    </label>
+  );
+}
+
+function CreateRuleErrorText({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return <p className="mt-2 text-[13px] text-[#ef2f32]">{message}</p>;
+}
+
+function CreateRuleModal({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (draft: CreateRuleDraft) => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [draft, setDraft] = useState<CreateRuleDraft>(INITIAL_CREATE_RULE_DRAFT);
+  const [errors, setErrors] = useState<
+    Partial<Record<CreateRuleValidationField, string>>
+  >({});
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const updateField = <T extends CreateRuleDraftField>(
+    field: T,
+    value: CreateRuleDraft[T],
+  ) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const updateCondition = (
+    conditionId: string,
+    field: keyof CreateRuleCondition,
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      conditions: current.conditions.map((condition) =>
+        condition.id === conditionId
+          ? { ...condition, [field]: value }
+          : condition,
+      ),
+    }));
+    setErrors((current) => {
+      if (!current.conditions) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.conditions;
+      return next;
+    });
+  };
+
+  const addCondition = () => {
+    setDraft((current) => ({
+      ...current,
+      conditions: [
+        ...current.conditions,
+        {
+          id: `condition-${current.conditions.length + 1}`,
+          field: "",
+          operator: ">",
+          value: "",
+          unit: "Tons",
+        },
+      ],
+    }));
+    setErrors((current) => {
+      if (!current.conditions) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.conditions;
+      return next;
+    });
+  };
+
+  const validateCurrentStep = () => {
+    const requiredFieldsByStep: Array<CreateRuleValidationField[]> = [
+      ["ruleName", "category", "description"],
+      ["conditions", "actionType"],
+      ["severity", "ruleScope"],
+    ];
+    const nextErrors: Partial<Record<CreateRuleValidationField, string>> = {};
+
+    requiredFieldsByStep[step].forEach((field) => {
+      if (field === "conditions") {
+        const hasInvalidCondition = draft.conditions.some(
+          (condition) =>
+            !condition.field.trim() ||
+            !condition.operator.trim() ||
+            !condition.value.trim(),
+        );
+
+        if (hasInvalidCondition) {
+          nextErrors.conditions = `${CREATE_RULE_FIELD_LABELS.conditions} are required`;
+        }
+        return;
+      }
+
+      const value = draft[field];
+
+      if (typeof value === "string" && !value.trim()) {
+        nextErrors[field] = `${CREATE_RULE_FIELD_LABELS[field]} is required`;
+      }
+    });
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleContinue = () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
+    if (step === CREATE_RULE_STEP_COPY.length - 1) {
+      onSubmit(draft);
+      return;
+    }
+
+    setStep((current) => current + 1);
+  };
+
+  const currentStepCopy = CREATE_RULE_STEP_COPY[step];
+  const fieldClassName =
+    "w-full rounded-[20px] border border-[#ccd6e5] bg-white px-6 text-[18px] text-[#2a2f39] outline-none transition-shadow placeholder:text-[#8f97a6] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.24)] px-4 py-8 backdrop-blur-[5px]">
+      <button
+        type="button"
+        aria-label="Close create rule modal"
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+
+      <div className="relative w-full max-w-[1080px] overflow-hidden rounded-[28px] bg-white shadow-[0_40px_120px_-42px_rgba(16,30,61,0.45)]">
+        <div className="border-b border-[#eef2f7] px-8 py-7">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-[#2a2f39]">
+                Create New Rule
+              </h2>
+              <p className="mt-2 text-[16px] text-[#8a92a1]">
+                Step {step + 1} of {CREATE_RULE_STEP_COPY.length} • {currentStepCopy}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[22px] text-[#2a3142] transition-colors hover:bg-[#f7f9fc]"
+            >
+              <CloseOutlined />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-8 py-7">
+          <div className="grid grid-cols-3 gap-7">
+            {CREATE_RULE_STEP_COPY.map((label, index) => (
+              <div
+                key={`${label}-${index}`}
+                className={classNames(
+                  "h-1.5 rounded-full",
+                  index <= step ? "bg-[#8e9ab0]" : "bg-[#e8ecf3]",
+                )}
+              />
+            ))}
+          </div>
+
+          {step === 0 ? (
+            <div className="mt-8 space-y-8">
+              <div>
+                <CreateRuleFieldLabel label="Rule Name" required />
+                <input
+                  type="text"
+                  value={draft.ruleName}
+                  onChange={(event) => updateField("ruleName", event.target.value)}
+                  placeholder="e.g. Lithium Export License Required"
+                  className={classNames(fieldClassName, "mt-3 h-20")}
+                />
+                <CreateRuleErrorText message={errors.ruleName} />
+              </div>
+
+              <div>
+                <CreateRuleFieldLabel label="Compliance Category" required />
+                <div className="relative mt-3">
+                  <select
+                    value={draft.category}
+                    onChange={(event) => updateField("category", event.target.value)}
+                    className={classNames(
+                      fieldClassName,
+                      "h-20 appearance-none pr-16",
+                      !draft.category && "text-[#8f97a6]",
+                    )}
+                  >
+                    <option value="">Select your compliance category</option>
+                    {CREATE_RULE_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <DownOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#14244a]" />
+                </div>
+                <CreateRuleErrorText message={errors.category} />
+              </div>
+
+              <div>
+                <CreateRuleFieldLabel label="Rule Description" required />
+                <textarea
+                  value={draft.description}
+                  onChange={(event) => updateField("description", event.target.value)}
+                  placeholder="Describe what this rule evaluates and why it is required"
+                  className={classNames(fieldClassName, "mt-3 h-40 py-5")}
+                />
+                <CreateRuleErrorText message={errors.description} />
+              </div>
+            </div>
+          ) : null}
+
+          {step === 1 ? (
+            <div className="mt-8 space-y-8">
+              <div>
+                <CreateRuleFieldLabel label="Rule Name" required />
+                <div className="mt-3 rounded-[24px] border border-[#b7c5d9] bg-white p-6">
+                  <div className="space-y-4 rounded-[24px] bg-[#fafbfd] p-5">
+                    {draft.conditions.map((condition) => (
+                      <div
+                        key={condition.id}
+                        className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_170px_minmax(0,1.1fr)]"
+                      >
+                        <div className="relative">
+                          <select
+                            value={condition.field}
+                            onChange={(event) =>
+                              updateCondition(
+                                condition.id,
+                                "field",
+                                event.target.value,
+                              )
+                            }
+                            className={classNames(
+                              fieldClassName,
+                              "h-20 appearance-none pr-16",
+                              !condition.field && "text-[#8f97a6]",
+                            )}
+                          >
+                            <option value="">Select field</option>
+                            {CREATE_RULE_TRIGGER_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <DownOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#8f97a6]" />
+                        </div>
+
+                        <div className="relative">
+                          <select
+                            value={condition.operator}
+                            onChange={(event) =>
+                              updateCondition(
+                                condition.id,
+                                "operator",
+                                event.target.value,
+                              )
+                            }
+                            className={classNames(
+                              fieldClassName,
+                              "h-20 appearance-none pr-16 text-center",
+                              !condition.operator && "text-[#8f97a6]",
+                            )}
+                          >
+                            {CREATE_RULE_OPERATOR_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <DownOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#8f97a6]" />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={condition.value}
+                            onChange={(event) =>
+                              updateCondition(
+                                condition.id,
+                                "value",
+                                event.target.value,
+                              )
+                            }
+                            placeholder="Value"
+                            className={classNames(
+                              fieldClassName,
+                              "h-20 pr-[132px]",
+                            )}
+                          />
+                          <div className="absolute inset-y-0 right-5 flex items-center">
+                            <div className="relative">
+                              <select
+                                value={condition.unit}
+                                onChange={(event) =>
+                                  updateCondition(
+                                    condition.id,
+                                    "unit",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-12 appearance-none rounded-[16px] border border-[#d7deea] bg-[#f7f9fc] px-4 pr-10 text-[16px] text-[#5d6675] outline-none"
+                              >
+                                {CREATE_RULE_UNIT_OPTIONS.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <DownOutlined className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-[#8f97a6]" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addCondition}
+                    className="mt-5 flex h-20 w-full items-center justify-center gap-4 rounded-[20px] border border-dashed border-[#657184] bg-white text-[18px] font-medium text-[#8a92a1] transition-colors hover:bg-[#fafbfd]"
+                  >
+                    Add another condition
+                    <PlusOutlined />
+                  </button>
+                </div>
+                <CreateRuleErrorText message={errors.conditions} />
+              </div>
+
+              <div>
+                <CreateRuleFieldLabel label="System Action" required />
+                <div className="relative mt-3">
+                  <select
+                    value={draft.actionType}
+                    onChange={(event) => updateField("actionType", event.target.value)}
+                    className={classNames(
+                      fieldClassName,
+                      "h-20 appearance-none pr-16",
+                      !draft.actionType && "text-[#8f97a6]",
+                    )}
+                  >
+                    <option value="">Select what happens when rule is triggered</option>
+                    {CREATE_RULE_ACTION_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <DownOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#14244a]" />
+                </div>
+                <CreateRuleErrorText message={errors.actionType} />
+              </div>
+            </div>
+          ) : null}
+
+          {step === 2 ? (
+            <div className="mt-8 space-y-8">
+              <div>
+                <CreateRuleFieldLabel label="Severity Level" required />
+                <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                  {CREATE_RULE_SEVERITY_OPTIONS.map((option) => {
+                    const toneClassName =
+                      option === "High"
+                        ? "bg-[#f44344]"
+                        : option === "Medium"
+                          ? "bg-[#f3a10d]"
+                          : "bg-[#18b829]";
+
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => updateField("severity", option)}
+                        className={classNames(
+                          "rounded-[20px] border bg-white px-6 py-9 text-center transition-colors",
+                          draft.severity === option
+                            ? "border-[#14244a] shadow-[0_0_0_3px_rgba(20,36,74,0.08)]"
+                            : "border-[#ccd6e5] hover:border-[#aab8cc]",
+                        )}
+                      >
+                        <span
+                          className={classNames(
+                            "mx-auto block h-5 w-5 rounded-full",
+                            toneClassName,
+                          )}
+                        />
+                        <span className="mt-5 block text-[20px] font-medium text-[#2a2f39]">
+                          {option} Risk
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <CreateRuleErrorText message={errors.severity} />
+              </div>
+
+              <div>
+                <CreateRuleFieldLabel label="Rule Scope" required />
+                <div className="relative mt-3">
+                  <select
+                    value={draft.ruleScope}
+                    onChange={(event) => updateField("ruleScope", event.target.value)}
+                    className={classNames(
+                      fieldClassName,
+                      "h-20 appearance-none pr-16",
+                      !draft.ruleScope && "text-[#8f97a6]",
+                    )}
+                  >
+                    {CREATE_RULE_SCOPE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <DownOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#14244a]" />
+                </div>
+                <CreateRuleErrorText message={errors.ruleScope} />
+              </div>
+
+              <div className="flex items-start gap-4 rounded-[20px] border border-[#bfd6ff] bg-[#eef4ff] px-6 py-5">
+                <span className="mt-1 text-[22px] text-[#5c92ff]">
+                  <InfoCircleOutlined />
+                </span>
+                <p className="text-[16px] leading-7 text-[#5c92ff]">
+                  This rule will be created as a Draft and must be published to
+                  take effect on new miner submissions.
+                </p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-4 border-t border-[#eef2f7] px-8 py-7 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-14 items-center justify-center rounded-[18px] px-5 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
+          >
+            Cancel
+          </button>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {step > 0 ? (
+              <button
+                type="button"
+                onClick={() => setStep((current) => current - 1)}
+                className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-10 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+              >
+                Back
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={handleContinue}
+              className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-10 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              style={primaryActionStyle}
+            >
+              {step === CREATE_RULE_STEP_COPY.length - 1 ? "Create Rule" : "Continue"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RuleConfigurationDrawer({
+  rule,
+  onClose,
+  onSubmit,
+}: {
+  rule: ComplianceRuleRow;
+  onClose: () => void;
+  onSubmit: (draft: CreateRuleDraft, mode: "draft" | "publish") => void;
+}) {
+  const [draft, setDraft] = useState<CreateRuleDraft>(() =>
+    createDraftFromRuleRow(rule),
+  );
+  const [errors, setErrors] = useState<
+    Partial<Record<CreateRuleValidationField, string>>
+  >({});
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const fieldClassName =
+    "w-full rounded-[18px] border border-[#ccd6e5] bg-white px-5 text-[17px] text-[#2a2f39] outline-none transition-shadow placeholder:text-[#8f97a6] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]";
+
+  const updateField = <T extends CreateRuleDraftField>(
+    field: T,
+    value: CreateRuleDraft[T],
+  ) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const updateCondition = (
+    conditionId: string,
+    field: keyof CreateRuleCondition,
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      conditions: current.conditions.map((condition) =>
+        condition.id === conditionId
+          ? { ...condition, [field]: value }
+          : condition,
+      ),
+    }));
+    setErrors((current) => {
+      if (!current.conditions) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.conditions;
+      return next;
+    });
+  };
+
+  const addCondition = () => {
+    setDraft((current) => ({
+      ...current,
+      conditions: [
+        ...current.conditions,
+        {
+          id: `${rule.id}-condition-${current.conditions.length + 1}`,
+          field: "",
+          operator: ">",
+          value: "",
+          unit: "Tons",
+        },
+      ],
+    }));
+  };
+
+  const removeCondition = (conditionId: string) => {
+    setDraft((current) => ({
+      ...current,
+      conditions:
+        current.conditions.length > 1
+          ? current.conditions.filter((condition) => condition.id !== conditionId)
+          : current.conditions,
+    }));
+  };
+
+  const validateDraft = () => {
+    const nextErrors: Partial<Record<CreateRuleValidationField, string>> = {};
+
+    (
+      [
+        "ruleName",
+        "category",
+        "description",
+        "actionType",
+        "severity",
+        "ruleScope",
+      ] as const
+    ).forEach((field) => {
+      const value = draft[field];
+
+      if (typeof value === "string" && !value.trim()) {
+        nextErrors[field] = `${CREATE_RULE_FIELD_LABELS[field]} is required`;
+      }
+    });
+
+    const hasInvalidCondition = draft.conditions.some(
+      (condition) =>
+        !condition.field.trim() ||
+        !condition.operator.trim() ||
+        !condition.value.trim(),
+    );
+
+    if (hasInvalidCondition) {
+      nextErrors.conditions = `${CREATE_RULE_FIELD_LABELS.conditions} are required`;
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = (mode: "draft" | "publish") => {
+    if (!validateDraft()) {
+      return;
+    }
+
+    onSubmit(draft, mode);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(15,23,42,0.28)] backdrop-blur-[4px]">
+      <button
+        type="button"
+        aria-label="Close rule configuration panel"
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+
+      <aside className="relative flex h-full w-full max-w-[620px] flex-col border-l border-[#e5e9f1] bg-white shadow-[-20px_0_60px_-32px_rgba(16,30,61,0.5)]">
+        <div className="border-b border-[#edf1f7] px-7 py-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-[20px] font-semibold text-[#2a2f39]">
+                Rule Configuration
+              </h2>
+              <p className="mt-1 text-[15px] text-[#8a92a1]">
+                Modify compliance rule parameters
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[22px] text-[#2a3142] transition-colors hover:bg-[#f7f9fc]"
+            >
+              <CloseOutlined />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-10 overflow-y-auto px-7 py-8">
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Rule Identity
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Rule Name" required />
+              <input
+                type="text"
+                value={draft.ruleName}
+                onChange={(event) => updateField("ruleName", event.target.value)}
+                className={classNames(fieldClassName, "mt-3 h-14")}
+              />
+              <CreateRuleErrorText message={errors.ruleName} />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Compliance Category" required />
+              <div className="relative mt-3">
+                <select
+                  value={draft.category}
+                  onChange={(event) => updateField("category", event.target.value)}
+                  className={classNames(
+                    fieldClassName,
+                    "h-14 appearance-none pr-14",
+                    !draft.category && "text-[#8f97a6]",
+                  )}
+                >
+                  <option value="">Select category</option>
+                  {CREATE_RULE_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#14244a]" />
+              </div>
+              <CreateRuleErrorText message={errors.category} />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Rule Description" required />
+              <textarea
+                value={draft.description}
+                onChange={(event) => updateField("description", event.target.value)}
+                className={classNames(fieldClassName, "mt-3 h-[84px] py-4")}
+              />
+              <CreateRuleErrorText message={errors.description} />
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Trigger Conditions
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Rule Name" required />
+              <div className="mt-3 rounded-[22px] border border-[#b7c5d9] bg-white p-5">
+                <div className="space-y-4 rounded-[20px] bg-[#fafbfd] p-4">
+                  {draft.conditions.map((condition) => (
+                    <div
+                      key={condition.id}
+                      className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_90px_minmax(0,1fr)_44px]"
+                    >
+                      <div className="relative">
+                        <select
+                          value={condition.field}
+                          onChange={(event) =>
+                            updateCondition(
+                              condition.id,
+                              "field",
+                              event.target.value,
+                            )
+                          }
+                          className={classNames(
+                            fieldClassName,
+                            "h-14 appearance-none pr-12",
+                            !condition.field && "text-[#8f97a6]",
+                          )}
+                        >
+                          <option value="">Select field</option>
+                          {CREATE_RULE_TRIGGER_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <DownOutlined className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[16px] text-[#8f97a6]" />
+                      </div>
+
+                      <div className="relative">
+                        <select
+                          value={condition.operator}
+                          onChange={(event) =>
+                            updateCondition(
+                              condition.id,
+                              "operator",
+                              event.target.value,
+                            )
+                          }
+                          className={classNames(
+                            fieldClassName,
+                            "h-14 appearance-none px-4 pr-9 text-center",
+                          )}
+                        >
+                          {CREATE_RULE_OPERATOR_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <DownOutlined className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-[#8f97a6]" />
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={condition.value}
+                          onChange={(event) =>
+                            updateCondition(
+                              condition.id,
+                              "value",
+                              event.target.value,
+                            )
+                          }
+                          className={classNames(fieldClassName, "h-14 pr-[88px]")}
+                        />
+                        <div className="absolute inset-y-0 right-4 flex items-center">
+                          <div className="relative">
+                            <select
+                              value={condition.unit}
+                              onChange={(event) =>
+                                updateCondition(
+                                  condition.id,
+                                  "unit",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-10 appearance-none rounded-[14px] border border-[#d7deea] bg-[#f7f9fc] px-3 pr-8 text-[15px] text-[#5d6675] outline-none"
+                            >
+                              {CREATE_RULE_UNIT_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                            <DownOutlined className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-[#8f97a6]" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeCondition(condition.id)}
+                        disabled={draft.conditions.length === 1}
+                        className="inline-flex h-14 w-11 items-center justify-center rounded-[14px] border border-[#e2e7f0] bg-white text-[18px] text-[#7a8291] transition-colors hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addCondition}
+                  className="mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-[18px] border border-dashed border-[#8e98a8] bg-white text-[16px] font-medium text-[#8a92a1] transition-colors hover:bg-[#fafbfd]"
+                >
+                  Add another condition
+                  <PlusOutlined />
+                </button>
+              </div>
+              <CreateRuleErrorText message={errors.conditions} />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="System Action" required />
+              <div className="relative mt-3">
+                <select
+                  value={draft.actionType}
+                  onChange={(event) => updateField("actionType", event.target.value)}
+                  className={classNames(
+                    fieldClassName,
+                    "h-14 appearance-none pr-14",
+                    !draft.actionType && "text-[#8f97a6]",
+                  )}
+                >
+                  <option value="">Select system action</option>
+                  {CREATE_RULE_ACTION_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#14244a]" />
+              </div>
+              <CreateRuleErrorText message={errors.actionType} />
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Severity Level
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Severity Level" required />
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {CREATE_RULE_SEVERITY_OPTIONS.map((option) => {
+                  const toneClassName =
+                    option === "High"
+                      ? "bg-[#f44344]"
+                      : option === "Medium"
+                        ? "bg-[#f3a10d]"
+                        : "bg-[#18b829]";
+
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateField("severity", option)}
+                      className={classNames(
+                        "rounded-[18px] border bg-white px-4 py-6 text-center transition-colors",
+                        draft.severity === option
+                          ? "border-[#d5d9e2] bg-[#f1f2f4]"
+                          : "border-[#ccd6e5] hover:border-[#aab8cc]",
+                      )}
+                    >
+                      <span
+                        className={classNames(
+                          "mx-auto block h-4 w-4 rounded-full",
+                          toneClassName,
+                        )}
+                      />
+                      <span className="mt-4 block text-[18px] font-medium text-[#2a2f39]">
+                        {option} Risk
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <CreateRuleErrorText message={errors.severity} />
+              <p className="mt-3 text-[14px] text-[#8a92a1]">
+                Severity determines alert priority in dashboard notifications.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Rule Scope
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Rule Scope" required />
+              <div className="relative mt-3">
+                <select
+                  value={draft.ruleScope}
+                  onChange={(event) => updateField("ruleScope", event.target.value)}
+                  className={classNames(fieldClassName, "h-14 appearance-none pr-14")}
+                >
+                  {CREATE_RULE_SCOPE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#14244a]" />
+              </div>
+              <CreateRuleErrorText message={errors.ruleScope} />
+            </div>
+          </section>
+        </div>
+
+        <div className="border-t border-[#edf1f7] px-7 py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-14 items-center justify-center rounded-[18px] px-5 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
+            >
+              Cancel
+            </button>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => handleSubmit("draft")}
+                className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-9 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+              >
+                Save Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit("publish")}
+                className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-9 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+                style={primaryActionStyle}
+              >
+                Publish Rule
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function DocumentRuleChecklistItem({
+  checked,
+  label,
+  onToggle,
+}: {
+  checked: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex items-center gap-4 py-1 text-left"
+    >
+      <span
+        className={classNames(
+          "inline-flex h-7 w-7 items-center justify-center rounded-[7px] border text-[14px] transition-colors",
+          checked
+            ? "border-[#14244a] bg-[#14244a] text-white"
+            : "border-[#bcc8da] bg-white text-transparent",
+        )}
+      >
+        <CheckOutlined />
+      </span>
+      <span className="text-[16px] text-[#2a2f39]">{label}</span>
+    </button>
+  );
+}
+
+function DocumentRuleValidationCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[#dce3ef] bg-[#fbfcfe] px-5 py-5">
+      <div className="text-[16px] text-[#8a92a1]">{title}</div>
+      <div className="mt-3 h-px bg-[#e6ebf3]" />
+      <div className="mt-4 text-[18px] font-medium text-[#5d6675]">{value}</div>
+    </div>
+  );
+}
+
+function DocumentRuleConfigurationDrawer({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (draft: DocumentRuleDraft) => void;
+}) {
+  const [draft, setDraft] = useState<DocumentRuleDraft>(
+    INITIAL_DOCUMENT_RULE_DRAFT,
+  );
+  const [errors, setErrors] = useState<
+    Partial<Record<DocumentRuleValidationField, string>>
+  >({});
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const fieldClassName =
+    "w-full rounded-[18px] border border-[#ccd6e5] bg-white px-5 text-[17px] text-[#2a2f39] outline-none transition-shadow placeholder:text-[#8f97a6] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]";
+
+  const updateField = <T extends keyof DocumentRuleDraft>(
+    field: T,
+    value: DocumentRuleDraft[T],
+  ) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setErrors((current) => {
+      if (!current.documentName || field !== "documentName") {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.documentName;
+      return next;
+    });
+  };
+
+  const toggleMandatoryMetadata = (
+    field: keyof DocumentRuleDraft["mandatoryMetadata"],
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      mandatoryMetadata: {
+        ...current.mandatoryMetadata,
+        [field]: !current.mandatoryMetadata[field],
+      },
+    }));
+  };
+
+  const toggleExpiryAction = (
+    field: keyof DocumentRuleDraft["expiryActions"],
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      expiryActions: {
+        ...current.expiryActions,
+        [field]: !current.expiryActions[field],
+      },
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!draft.documentName.trim()) {
+      setErrors({ documentName: "Document Name is required" });
+      return;
+    }
+
+    onSubmit(draft);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(15,23,42,0.28)] backdrop-blur-[4px]">
+      <button
+        type="button"
+        aria-label="Close document rule configuration panel"
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+
+      <aside className="relative flex h-full w-full max-w-[620px] flex-col border-l border-[#e5e9f1] bg-white shadow-[-20px_0_60px_-32px_rgba(16,30,61,0.5)]">
+        <div className="border-b border-[#edf1f7] px-7 py-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-[20px] font-semibold text-[#2a2f39]">
+                Edit Document Rule
+              </h2>
+              <p className="mt-1 text-[15px] text-[#8a92a1]">
+                Configure validation rules and compliance requirements
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[22px] text-[#2a3142] transition-colors hover:bg-[#f7f9fc]"
+            >
+              <CloseOutlined />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-10 overflow-y-auto px-7 py-8">
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Document Identity
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Document Name" required />
+              <input
+                type="text"
+                value={draft.documentName}
+                onChange={(event) =>
+                  updateField("documentName", event.target.value)
+                }
+                className={classNames(fieldClassName, "mt-3 h-14")}
+              />
+              <CreateRuleErrorText message={errors.documentName} />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Description" />
+              <textarea
+                value={draft.description}
+                onChange={(event) =>
+                  updateField("description", event.target.value)
+                }
+                className={classNames(fieldClassName, "mt-3 h-[88px] py-4")}
+              />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Applicable Minerals" />
+              <input
+                type="text"
+                value={draft.applicableMinerals}
+                onChange={(event) =>
+                  updateField("applicableMinerals", event.target.value)
+                }
+                className={classNames(fieldClassName, "mt-3 h-14")}
+              />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Applicable Jurisdiction" />
+              <div className="relative mt-3">
+                <select
+                  value={draft.applicableJurisdiction}
+                  onChange={(event) =>
+                    updateField("applicableJurisdiction", event.target.value)
+                  }
+                  className={classNames(fieldClassName, "h-14 appearance-none pr-14")}
+                >
+                  {DOCUMENT_RULE_JURISDICTION_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#14244a]" />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              Validation Rules
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DocumentRuleValidationCard
+                title="Allowed File Formats"
+                value={draft.allowedFileFormats}
+              />
+              <DocumentRuleValidationCard
+                title="Maximum File Size"
+                value={draft.maximumFileSize}
+              />
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Mandatory Metadata Fields" />
+              <div className="mt-4 space-y-5">
+                <DocumentRuleChecklistItem
+                  checked={draft.mandatoryMetadata.issueDate}
+                  label="Issue Date"
+                  onToggle={() => toggleMandatoryMetadata("issueDate")}
+                />
+                <DocumentRuleChecklistItem
+                  checked={draft.mandatoryMetadata.issuingAuthority}
+                  label="Issuing Authority"
+                  onToggle={() => toggleMandatoryMetadata("issuingAuthority")}
+                />
+                <DocumentRuleChecklistItem
+                  checked={draft.mandatoryMetadata.expiryDate}
+                  label="Expiry Date"
+                  onToggle={() => toggleMandatoryMetadata("expiryDate")}
+                />
+                <DocumentRuleChecklistItem
+                  checked={draft.mandatoryMetadata.documentNumber}
+                  label="Document Number"
+                  onToggle={() => toggleMandatoryMetadata("documentNumber")}
+                />
+              </div>
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Expiry Type" />
+              <div className="relative mt-3">
+                <select
+                  value={draft.expiryType}
+                  onChange={(event) =>
+                    updateField("expiryType", event.target.value)
+                  }
+                  className={classNames(fieldClassName, "h-14 appearance-none pr-14")}
+                >
+                  {DOCUMENT_RULE_EXPIRY_TYPE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#14244a]" />
+              </div>
+            </div>
+
+            <div>
+              <CreateRuleFieldLabel label="Validity Period (years)" />
+              <input
+                type="text"
+                value={draft.validityPeriodYears}
+                onChange={(event) =>
+                  updateField("validityPeriodYears", event.target.value)
+                }
+                className={classNames(fieldClassName, "mt-3 h-14")}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <div className="text-[14px] font-medium uppercase tracking-[0.05em] text-[#7a8291]">
+              System Action On Expiry
+            </div>
+
+            <div className="space-y-5">
+              <DocumentRuleChecklistItem
+                checked={draft.expiryActions.sendRenewalReminder}
+                label="Send renewal reminder"
+                onToggle={() => toggleExpiryAction("sendRenewalReminder")}
+              />
+              <DocumentRuleChecklistItem
+                checked={draft.expiryActions.flagMiner}
+                label="Flag Miner"
+                onToggle={() => toggleExpiryAction("flagMiner")}
+              />
+              <DocumentRuleChecklistItem
+                checked={draft.expiryActions.blockNewSubmissions}
+                label="Block new submissions"
+                onToggle={() => toggleExpiryAction("blockNewSubmissions")}
+              />
+            </div>
+          </section>
+        </div>
+
+        <div className="border-t border-[#edf1f7] px-7 py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-9 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-9 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              style={primaryActionStyle}
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function VerificationRulesSettingsView() {
+  const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
+  const [ruleRows, setRuleRows] = useState<ComplianceRuleRow[]>(
+    COMPLIANCE_ACTIVE_RULE_ROWS,
+  );
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+
+  const handleCreateRule = (draft: CreateRuleDraft) => {
+    setRuleRows((current) => [createRuleRowFromDraft(draft), ...current]);
+    setIsCreateRuleModalOpen(false);
+    showToast("Mock rule created locally. API integration pending.", "success");
+  };
+
+  const handleEditRule = (ruleId: string) => {
+    setEditingRuleId(ruleId);
+  };
+
+  const handleUpdateRule = (
+    draft: CreateRuleDraft,
+    mode: "draft" | "publish",
+  ) => {
+    if (!editingRuleId) {
+      return;
+    }
+
+    setRuleRows((current) =>
+      current.map((rule) =>
+        rule.id === editingRuleId
+          ? createRuleRowFromDraft(draft, {
+              id: rule.id,
+              version: rule.version,
+              status:
+                mode === "publish"
+                  ? { label: "Active", tone: "green" }
+                  : { label: "Draft", tone: "cyan" },
+            })
+          : rule,
+      ),
+    );
+    setEditingRuleId(null);
+    showToast(
+      mode === "publish"
+        ? "Mock rule published locally. API integration pending."
+        : "Mock rule draft saved locally. API integration pending.",
+      "success",
+    );
+  };
+
+  const editingRule =
+    editingRuleId != null
+      ? ruleRows.find((rule) => rule.id === editingRuleId) ?? null
+      : null;
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-5">
+        <ComplianceSettingsBreadcrumbs
+          currentLabel="Verification Rules & Thresholds"
+        />
+
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+              Verification Rules &amp; Thresholds
+            </h1>
+            <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
+              Define automated compliance requirements used to evaluate miner
+              submissions.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="inline-flex h-14 items-center gap-3 rounded-[18px] border border-[#e1e5ee] bg-[#f7f9fc] px-6 text-[16px] font-medium text-[#2f3541] transition-colors hover:bg-white"
+            >
+              <ClockCircleOutlined />
+              View Rule History
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCreateRuleModalOpen(true)}
+              className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#14244a] px-6 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              style={primaryActionStyle}
+            >
+              <PlusOutlined />
+              Create New Rule
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section className="space-y-5">
+        <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+            <SafetyCertificateOutlined />
+          </span>
+          Compliance Rule Categories
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3 md:grid-cols-2">
+          {COMPLIANCE_RULE_CATEGORIES.map((category) => (
+            <ComplianceRuleCategoryCard
+              key={category.id}
+              category={category}
+            />
+          ))}
+        </div>
+      </section>
+
+      <ComplianceSettingsTable rows={ruleRows} onEditRule={handleEditRule} />
+
+      <section className="space-y-5">
+        <div>
+          <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+              <CheckCircleOutlined />
+            </span>
+            Production &amp; Reporting Thresholds
+          </div>
+          <p className="mt-2 text-[14px] text-[#8a92a1]">
+            Define thresholds used to evaluate miner activity with automated
+            enforcement actions.
+          </p>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          {COMPLIANCE_THRESHOLD_CARDS.map((card) => (
+            <ComplianceThresholdCardView key={card.id} card={card} />
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-5">
+        <div>
+          <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+              <WarningFilled />
+            </span>
+            Automated Risk Detection
+          </div>
+          <p className="mt-2 text-[14px] text-[#8a92a1]">
+            System-level compliance flags that automatically detect and respond
+            to risk conditions.
+          </p>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          {COMPLIANCE_RISK_RULE_CARDS.map((card) => (
+            <ComplianceRiskRuleCardView key={card.id} card={card} />
+          ))}
+        </div>
+      </section>
+
+      {isCreateRuleModalOpen ? (
+        <CreateRuleModal
+          onClose={() => setIsCreateRuleModalOpen(false)}
+          onSubmit={handleCreateRule}
+        />
+      ) : null}
+
+      {editingRule ? (
+        <RuleConfigurationDrawer
+          key={editingRule.id}
+          rule={editingRule}
+          onClose={() => setEditingRuleId(null)}
+          onSubmit={handleUpdateRule}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function DocumentsDataControlsView() {
+  const [isDocumentRuleDrawerOpen, setIsDocumentRuleDrawerOpen] = useState(false);
+
+  const openDocumentRuleDrawer = () => {
+    setIsDocumentRuleDrawerOpen(true);
+  };
+
+  const handleSaveDocumentRule = (draft: DocumentRuleDraft) => {
+    setIsDocumentRuleDrawerOpen(false);
+    showToast(
+      `Mock document rule for ${draft.documentName} saved locally. API integration pending.`,
+      "success",
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-5">
+        <ComplianceSettingsBreadcrumbs
+          currentLabel="Documents & Data Controls"
+        />
+
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+              Documents &amp; Data Controls
+            </h1>
+            <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
+              Configure evidence requirements, file validation rules, and
+              compliance data governance policies.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="inline-flex h-14 items-center gap-3 rounded-[18px] border border-[#e1e5ee] bg-[#f7f9fc] px-6 text-[16px] font-medium text-[#2f3541] transition-colors hover:bg-white"
+            >
+              <ClockCircleOutlined />
+              View Document Audit Logs
+            </button>
+            <button
+              type="button"
+              onClick={openDocumentRuleDrawer}
+              className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#14244a] px-6 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              style={primaryActionStyle}
+            >
+              <PlusOutlined />
+              Add required Document
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ComplianceDocumentRequirementsTable
+        rows={COMPLIANCE_DOCUMENT_REQUIREMENT_ROWS}
+        onEditDocument={openDocumentRuleDrawer}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {COMPLIANCE_DATA_CONTROL_CARDS.map((card) => (
+          <ComplianceDataControlCardView key={card.id} card={card} />
+        ))}
+      </div>
+
+      {isDocumentRuleDrawerOpen ? (
+        <DocumentRuleConfigurationDrawer
+          onClose={() => setIsDocumentRuleDrawerOpen(false)}
+          onSubmit={handleSaveDocumentRule}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ComplianceSettingsView({
+  view,
+}: {
+  view: Extract<ComplianceView, "settings" | "documents-data-controls">;
+}) {
+  return view === "documents-data-controls" ? (
+    <DocumentsDataControlsView />
+  ) : (
+    <VerificationRulesSettingsView />
   );
 }
 
@@ -3490,8 +5883,12 @@ export default function ComplianceDashboardPage() {
   const persona: DashboardPersona =
     personaParam === "compliance" ? "compliance" : "admin";
   const complianceView: ComplianceView =
-    persona !== "compliance"
-      ? "dashboard"
+    complianceViewParam === "settings"
+      ? "settings"
+      : complianceViewParam === "documents-data-controls"
+        ? "documents-data-controls"
+      : persona !== "compliance"
+        ? "dashboard"
       : complianceViewParam === "reviews"
         ? "reviews"
         : complianceViewParam === "compliance-profile"
@@ -3501,6 +5898,11 @@ export default function ComplianceDashboardPage() {
           : "dashboard";
   const isComplianceProfileSurface =
     complianceView === "profile" || complianceView === "compliance-profile";
+  const isComplianceSettingsSurface =
+    complianceView === "settings" ||
+    complianceView === "documents-data-controls";
+  const isComplianceStaticSurface =
+    isComplianceProfileSurface || isComplianceSettingsSurface;
   const [now, setNow] = useState(() => Date.now());
   const [selectedReview, setSelectedReview] =
     useState<ComplianceReviewSelection | null>(null);
@@ -3531,7 +5933,7 @@ export default function ComplianceDashboardPage() {
     queryKey: ["complianceReviewDashboardCards"],
     queryFn: getComplianceReviewDashboardCards,
     initialData: DEFAULT_COMPLIANCE_REVIEW_DASHBOARD_CARDS,
-    enabled: persona === "admin" && hasAccessToken,
+    enabled: persona === "admin" && !isComplianceSettingsSurface && hasAccessToken,
     retry: false,
   });
   const adminReviewsQ = useQuery({
@@ -3539,7 +5941,7 @@ export default function ComplianceDashboardPage() {
     queryFn: () => getComplianceReviews({ page: 1, per_page: 10 }),
     initialData: DEFAULT_COMPLIANCE_REVIEWS,
     enabled:
-      (persona === "admin" ||
+      ((persona === "admin" && !isComplianceSettingsSurface) ||
         (persona === "compliance" && complianceView === "reviews")) &&
       hasAccessToken,
     retry: false,
@@ -3550,7 +5952,7 @@ export default function ComplianceDashboardPage() {
     initialData: DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
     enabled:
       persona === "compliance" &&
-      !isComplianceProfileSurface &&
+      !isComplianceStaticSurface &&
       hasAccessToken,
     retry: false,
   });
@@ -3560,7 +5962,7 @@ export default function ComplianceDashboardPage() {
     initialData: DEFAULT_COMPLIANCE_REVIEW_QUEUE,
     enabled:
       persona === "compliance" &&
-      !isComplianceProfileSurface &&
+      !isComplianceStaticSurface &&
       hasAccessToken,
     retry: false,
   });
@@ -3570,7 +5972,7 @@ export default function ComplianceDashboardPage() {
     initialData: DEFAULT_COMPLIANCE_MY_TASKS,
     enabled:
       persona === "compliance" &&
-      !isComplianceProfileSurface &&
+      !isComplianceStaticSurface &&
       hasAccessToken,
     retry: false,
   });
@@ -3843,7 +6245,7 @@ export default function ComplianceDashboardPage() {
   };
 
   const showMinerDetailView =
-    Boolean(openedMinerDetail) && !isComplianceProfileSurface;
+    Boolean(openedMinerDetail) && !isComplianceStaticSurface;
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-[#202534]">
@@ -3854,6 +6256,7 @@ export default function ComplianceDashboardPage() {
           <DashboardTopBar
             key={`${persona}-${complianceView}`}
             persona={persona}
+            complianceView={complianceView}
             onMenuNavigate={resetCompliancePanels}
           />
 
@@ -3866,6 +6269,14 @@ export default function ComplianceDashboardPage() {
                   minerDetail={complianceMinerDetailQ.data}
                   isLoading={complianceMinerDetailQ.isLoading}
                   onBack={() => setOpenedMinerDetail(null)}
+                />
+              ) : isComplianceSettingsSurface ? (
+                <ComplianceSettingsView
+                  view={
+                    complianceView === "documents-data-controls"
+                      ? "documents-data-controls"
+                      : "settings"
+                  }
                 />
               ) : persona === "admin" ? (
                 <>
@@ -3901,7 +6312,7 @@ export default function ComplianceDashboardPage() {
         </div>
       </div>
 
-      {persona === "compliance" && !isComplianceProfileSurface && selectedReview ? (
+      {persona === "compliance" && !isComplianceStaticSurface && selectedReview ? (
         <ComplianceReviewDrawer
           selection={selectedReview}
           detail={selectedReviewDetailQ.data}
@@ -3913,7 +6324,7 @@ export default function ComplianceDashboardPage() {
         />
       ) : null}
 
-      {!isComplianceProfileSurface && claimConflictTask && claimConflictLoggedAt ? (
+      {!isComplianceStaticSurface && claimConflictTask && claimConflictLoggedAt ? (
         <ComplianceClaimConflictModal
           minerCode={claimConflictTask.minerCode}
           loggedAt={claimConflictLoggedAt}
