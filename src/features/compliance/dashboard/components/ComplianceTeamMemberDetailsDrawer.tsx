@@ -254,7 +254,7 @@ export default function ComplianceTeamMemberDetailsDrawer({
               onClick={() =>
                 showToast(
                   `Mock suspend-account flow for ${member.name}. API wiring is pending.`,
-                  "warning",
+                  "info",
                 )
               }
               className="inline-flex h-16 w-full items-center justify-center rounded-[18px] border border-[#ffd2d2] bg-[#fff9f9] px-6 text-[16px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff2f2]"

@@ -513,7 +513,7 @@ export default function ComplianceTeamsRolesView() {
               onClick={() =>
                 showToast(
                   "Mock logout-all-sessions action. API wiring is pending.",
-                  "warning",
+                  "info",
                 )
               }
               className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#ffb7b7] bg-white px-6 text-[16px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff5f5]"
