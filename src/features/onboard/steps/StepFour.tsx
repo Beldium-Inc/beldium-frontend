@@ -16,24 +16,47 @@ const ESG_DOCUMENTATION_STATUS = {
   NOT_YET_INITIATED: "not_yet_initiated",
 } as const;
 
-export function StepFour({
-  data,
-  onNext,
-}: {
+export function StepFour(props: {
   data: unknown;
   onNext: () => void;
 }) {
   const [form] = Form.useForm();
-  const [envDoc, setEnvDoc] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const { onNext } = props;
   const handleSubmit = async (values: Record<string, unknown>) => {
+    const environmentalDocumentation = String(
+      values.environmentalDocumentation || ""
+    );
+    const environmentalComplianceDocument = Array.isArray(
+      values.environmentalComplianceDocument
+    )
+      ? (
+          values.environmentalComplianceDocument[0] as {
+            originFileObj?: File;
+          }
+        )?.originFileObj
+      : undefined;
+
+    if (
+      environmentalDocumentation === ESG_DOCUMENTATION_STATUS.COMPLETED &&
+      !environmentalComplianceDocument
+    ) {
+      form.setFields([
+        {
+          name: "environmentalComplianceDocument",
+          errors: ["Please upload your environmental compliance document"],
+        },
+      ]);
+      return;
+    }
+
     try {
       setLoading(true);
       const formData = new FormData();
       formData.append("onboarding_step", "environmental_esg");
       formData.append(
         "environmental_documentation",
-        String(values.environmentalDocumentation || "")
+        environmentalDocumentation
       );
       formData.append(
         "environmental_consultant",
@@ -46,10 +69,11 @@ export function StepFour({
         "has_conducted_community_engagement",
         cec === "Yes" ? "true" : "false"
       );
-      if (envDoc) {
-        formData.append("environmental_compliance_document", envDoc);
-      } else {
-        formData.append("environmental_compliance_document", "");
+      if (environmentalComplianceDocument) {
+        formData.append(
+          "environmental_compliance_document",
+          environmentalComplianceDocument
+        );
       }
       await minerOnboarding(formData);
       showToast("Saved environmental & ESG readiness", "success");
@@ -110,17 +134,22 @@ export function StepFour({
 
           <Form.Item
             label="Environmental & Compliance Documents"
+            name="environmentalComplianceDocument"
             dependencies={["environmentalDocumentation"]}
+            valuePropName="fileList"
+            getValueFromEvent={(event) => event?.fileList?.slice(-1) ?? []}
             rules={[
               ({ getFieldValue }) => ({
-                validator: async () => {
+                validator: async (_, fileList) => {
                   const status = String(
                     getFieldValue("environmentalDocumentation") || ""
                   );
                   const requiresDocument =
-                    status === ESG_DOCUMENTATION_STATUS.COMPLETED ||
-                    status === ESG_DOCUMENTATION_STATUS.IN_PROGRESS;
-                  if (!requiresDocument || envDoc) {
+                    status === ESG_DOCUMENTATION_STATUS.COMPLETED;
+                  if (
+                    !requiresDocument ||
+                    (Array.isArray(fileList) && fileList.length > 0)
+                  ) {
                     return Promise.resolve();
                   }
                   return Promise.reject(
@@ -133,16 +162,9 @@ export function StepFour({
             ]}
           >
             <Upload.Dragger
-              beforeUpload={(file) => {
-                setEnvDoc(file);
-                return false;
-              }}
-              onRemove={() => setEnvDoc(null)}
-              onChange={({ fileList }) => {
-                const f = fileList?.[0]?.originFileObj as File | undefined;
-                setEnvDoc(f || null);
-              }}
+              beforeUpload={() => false}
               multiple={false}
+              maxCount={1}
               accept=".pdf,.png,.jpg,.jpeg"
             >
               <p className="text-sm">Choose file or drag and drop it here</p>
