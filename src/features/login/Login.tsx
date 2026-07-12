@@ -7,6 +7,7 @@ import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { login, getUser } from "@/src/features/onboarding/api";
 import { showToast } from "@/src/store/toast.store";
+import { SocialButton } from "@/src/features/onboarding/ui/SocialButton";
 
 type LoginFormValues = {
   email: string;
@@ -60,7 +61,7 @@ export function Login() {
 
         if (completed) {
           if (role === "Compliance") {
-            router.push("/compliancedashboard");
+            router.push("/compliancedashboard?persona=compliance");
           } else {
             router.push("/dashboard");
           }
@@ -88,15 +89,23 @@ export function Login() {
     }
   };
   return (
-    <div className="w-full md:w-3/4 py-10 px-5 flex flex-col gap-6">
-      <div className="w-full">
-        <Image
-          src="/assets/images/logo.png"
-          height={72}
-          width={72}
-          alt="logo"
-        />
+    <div className="w-full flex flex-col gap-6">
+      <div>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back</h2>
+        <p className="text-sm text-gray-500">Log in to continue to your Beldium account.</p>
       </div>
+
+      <div className="flex flex-col gap-3">
+        <SocialButton provider="google" />
+        <SocialButton provider="facebook" />
+      </div>
+
+      <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="h-px flex-1 bg-gray-200" />
+        Or continue with email
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
       <div>
         <Form
           form={form}

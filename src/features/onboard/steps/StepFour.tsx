@@ -2,9 +2,8 @@
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form, Radio, Upload } from "antd";
 import Image from "next/image";
-import Link from "next/link";
-import MobileTimeline from "../component/MobileTimeline";
-import Logo from "../component/Logo";
+import { useRouter } from "next/navigation";
+import { StepHeader } from "../component/StepHeader";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -21,9 +20,13 @@ export function StepFour(props: {
   onNext: () => void;
 }) {
   const [form] = Form.useForm();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const { onNext } = props;
-  const handleSubmit = async (values: Record<string, unknown>) => {
+
+  // Returns false (and sets an inline field error) if the required document is missing.
+  const saveStep = async (values: Record<string, unknown>) => {
     const environmentalDocumentation = String(
       values.environmentalDocumentation || ""
     );
@@ -47,35 +50,41 @@ export function StepFour(props: {
           errors: ["Please upload your environmental compliance document"],
         },
       ]);
-      return;
+      return false;
     }
 
+    const formData = new FormData();
+    formData.append("onboarding_step", "environmental_esg");
+    formData.append(
+      "environmental_documentation",
+      environmentalDocumentation
+    );
+    formData.append(
+      "environmental_consultant",
+      String(values.environmentalConsultant || "")
+    );
+    const smip = String(values.SMIP || "");
+    const cec = String(values.CEC || "");
+    formData.append("has_safety_measures", smip === "Yes" ? "true" : "false");
+    formData.append(
+      "has_conducted_community_engagement",
+      cec === "Yes" ? "true" : "false"
+    );
+    if (environmentalComplianceDocument) {
+      formData.append(
+        "environmental_compliance_document",
+        environmentalComplianceDocument
+      );
+    }
+    await minerOnboarding(formData);
+    return true;
+  };
+
+  const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("onboarding_step", "environmental_esg");
-      formData.append(
-        "environmental_documentation",
-        environmentalDocumentation
-      );
-      formData.append(
-        "environmental_consultant",
-        String(values.environmentalConsultant || "")
-      );
-      const smip = String(values.SMIP || "");
-      const cec = String(values.CEC || "");
-      formData.append("has_safety_measures", smip === "Yes" ? "true" : "false");
-      formData.append(
-        "has_conducted_community_engagement",
-        cec === "Yes" ? "true" : "false"
-      );
-      if (environmentalComplianceDocument) {
-        formData.append(
-          "environmental_compliance_document",
-          environmentalComplianceDocument
-        );
-      }
-      await minerOnboarding(formData);
+      const saved = await saveStep(values);
+      if (!saved) return;
       showToast("Saved environmental & ESG readiness", "success");
       onNext();
     } catch (error: unknown) {
@@ -88,20 +97,31 @@ export function StepFour(props: {
       setLoading(false);
     }
   };
+
+  const handleSaveAndExit = async () => {
+    try {
+      const values = await form.validateFields();
+      setExiting(true);
+      const saved = await saveStep(values);
+      if (!saved) return;
+      showToast("Progress saved. You can resume anytime.", "success");
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
+      if (e?.errorFields) return;
+      const msg = e?.response?.data?.message || "Failed to save progress";
+      showToast(msg, "error");
+    } finally {
+      setExiting(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
-      <Logo />
-      <div>
-        <MobileTimeline />
-
-      </div>
-      <div className="">
-        <h5 className="title">Environmental & ESG Readiness</h5>
-        <p className="small-text">
-          Let us know your current environmental and safety practices.
-        </p>
-      </div>
+      <StepHeader
+        title="Environmental & ESG Readiness"
+        subtitle="Let us know your current environmental and safety practices."
+      />
 
       <div className="w-full flex flex-col gap-6">
         <Form form={form} layout="vertical" autoComplete="off" onFinish={handleSubmit}>
@@ -235,9 +255,14 @@ export function StepFour(props: {
               </Form.Item>
             </div>
             <div>
-              <p className="text-sm flex justify-center md:block">
-                <Link href="/">Save and Exit</Link>
-              </p>
+              <button
+                type="button"
+                onClick={handleSaveAndExit}
+                disabled={exiting}
+                className="text-sm flex justify-center md:block text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+              >
+                {exiting ? "Saving..." : "Save and Exit"}
+              </button>
             </div>
           </div>
         </Form>

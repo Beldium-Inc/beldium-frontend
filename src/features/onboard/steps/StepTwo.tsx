@@ -2,9 +2,8 @@
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form, Radio, Select } from "antd";
 import Image from "next/image";
-import Link from "next/link";
-import Logo from "../component/Logo";
-import MobileTimeline from "../component/MobileTimeline";
+import { useRouter } from "next/navigation";
+import { StepHeader } from "../component/StepHeader";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -18,35 +17,42 @@ export function StepTwo({
   onNext: () => void;
 }) {
   const [form] = Form.useForm();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const saveStep = async (values: Record<string, unknown>) => {
+    const methodLabel = String(values.miningMethod || "");
+    const statusLabel = String(values.operationStatus || "");
+    const method =
+      methodLabel === "Open pit"
+        ? "open_pit"
+        : methodLabel === "Shaft or Underground"
+        ? "shaft_or_underground"
+        : methodLabel === "Exploration"
+        ? "exploration"
+        : "";
+    const status =
+      statusLabel === "Active"
+        ? "active"
+        : statusLabel === "Developing"
+        ? "developing"
+        : statusLabel === "Temporarily inactive"
+        ? "temporarily_inactive"
+        : "";
+    const formData = new FormData();
+    formData.append("onboarding_step", "mining_operation_profile");
+    formData.append("mineral_type", String(values.mineralType || ""));
+    formData.append("mining_method", method);
+    formData.append("depth_range", String(values.depthRange || values.deptRange || ""));
+    formData.append("operational_status", status);
+    await minerOnboarding(formData);
+  };
+
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       setLoading(true);
-      const methodLabel = String(values.miningMethod || "");
-      const statusLabel = String(values.operationStatus || "");
-      const method =
-        methodLabel === "Open pit"
-          ? "open_pit"
-          : methodLabel === "Shaft or Underground"
-          ? "shaft_or_underground"
-          : methodLabel === "Exploration"
-          ? "exploration"
-          : "";
-      const status =
-        statusLabel === "Active"
-          ? "active"
-          : statusLabel === "Developing"
-          ? "developing"
-          : statusLabel === "Temporarily inactive"
-          ? "temporarily_inactive"
-          : "";
-      const formData = new FormData();
-      formData.append("onboarding_step", "mining_operation_profile");
-      formData.append("mineral_type", String(values.mineralType || ""));
-      formData.append("mining_method", method);
-      formData.append("depth_range", String(values.depthRange || values.deptRange || ""));
-      formData.append("operational_status", status);
-      await minerOnboarding(formData);
+      await saveStep(values);
       showToast("Saved mining operation profile", "success");
       onNext();
     } catch (error: unknown) {
@@ -57,18 +63,27 @@ export function StepTwo({
       setLoading(false);
     }
   };
+
+  const handleSaveAndExit = async () => {
+    try {
+      const values = await form.validateFields();
+      setExiting(true);
+      await saveStep(values);
+      showToast("Progress saved. You can resume anytime.", "success");
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
+      if (e?.errorFields) return;
+      const msg = e?.response?.data?.message || "Failed to save progress";
+      showToast(msg, "error");
+    } finally {
+      setExiting(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
-      <Logo />
-      <div>
-        <MobileTimeline />
-      </div>
-
-      <div className="">
-        <h5 className="title">Mining Operation Profile</h5>
-        <p className="small-text">Tell us what you do</p>
-      </div>
+      <StepHeader title="Mining Operation Profile" subtitle="Tell us what you do" />
 
       <div className="w-full flex flex-col gap-6">
         <Form form={form} layout="vertical" autoComplete="off" onFinish={handleSubmit}>
@@ -161,9 +176,14 @@ export function StepTwo({
               </Form.Item>
             </div>
             <div>
-              <p className="text-sm flex justify-center md:block">
-                <Link href="/">Save and Exit</Link>
-              </p>
+              <button
+                type="button"
+                onClick={handleSaveAndExit}
+                disabled={exiting}
+                className="text-sm flex justify-center md:block text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+              >
+                {exiting ? "Saving..." : "Save and Exit"}
+              </button>
             </div>
           </div>
         </Form>

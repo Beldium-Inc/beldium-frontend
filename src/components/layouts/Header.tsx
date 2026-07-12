@@ -5,6 +5,7 @@ import {
   BellOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
+  DownOutlined,
   MenuOutlined,
   SearchOutlined,
   UserOutlined,
@@ -30,7 +31,7 @@ export default function Header() {
   const userName = user?.company_name || user?.email?.split('@')[0] || "Miner";
 
   return (
-    <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8">
+    <header className="h-20 bg-white border-none flex items-center justify-between px-4 lg:px-8">
       {/* Left Section: Toggle + Portal Title + Badge */}
       <div className="flex items-center gap-4">
         {/* Mobile Toggle - explicitly only on mobile */}
@@ -42,7 +43,7 @@ export default function Header() {
           />
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center ml-4 gap-3">
           <span className="text-gray-600 font-medium hidden sm:inline-block">Miner Portal</span>
           {isLoading ? (
             <Skeleton.Button active size="small" style={{ width: 100 }} />
@@ -91,12 +92,13 @@ export default function Header() {
                 <div className="text-sm font-semibold text-gray-900 leading-tight">{userName}</div>
                 {minerId && <div className="text-xs text-gray-500 mt-0.5">{minerId}</div>}
               </div>
-              <Avatar 
-                size={40} 
-                src={user?.profile_picture} 
+              <Avatar
+                size={40}
+                src={user?.profile_picture}
                 icon={!user?.profile_picture && <UserOutlined />}
                 className="border border-gray-200"
               />
+              <DownOutlined className="text-gray-400 text-xs hidden sm:inline-block" />
             </>
           )}
         </div>

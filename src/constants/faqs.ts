@@ -126,7 +126,7 @@ export const faqs: FaqType[] = [
     category: "Security",
     question: "Does SeedFi perform a credit check on loan applicants?",
     answer:
-      "Yes, but don’t worry — our focus is on your financial journey, not just your credit score.",
+      "Yes, but don’t worry, our focus is on your financial journey, not just your credit score.",
   },
   {
     category: "Security",

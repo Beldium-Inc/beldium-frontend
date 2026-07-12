@@ -196,3 +196,19 @@ export async function getOrderDetail(id: string) {
   const { data } = await authApi.get<OrderDetailResponse>(`/miner/dashboard/${id}/detail/`);
   return data;
 }
+
+// `id` here is the RFQAssignment id (same id as an OpenQueueItem row), not an order id.
+export async function acceptRequest(id: string) {
+  const { data } = await authApi.post(`/miner/dashboard/${id}/accept/`);
+  return data;
+}
+
+export async function declineRequest(id: string) {
+  const { data } = await authApi.post(`/miner/dashboard/${id}/decline/`);
+  return data;
+}
+
+export async function downloadInvoice(orderId: string) {
+  const { data } = await authApi.get(`/miner/dashboard/${orderId}/invoice/`, { responseType: "blob" });
+  return data as Blob;
+}

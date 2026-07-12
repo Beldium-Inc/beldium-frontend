@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getUser } from "@/src/features/onboarding/api";
 import { useRouter } from "next/navigation";
 import { Spin } from "antd";
+import Image from "next/image";
 
 const titles = [
   "Organization Identity",
@@ -77,31 +78,49 @@ export default function Page() {
       <div className="hidden lg:block text-primary w-1/2 h-screen bg-gradient-to-tl from-slate-400 from-0% via-sky-50 via-50% to-slate-50 to-100% rounded-2xl">
         <div className="flex flex-col items-center justify-center h-full w-full  p-25">
           <div className="rounded-xl w-full shawdow1 transparent p-2  shadow-sm ">
+            <div className="h-16 w-14 rounded-xl bg-white shadow-sm flex items-center justify-center mb-4 ml-1">
+              <Image src="/assets/images/logo.png" height={30} width={30} alt="Beldium logo" />
+            </div>
             <div className="w-full  flex flex-col gap-6 p-6 bg-white rounded-2xl">
-              <h2 className="mb-6  text-sm font-semibold">Complete Your Profile</h2>
-              <div className="relative">
-                <div className="absolute left-[11px] top-0 h-full w-px bg-gray-200" />
-                <div className="space-y-6">
-                  {steps.map((s) => (
-                    <div key={s.id} className="flex items-start gap-4">
-                      <div className="relative z-10">
-                        {s.status === "completed" && (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0f172a] text-white">✓</div>
-                        )}
-                        {s.status === "active" && (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#0f172a]">
-                            <div className="h-2.5 w-2.5 rounded-full bg-[#0f172a]" />
-                          </div>
-                        )}
-                        {s.status === "pending" && <div className="h-6 w-6 rounded-full border border-gray-300 bg-white" />}
+              <h2 className="text-base font-semibold text-gray-900 mb-6">Complete Your Profile</h2>
+              <div className="flex flex-col">
+                {steps.map((s, index) => {
+                  const isLast = index === steps.length - 1;
+                  return (
+                    <div key={s.id} className="flex py-3 gap-3">
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            s.status === "completed" || s.status === "active"
+                              ? "bg-[#0B1B3F] border border-gray-400"
+                              : "bg-white border border-gray-400"
+                          }`}
+                        >
+                          {s.status === "completed" ? (
+                            <span className="text-white text-xs">✓</span>
+                          ) : (
+                            <div
+                              className={`h-2 w-2 rounded-full ${
+                                s.status === "active" ? "bg-white" : "bg-transparent"
+                              }`}
+                            />
+                          )}
+                        </div>
+                        {!isLast && <div className="w-px flex-1 bg-gray-800 border-1/2 mt-0 my-[-32px]" />}
                       </div>
-                      <div>
-                        <p className="text-[11px] text-gray-400">Step {s.id}</p>
-                        <p className="text-sm text-gray-900">{s.title}</p>
+                      <div className={isLast ? "pb-0" : "pb-8"}>
+                        <div className="text-[11px] text-gray-400">Step {s.id}</div>
+                        <div
+                          className={`text-sm ${
+                            s.status === "active" ? "font-semibold text-gray-900" : "text-gray-700"
+                          }`}
+                        >
+                          {s.title}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>

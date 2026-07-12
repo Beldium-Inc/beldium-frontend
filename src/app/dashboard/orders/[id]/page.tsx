@@ -61,10 +61,22 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
+      {/* Breadcrumb */}
+      <div className="text-xs text-gray-400 flex items-center gap-1.5">
+        <button
+          onClick={() => router.push('/dashboard?view=orders')}
+          className="hover:text-gray-600 transition-colors"
+        >
+          Order
+        </button>
+        <span>›</span>
+        <span className="text-gray-500">Order Detail</span>
+      </div>
+
       {/* Back Navigation */}
-      <div className="mb-6">
+      <div className="-mt-2">
         <Tooltip title="Return to Orders list (Esc)">
-          <button 
+          <button
             onClick={() => router.push('/dashboard?view=orders')}
             className="group flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors py-2 px-3 -ml-3 rounded-lg hover:bg-gray-100"
             aria-label="Back to Orders"
@@ -111,11 +123,11 @@ export default function OrderDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
               <div>
                 <span className="text-xs text-gray-400 block mb-1">Mineral Type</span>
-                <span className="text-sm font-medium text-gray-900">{order.mineral_type || "—"}</span>
+                <span className="text-sm font-medium text-gray-900">{order.mineral_type || "--"}</span>
               </div>
               <div>
                 <span className="text-xs text-gray-400 block mb-1">Grade/Purity</span>
-                <span className="text-sm font-medium text-gray-900">{order.grade || "—"}</span>
+                <span className="text-sm font-medium text-gray-900">{order.grade || "--"}</span>
               </div>
               <div>
                 <span className="text-xs text-gray-400 block mb-1">Quantity</span>

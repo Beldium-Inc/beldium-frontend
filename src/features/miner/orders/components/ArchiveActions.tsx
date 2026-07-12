@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Button, message } from 'antd';
 import { DownloadOutlined, FileDoneOutlined, PrinterOutlined } from "@ant-design/icons";
+import { downloadInvoice } from '../../dashboard/api';
 
 export interface ArchiveActionsProps {
   orderId: string;
@@ -31,72 +32,53 @@ export default function ArchiveActions({
     setState((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const runAction = useCallback(async (action: 'download' | 'receipt' | 'print') => {
-    const loadingMap = {
-      download: 'Generating invoice...',
-      receipt: 'Generating payment receipt...',
-      print: 'Preparing print summary...',
-    } as const;
-
-    const successMap = {
-      download: `Invoice for ${orderCode} is ready`,
-      receipt: `Payment receipt for ${orderCode} is ready`,
-      print: `Print view for ${orderCode} is ready`,
-    } as const;
-
-    const errorMap = {
-      download: 'Failed to download invoice',
-      receipt: 'Failed to generate payment receipt',
-      print: 'Failed to prepare print summary',
-    } as const;
-
-    const statePatchMap = {
-      download: { isDownloading: true },
-      receipt: { isGeneratingReceipt: true },
-      print: { isPrinting: true },
-    } as const;
-
-    const donePatchMap = {
-      download: { isDownloading: false },
-      receipt: { isGeneratingReceipt: false },
-      print: { isPrinting: false },
-    } as const;
-
-    const delayMap = {
-      download: 1200,
-      receipt: 1000,
-      print: 700,
-    } as const;
-
+  const handleDownloadInvoice = useCallback(async () => {
     try {
-      updateState({ ...statePatchMap[action], error: null });
-      const hide = message.loading(loadingMap[action], 1);
-      await new Promise((resolve) => setTimeout(resolve, delayMap[action]));
-      hide();
-      message.success(successMap[action]);
-      if (action === 'print') {
-        window.print();
-      }
+      updateState({ isDownloading: true, error: null });
+      const blob = await downloadInvoice(orderId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${orderCode}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      message.success(`Invoice for ${orderCode} downloaded`);
     } catch (error) {
-      const errMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errMessage = error instanceof Error ? error.message : 'Failed to download invoice';
       updateState({ error: errMessage });
-      message.error(errorMap[action]);
+      message.error('Failed to download invoice');
     } finally {
-      updateState(donePatchMap[action]);
+      updateState({ isDownloading: false });
     }
+  }, [orderId, orderCode, updateState]);
+
+  // "Payment Receipt" and "Print Summary" have no backing backend endpoint
+  // (only GET /miner/dashboard/{id}/invoice/ exists) — these remain a
+  // client-only preview until a real endpoint is added.
+  const runFakeAction = useCallback(async (action: 'receipt' | 'print') => {
+    const loadingMap = { receipt: 'Generating payment receipt...', print: 'Preparing print summary...' } as const;
+    const successMap = { receipt: `Payment receipt for ${orderCode} is ready`, print: `Print view for ${orderCode} is ready` } as const;
+    const statePatchMap = { receipt: { isGeneratingReceipt: true }, print: { isPrinting: true } } as const;
+    const donePatchMap = { receipt: { isGeneratingReceipt: false }, print: { isPrinting: false } } as const;
+
+    updateState({ ...statePatchMap[action], error: null });
+    const hide = message.loading(loadingMap[action], 1);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    hide();
+    message.success(successMap[action]);
+    if (action === 'print') window.print();
+    updateState(donePatchMap[action]);
   }, [orderCode, updateState]);
 
-  const handleDownloadInvoice = useCallback(async () => {
-    await runAction('download');
-  }, [runAction]);
-
   const handleGenerateReceipt = useCallback(async () => {
-    await runAction('receipt');
-  }, [runAction]);
+    await runFakeAction('receipt');
+  }, [runFakeAction]);
 
   const handlePrintSummary = useCallback(async () => {
-    await runAction('print');
-  }, [runAction]);
+    await runFakeAction('print');
+  }, [runFakeAction]);
 
   return (
     <div className={`bg-white rounded-3xl border border-[#E8EDF5] p-5 md:p-6 shadow-[0_18px_42px_-22px_rgba(15,23,42,0.34)] ${className}`} data-order-id={orderId}>

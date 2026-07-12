@@ -1,9 +1,8 @@
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Input, Button, Form, Select, DatePicker } from "antd";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileTimeline from "@/src/features/compliance/component/MobileTimeline";
-import Logo from "@/src/features/onboard/component/Logo";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -18,22 +17,28 @@ export function StepOrgIdentity({
   onNext: () => void;
 }) {
   const [form] = Form.useForm();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const buildFormData = (values: Record<string, unknown>) => {
+    const date = values.yearEstablished
+      ? (values.yearEstablished as Dayjs).format("YYYY-MM-DD")
+      : "";
+    const formData = new FormData();
+    formData.append("onboarding_step", "organization_identity");
+    formData.append("organization_name", String(values.organizationName || ""));
+    formData.append("organization_type", String(values.organizationType || ""));
+    formData.append("year_of_establishment", date);
+    formData.append("country_of_operation", String(values.country || ""));
+    formData.append("primary_office_address", String(values.officeAddress || ""));
+    return formData;
+  };
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       setLoading(true);
-      const date = values.yearEstablished
-        ? (values.yearEstablished as Dayjs).format("YYYY-MM-DD")
-        : "";
-      const formData = new FormData();
-      formData.append("onboarding_step", "organization_identity");
-      formData.append("organization_name", String(values.organizationName || ""));
-      formData.append("organization_type", String(values.organizationType || ""));
-      formData.append("year_of_establishment", date);
-      formData.append("country_of_operation", String(values.country || ""));
-      formData.append("primary_office_address", String(values.officeAddress || ""));
-      await complianceOnboarding(formData);
+      await complianceOnboarding(buildFormData(values));
       showToast("Saved organization identity", "success");
       onNext();
     } catch (error: unknown) {
@@ -46,10 +51,25 @@ export function StepOrgIdentity({
     }
   };
 
+  const handleSaveAndExit = async () => {
+    try {
+      const values = await form.validateFields();
+      setExiting(true);
+      await complianceOnboarding(buildFormData(values));
+      showToast("Progress saved. You can resume anytime.", "success");
+      router.push("/compliancedashboard");
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } } };
+      const msg = e?.response?.data?.message || "Failed to save progress";
+      showToast(msg, "error");
+    } finally {
+      setExiting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
-      <Logo />
       <div>
         <MobileTimeline />
       </div>
@@ -136,9 +156,14 @@ export function StepOrgIdentity({
               </Form.Item>
             </div>
             <div>
-              <p className="text-sm flex justify-center md:block">
-                <Link href="/">Save and Exit</Link>
-              </p>
+              <button
+                type="button"
+                onClick={handleSaveAndExit}
+                disabled={exiting}
+                className="text-sm flex justify-center md:block text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+              >
+                {exiting ? "Saving..." : "Save and Exit"}
+              </button>
             </div>
           </div>
         </Form>

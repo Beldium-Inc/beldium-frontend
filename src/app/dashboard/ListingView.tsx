@@ -6,11 +6,12 @@ import { Card, Input, Select, Skeleton, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { ArrowRightOutlined } from "@ant-design/icons";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
 import { useMemo, useState } from "react";
 
 export default function ListingView() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [q, setQ] = useState<string>(searchParams.get("q") || "");
   const [status, setStatus] = useState<string | null>(searchParams.get("status") || null);
@@ -45,6 +46,7 @@ export default function ListingView() {
   };
 
   type ListingRowItem = {
+    id: string;
     listing_code: string;
     grade: string;
     quantity: number;
@@ -74,26 +76,29 @@ export default function ListingView() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-24 px-4 md:px-6">
+    <div className="max-w-8xl mx-auto space-y-6 pb-24 px-4 md:px-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Listings</h1>
           <p className="text-sm md:text-base text-gray-500">Manage your mineral listings and availability</p>
         </div>
-        <CreateListingButton ariaLabel="Create new mineral listing" onClick={() => {}}>
+        <CreateListingButton
+          ariaLabel="Create new mineral listing"
+          onClick={() => location.assign('/dashboard?view=create_listing')}
+        >
           Create New Mineral Listing
         </CreateListingButton>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        <Card className="rounded-xl border-0 shadow-sm" bodyStyle={{ background: "#EAF2FF", borderRadius: "12px" }}>
+        <Card className="rounded-xl border border-gray-200 shadow-sm">
           {cardsLoading ? (
             <Skeleton active paragraph={{ rows: 1 }} />
           ) : (
             <div className="flex items-center justify-between">
               <div>
                 <div className="mb-2">
-                  <span className="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center">
+                  <span className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
                     <Image src="/assets/icons/users-icon.svg" alt="Total listings" width={18} height={18} />
                   </span>
                 </div>
@@ -105,14 +110,14 @@ export default function ListingView() {
             </div>
           )}
         </Card>
-        <Card className="rounded-xl border border-[#E9ECF2] shadow-sm" bodyStyle={{ background: "#FFFFFF", borderRadius: "12px" }}>
+        <Card className="rounded-xl border border-gray-200 shadow-sm">
           {cardsLoading ? (
             <Skeleton active paragraph={{ rows: 1 }} />
           ) : (
             <div className="flex items-center justify-between">
               <div>
                 <div className="mb-2">
-                  <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                  <span className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
                     <Image src="/assets/icons/line-graph-icon.svg" alt="Active listing" width={18} height={18} />
                   </span>
                 </div>
@@ -124,14 +129,14 @@ export default function ListingView() {
             </div>
           )}
         </Card>
-        <Card className="rounded-xl border-0 shadow-sm" bodyStyle={{ background: "#FFE9D6", borderRadius: "12px" }}>
+        <Card className="rounded-xl border border-gray-200 shadow-sm">
           {cardsLoading ? (
             <Skeleton active paragraph={{ rows: 1 }} />
           ) : (
             <div className="flex items-center justify-between">
               <div>
                 <div className="mb-2">
-                  <span className="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center">
+                  <span className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center">
                     <Image src="/assets/icons/warning-bg-icon.svg" alt="Draft listings" width={18} height={18} />
                   </span>
                 </div>
@@ -194,7 +199,16 @@ export default function ListingView() {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 6 }} />
           ) : (
-            <Table<ListingRowItem> rowKey={(r) => r.listing_code} columns={columns} dataSource={results as ListingRowItem[]} pagination={paginationConfig} />
+            <Table<ListingRowItem>
+              rowKey={(r) => r.id}
+              columns={columns}
+              dataSource={results as ListingRowItem[]}
+              pagination={paginationConfig}
+              onRow={(record) => ({
+                onClick: () => router.push(`/dashboard/listings/${record.id}`),
+                className: "cursor-pointer hover:bg-[#F8FAFF] transition-colors",
+              })}
+            />
           )}
         </div>
       </div>

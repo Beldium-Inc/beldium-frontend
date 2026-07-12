@@ -1,7 +1,7 @@
 // Step1.tsx
 import errorMsg from "@/src/components/ui/errorMsg";
-import { PasswordRules } from "@/src/components/ui/PasswordRules";
 import { Input, Button, Form } from "antd";
+import { ArrowLeftIcon } from "./ui/ArrowIcon";
 import { Rule } from "antd/es/form";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { signup } from "./api";
 import { showToast } from "@/src/store/toast.store";
 import { useOnboardingStore } from "./onboarding.store";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
+import { SocialButton } from "./ui/SocialButton";
 
 const phoneRules: Rule[] = [
   { required: true, message: errorMsg("Primary phone number is required") },
@@ -33,9 +34,16 @@ type OnboardingData = {
   role?: "miner" | "partner";
 };
 
-export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => void }) {
+export function Onboard({
+  data,
+  onNext,
+  onBack,
+}: {
+  data: OnboardingData;
+  onNext: () => void;
+  onBack?: () => void;
+}) {
   const [form] = Form.useForm();
-  const [password, setPassword] = useState("");
   const { setData } = useOnboardingStore();
   const [loading, setLoading] = useState(false);
 
@@ -80,15 +88,30 @@ export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => 
     }
   };
   return (
-    <div className="w-full py-10 flex flex-col gap-6">
-      <div className="w-full">
-        <Image
-          src="/assets/images/logo.png"
-          height={72}
-          width={72}
-          alt="logo"
-        />
+    <div className="w-full flex flex-col gap-3">
+      <div className="flex mt-10 items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center justify-center h-8 w-8 text-gray-700"
+          aria-label="Back"
+        >
+          <ArrowLeftIcon />
+        </button>
+        <h2 className="text-xl pt-2 font-semibold text-gray-900">Create your account</h2>
       </div>
+
+      <div className="flex flex-col gap-3">
+        <SocialButton provider="google" />
+        <SocialButton provider="facebook" />
+      </div>
+
+      <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="h-px flex-1 bg-gray-200" />
+        Or continue with email
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
       <div>
         <Form
           form={form}
@@ -176,12 +199,9 @@ export function Onboard({ data, onNext }: { data: OnboardingData; onNext: () => 
           >
             <Input.Password
               placeholder="Enter password"
-              onChange={(e) => setPassword(e.target.value)}
               className="py-3!"
             />
           </Form.Item>
-
-          <PasswordRules password={password} />
 
           <Form.Item>
             <Button type="primary" htmlType="submit" block size="large" loading={loading}>

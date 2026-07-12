@@ -26,7 +26,7 @@ export default function OpenQueueTable({ items, loading }: Props) {
     mineral: i.mineral_type,
     quantity: i.quantity,
     status: i.status,
-    date: "—",
+    date: "--",
   }));
 
   return (

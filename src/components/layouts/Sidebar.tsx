@@ -20,12 +20,12 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   return (
     <aside
       className={clsx(
-        "relative min-h-screen bg-white flex flex-col transition-all duration-300 ease-in-out",
+        "relative min-h-screen border-0 bg-white flex flex-col transition-all duration-300 ease-in-out",
         sidebarCollapsed ? "w-20" : "w-64 lg:w-56 xl:w-64",
       )}
     >
       {/* Logo */}
-      <div className="h-16 px-6 flex items-end font-bungee border-b pb-2 border-gray-200 text-2xl">
+      <div className="h-20 px-6 flex items-end font-bungee border-none pb-5 mb-6 text-2xl">
         {sidebarCollapsed ? (
           <>
             <Image
@@ -63,15 +63,15 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
              // Active if view is orders OR we are in a sub-route of orders (like order details)
              isActive = view === 'orders' || currentPath.includes('/dashboard/orders');
           } else if (isListings) {
-             // Active if listings view is selected
-             isActive = view === 'listings';
+             // Active if listings/create_listing view is selected, or on a listing detail sub-route
+             isActive = view === 'listings' || view === 'create_listing' || currentPath.includes('/dashboard/listings');
           } else {
-             // For non-orders, ensure we are not in orders view if on dashboard root
-             if (item.href === '/dashboard' && (view === 'orders' || view === 'listings')) {
+             // For non-orders, ensure we are not in orders/listings view if on dashboard root
+             if (item.href === '/dashboard' && (view === 'orders' || view === 'listings' || view === 'create_listing')) {
                isActive = false;
              } else {
-               // Standard path matching, but exclude if we are in orders sub-route
-               isActive = (currentPath === itemPath || currentPath.endsWith(`${itemPath}/`)) && !currentPath.includes('/dashboard/orders');
+               // Standard path matching, but exclude if we are in orders/listings sub-route
+               isActive = (currentPath === itemPath || currentPath.endsWith(`${itemPath}/`)) && !currentPath.includes('/dashboard/orders') && !currentPath.includes('/dashboard/listings');
              }
           }
 
@@ -91,7 +91,7 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
               className={clsx(
                 "w-full flex cursor-pointer items-center gap-3 px-4 py-4 text-sm rounded-l-md transition-colors text-left",
                 isActive
-                  ? "bg-secondary text-primary font-medium border-r-6"
+                  ? "bg-secondary text-primary font-medium border-r-3"
                   : "text-slate-800 hover:bg-light-secondary hover:text-white",
               )}
             >

@@ -53,18 +53,22 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
       dataIndex: "shipment_status",
       key: "shipment_status",
       render: (text) => {
-        let color = 'bg-blue-500';
-        let label = text;
-        
-        if (text === LOGISTICS_STATUS.LOCKED) {
-            color = 'bg-blue-600';
-            label = 'Awaiting pickup';
-        }
-        
+        const normalized = (text === LOGISTICS_STATUS.LOCKED ? 'awaiting pickup' : text)
+          ?.replace(/_/g, ' ')
+          .toLowerCase();
+
+        const colorMap: Record<string, string> = {
+          'awaiting pickup': 'bg-blue-600',
+          assigned: 'bg-gray-400',
+          delivered: 'bg-green-500',
+          'in transit': 'bg-purple-500',
+        };
+        const color = colorMap[normalized] || 'bg-gray-400';
+
         return (
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${color}`} />
-            <span className="text-gray-600 capitalize">{label.replace(/_/g, ' ').toLowerCase()}</span>
+            <span className="text-gray-600 capitalize">{normalized}</span>
           </div>
         );
       },

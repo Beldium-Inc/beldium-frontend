@@ -2,9 +2,8 @@
 import errorMsg from "@/src/components/ui/errorMsg";
 import { Button, Form, Radio } from "antd";
 import Image from "next/image";
-import Link from "next/link";
-import MobileTimeline from "../component/MobileTimeline";
-import Logo from "../component/Logo";
+import { useRouter } from "next/navigation";
+import { StepHeader } from "../component/StepHeader";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -18,31 +17,38 @@ export function StepFive({
   onNext: () => void;
 }) {
   const [form] = Form.useForm();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const saveStep = async (values: Record<string, unknown>) => {
+    const formData = new FormData();
+    formData.append("onboarding_step", "production_supply_signals");
+    formData.append(
+      "estimated_monthly_output",
+      String(values.estimatedMonthlyOutput || "")
+    );
+    formData.append(
+      "processing_stages",
+      String(values.processingStage || "")
+    );
+    const logisticsLabel = String(values.logisticsAccess || "");
+    const logistics =
+      logisticsLabel === "Road"
+        ? "road"
+        : logisticsLabel === "Rail"
+        ? "rail"
+        : logisticsLabel === "Port access planned"
+        ? "port_access_planned"
+        : "";
+    formData.append("logistics_access", logistics || String(values.logisticsAccess || ""));
+    await minerOnboarding(formData);
+  };
+
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("onboarding_step", "production_supply_signals");
-      formData.append(
-        "estimated_monthly_output",
-        String(values.estimatedMonthlyOutput || "")
-      );
-      formData.append(
-        "processing_stages",
-        String(values.processingStage || "")
-      );
-      const logisticsLabel = String(values.logisticsAccess || "");
-      const logistics =
-        logisticsLabel === "Road"
-          ? "road"
-          : logisticsLabel === "Rail"
-          ? "rail"
-          : logisticsLabel === "Port access planned"
-          ? "port_access_planned"
-          : "";
-      formData.append("logistics_access", logistics || String(values.logisticsAccess || ""));
-      await minerOnboarding(formData);
+      await saveStep(values);
       showToast("Saved production & supply signals", "success");
       onNext();
     } catch (error: unknown) {
@@ -55,20 +61,30 @@ export function StepFive({
       setLoading(false);
     }
   };
+
+  const handleSaveAndExit = async () => {
+    try {
+      const values = await form.validateFields();
+      setExiting(true);
+      await saveStep(values);
+      showToast("Progress saved. You can resume anytime.", "success");
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
+      if (e?.errorFields) return;
+      const msg = e?.response?.data?.message || "Failed to save progress";
+      showToast(msg, "error");
+    } finally {
+      setExiting(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
-      <Logo />
-      <div>
-        <MobileTimeline />
-
-      </div>
-      <div className="">
-        <h5 className="title">Production & Supply Signals</h5>
-        <p className="small-text">
-          Provide operational details to guide buyer and logistics matching
-        </p>
-      </div>
+      <StepHeader
+        title="Production & Supply Signals"
+        subtitle="Provide operational details to guide buyer and logistics matching"
+      />
 
       <div className="w-full flex flex-col gap-6">
         <Form form={form} layout="vertical" autoComplete="off" onFinish={handleSubmit}>
@@ -149,9 +165,14 @@ export function StepFive({
               </Form.Item>
             </div>
             <div>
-              <p className="text-sm flex justify-center md:block">
-                <Link href="/">Save and Exit</Link>
-              </p>
+              <button
+                type="button"
+                onClick={handleSaveAndExit}
+                disabled={exiting}
+                className="text-sm flex justify-center md:block text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+              >
+                {exiting ? "Saving..." : "Save and Exit"}
+              </button>
             </div>
           </div>
         </Form>

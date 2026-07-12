@@ -57,7 +57,7 @@ export default function OrdersView() {
     <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Orders</h1>
+        <h1 className="text-xl md:text-3xl font- text-gray-900">Orders</h1>
         <p className="text-xs md:text-sm text-gray-500">Track and manage buyer transactions.</p>
       </div>
 

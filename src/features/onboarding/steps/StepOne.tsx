@@ -78,8 +78,8 @@ export function StepOne({
   };
 
   return (
-    <div className="w-full py-10 flex flex-col gap-5">
-      <div className="w-full flex mb-8 justify-between items-center">
+    <div className="w-full flex flex-col gap-5">
+      <div className="w-full flex mb-4 justify-between items-center">
         <Button type="text" onClick={onBack}>
           <Image
             src="/assets/icons/arrow-icon.svg"

@@ -1,19 +1,15 @@
 "use client";
-import { OnboardingWizard } from "@/src/features/onboarding/OnboardingWizard";
-import { Carousel } from "antd";
+import { RoleSelection } from "@/src/features/onboarding/steps/RoleSelection";
 import { useOnboardingStore } from "@/src/features/onboarding/onboarding.store";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  // throw new Error("Render error test");
-  const { step } = useOnboardingStore();
-  const showCarousel = step !== 1;
   const router = useRouter();
+  const { step, setStep } = useOnboardingStore();
 
   useEffect(() => {
     const guard = async () => {
-      // Clean up localStorage if found (migration/fix)
       if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
@@ -21,78 +17,39 @@ export default function Home() {
 
       const access = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
       if (access) {
-        // Optional: Check expiration here too
         const expiresAt = sessionStorage.getItem("tokenExpiration");
         if (expiresAt && Date.now() > Number(expiresAt)) {
-           sessionStorage.clear();
-           // Let it fall through to show landing page
-           return;
+          sessionStorage.clear();
+          return;
         }
         router.replace("/onboarding");
         return;
       }
       const hasRegistered =
         typeof window !== "undefined" ? localStorage.getItem("hasRegistered") === "true" : false;
-      if (hasRegistered) {
+      const allowRegistration =
+        typeof window !== "undefined" ? sessionStorage.getItem("allowRegistration") === "true" : false;
+
+      if (hasRegistered && !allowRegistration) {
         router.replace("/login");
+        return;
+      }
+
+      if (step > 1) {
+        router.replace("/register");
       }
     };
     guard();
-  }, [router]);
+  }, [router, step]);
+
+  if (step > 1) return null;
+
   return (
-    <div className="relative w-full h-screen flex justify-between items-center">
-      {showCarousel && (
-        <div className="hidden lg:block bg-white text-primary w-1/2 h-screen p-0">
-          <Carousel
-            autoplay
-            dotPlacement="bottom"
-            className="h-screen flex flex-col justify-center items-center"
-          >
-            <div className="relative w-full h-screen border-red-600 bg-[url('/assets/images/get-started.jpg')] bg-cover bg-red-600">
-              <div className="absolute bottom-10 w-full text-white text-2xl text-shadow-lg px-5">
-                <h2 className="my-5 font-bold! text-4xl text-left w-3/4">
-                  Compliant Lithium Market Access Starts Here
-                </h2>
-                <p className="text-md">
-                  Register your operation and receive support with licensing, ESG,
-                  and buyer readiness
-                </p>
-              </div>
-            </div>
-            <div className="relative w-full h-screen bg-[url('/assets/images/lithium.jpg')] bg-cover">
-              <div className="absolute bottom-10 w-full text-white text-2xl text-shadow-lg px-5">
-                <h2 className="my-5 font-bold! text-4xl text-left w-3/4">
-                  Compliant Lithium Market Access Starts Here
-                </h2>
-                <p className="text-md">
-                  Register your operation and receive support with licensing, ESG,
-                  and buyer readiness
-                </p>
-              </div>
-            </div>
-            <div className="relative w-full h-screen bg-[url('/assets/images/bg-cover-02.jpg')] bg-cover">
-              <div className="absolute bottom-10 w-full text-white text-2xl text-shadow-lg px-5">
-                <h2 className="my-5 font-bold! text-4xl text-left w-3/4">
-                  Compliant Lithium Market Access Starts Here
-                </h2>
-                <p className="text-md">
-                  Register your operation and receive support with licensing, ESG,
-                  and buyer readiness
-                </p>
-              </div>
-            </div>
-          </Carousel>
-        </div>
-      )}
-      <div
-        className={
-          showCarousel
-            ? "w-full lg:w-1/2 border lg:p-10 h-screen flex justify-center items-center overflow-y-scroll"
-            : "w-full h-screen flex justify-center items-center lg:p-10 overflow-y-scroll"
-        }
-      >
-        <OnboardingWizard />
-      </div>
-    </div>
+    <RoleSelection
+      onNext={() => {
+        setStep(2);
+        router.push("/register");
+      }}
+    />
   );
 }

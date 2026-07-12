@@ -11,14 +11,7 @@ export function VerifySuccess({
   const router = useRouter();
 
   return (
-    <div className="w-full py-10 flex flex-col gap-6">
-      <div className="w-full flex mb-8 justify-center items-center">
-        {/* <Button type="text" onClick={onBack}>
-          <Image src="/assets/icons/arrow-icon.svg" height={24} width={24} alt="back" />
-        </Button> */}
-        <Image src="/assets/images/logo.png" height={36} width={36} alt="logo" />
-      </div>
-
+    <div className="w-full flex flex-col gap-6">
       <div className="flex flex-col items-center text-center gap-6">
         <Image src="/assets/icons/success-icon.svg" height={100} width={100} alt="success" />
         <h2 className="text-xl font-semibold">Your account has been verified successfully</h2>

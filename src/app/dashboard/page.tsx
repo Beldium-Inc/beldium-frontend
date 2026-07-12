@@ -48,21 +48,13 @@ export default function MinerDashboardPage() {
   const active = overview?.active_orders;
   const pending = overview?.pending_actions;
   const items = queueQ.data?.data?.results || [];
-  const shouldShowComplianceBanner =
-    !userQ.isLoading &&
-    (
-      user == null ||
-      user?.role == null ||
-      user?.has_completed_onboarding == null ||
-      user?.profile?.compliance_profile_onboarding_step == null
-    );
   const complianceBannerHref = "/onboarding?step=4";
 
   return (
-    <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full overflow-x-hidden">
+    <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full  overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="w-full">
-          <div className="text-xl md:text-2xl font-semibold">Overview</div>
+          <div className="text-xl md:text-3xl font">Overview</div>
           <div className="text-xs md:text-sm text-gray-500 mt-1">
             {userQ.isLoading ? (
               <Skeleton.Input active size="small" className="!w-48 md:!w-72" />
@@ -80,7 +72,7 @@ export default function MinerDashboardPage() {
         activeCount={active?.count || 0}
         activeChange={active?.percentage_change || 0}
         pendingCount={pending?.count || 0}
-        showComplianceBanner={shouldShowComplianceBanner}
+        showComplianceBanner={false}
         complianceBannerHref={complianceBannerHref}
         loading={overviewQ.isLoading}
       />

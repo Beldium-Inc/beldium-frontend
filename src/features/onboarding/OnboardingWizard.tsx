@@ -1,29 +1,34 @@
-import { useUIStore } from "@/src/store/ui/ui.store";
-import { Onboard } from "./Onboard";
+"use client";
+
 import { useOnboardingStore } from "./onboarding.store";
+import { OnboardingLayout } from "./OnboardingLayout";
+import { Onboard } from "./Onboard";
 import { StepOne } from "./steps/StepOne";
 import { VerifySuccess } from "./steps/VerifySuccess";
-import { RoleSelection } from "./steps/RoleSelection";
 
+// Renders steps 2+; step 1 (role selection) lives on its own route ("/").
 export function OnboardingWizard() {
-  const { step, setStep, data } = useOnboardingStore();
-  const { closeAlertModal } = useUIStore();
+  const { step, data, setStep } = useOnboardingStore();
 
-  const next = () => {
-    setStep(step + 1);
-    closeAlertModal();
-  };
-  const back = () => {
-    setStep(step - 1);
-    closeAlertModal();
-  };
+  if (step <= 2) {
+    return (
+      <OnboardingLayout>
+        <Onboard data={data} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+      </OnboardingLayout>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <OnboardingLayout>
+        <StepOne data={data} onNext={() => setStep(4)} onBack={() => setStep(2)} />
+      </OnboardingLayout>
+    );
+  }
 
   return (
-    <div className="w-full px-10 lg:px-16 xl:px-36 min-h-[550px]">
-      {step === 1 && <RoleSelection onNext={next} />}
-      {step === 2 && <Onboard data={data} onNext={next} />}
-      {step === 3 && <StepOne data={data} onNext={next} onBack={back} />}
-      {step === 4 && <VerifySuccess onBack={back} />}
-    </div>
+    <OnboardingLayout>
+      <VerifySuccess onBack={() => setStep(3)} />
+    </OnboardingLayout>
   );
 }

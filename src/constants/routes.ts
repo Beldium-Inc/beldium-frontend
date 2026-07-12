@@ -35,7 +35,7 @@ export const AppRoutes = [
   {
     key: "compliance",
     label: "Compliance",
-    href: "/compliancedashboard",
+    href: "/dashboard/compliance",
     icon: SafetyCertificateOutlined,
   },
   {

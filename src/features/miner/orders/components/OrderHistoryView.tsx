@@ -147,15 +147,15 @@ export default function OrderHistoryView({
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-100">
                 <div className="text-xs text-gray-400 mb-1">Total Volume Sold</div>
-                <div className="text-xl font-bold">{totalVolume ? `${totalVolume}MT` : '—'}</div>
+                <div className="text-xl font-bold">{totalVolume ? `${totalVolume}MT` : '--'}</div>
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-100">
                 <div className="text-xs text-gray-400 mb-1">Total Revenue</div>
-                <div className="text-xl font-bold">{totalRevenue ? `${DEFAULT_CURRENCY_SYMBOL}${totalRevenue}` : '—'}</div>
+                <div className="text-xl font-bold">{totalRevenue ? `${DEFAULT_CURRENCY_SYMBOL}${totalRevenue}` : '--'}</div>
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-100">
                 <div className="text-xs text-gray-400 mb-1">Last Transaction</div>
-                <div className="text-xl font-bold">{lastTransactionDate || '—'}</div>
+                <div className="text-xl font-bold">{lastTransactionDate || '--'}</div>
             </div>
         </div>
 

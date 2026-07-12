@@ -6441,11 +6441,11 @@ export default function ComplianceDashboardPage() {
     Boolean(openedMinerDetail) && !isComplianceStaticSurface;
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] text-[#202534]">
-      <div className="flex min-h-screen">
+    <div className="h-screen overflow-hidden bg-[#f5f7fb] text-[#202534]">
+      <div className="flex h-screen">
         <DashboardSidebar persona={persona} complianceView={complianceView} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <DashboardTopBar
             key={`${persona}-${complianceView}`}
             persona={persona}
@@ -6453,7 +6453,7 @@ export default function ComplianceDashboardPage() {
             onMenuNavigate={resetCompliancePanels}
           />
 
-          <main className="flex-1 px-4 py-6 sm:px-6 xl:px-8">
+          <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 xl:px-8">
             <div className="mx-auto max-w-[1600px] space-y-6">
               {showMinerDetailView && openedMinerDetail ? (
                 <ComplianceMinerDetailView

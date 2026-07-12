@@ -31,37 +31,33 @@ export default function OrdersStatsCards({
       title: "New Request(s)",
       count: incomingRfqs,
       subtitle: "Awaiting review",
-      icon: <AuditOutlined className="text-xl" />,
-      bg: "bg-blue-50",
+      icon: <AuditOutlined className="text-base" />,
+      badgeBg: "bg-blue-50",
       text: "text-blue-600",
-      border: "border-blue-100",
     },
     {
       title: "Active orders",
       count: activeOrders,
       subtitle: "In progress",
-      icon: <SyncOutlined className="text-xl" />,
-      bg: "bg-white",
-      text: "text-gray-600",
-      border: "border-gray-200",
+      icon: <SyncOutlined className="text-base" />,
+      badgeBg: "bg-cyan-50",
+      text: "text-cyan-600",
     },
     {
       title: "Require Action",
       count: compliancePending,
       subtitle: "Compliance or logistics needed",
-      icon: <SafetyCertificateOutlined className="text-xl" />,
-      bg: "bg-orange-50",
+      icon: <SafetyCertificateOutlined className="text-base" />,
+      badgeBg: "bg-orange-50",
       text: "text-orange-600",
-      border: "border-orange-100",
     },
     {
       title: "Completed",
       count: completedOrders,
       subtitle: "Successfully fulfilled",
-      icon: <CheckCircleOutlined className="text-xl" />,
-      bg: "bg-green-50",
+      icon: <CheckCircleOutlined className="text-base" />,
+      badgeBg: "bg-green-50",
       text: "text-green-600",
-      border: "border-green-100",
     },
   ];
 
@@ -70,21 +66,21 @@ export default function OrdersStatsCards({
       {cards.map((card, index) => (
         <div
           key={index}
-          className={`${card.bg} border ${card.border} rounded-xl p-5 flex flex-col justify-between h-32 relative overflow-hidden transition-all hover:shadow-md cursor-pointer group`}
+          className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col justify-between h-32 relative overflow-hidden transition-all hover:shadow-md cursor-pointer"
         >
-          <div className="flex items-start justify-between z-10">
-            <div className="flex items-center gap-2">
-              <div className={`${card.text}`}>{card.icon}</div>
-              <span className={`font-medium ${card.text.replace('600', '700')}`}>
-                {card.count} {card.title}
-              </span>
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-full ${card.badgeBg} ${card.text} flex items-center justify-center flex-shrink-0`}>
+              {card.icon}
             </div>
+            <span className="font-medium text-gray-900">
+              {card.count} {card.title}
+            </span>
           </div>
-          
-          <div className="z-10 flex items-center justify-between mt-auto">
+
+          <div className="flex items-center justify-between mt-auto">
             <span className="text-xs text-gray-500 font-medium">{card.subtitle}</span>
-            <div className={`w-8 h-8 rounded-full bg-white/50 flex items-center justify-center ${card.text} opacity-0 group-hover:opacity-100 transition-opacity`}>
-               <ArrowRightOutlined />
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500">
+              <ArrowRightOutlined className="text-xs" />
             </div>
           </div>
         </div>
