@@ -1,7 +1,7 @@
 "use client";
 import { ComplianceOnboardWizard } from "@/src/features/compliance/ComplianceOnboardWizard";
 import { useComplianceOnboardStore } from "@/src/features/compliance/complianceOnboard.store";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getUser } from "@/src/features/onboarding/api";
 import { useRouter } from "next/navigation";
 import { Spin } from "antd";
@@ -22,6 +22,11 @@ export default function Page() {
   const { step, setStep } = useComplianceOnboardStore();
   const router = useRouter();
   const [booting, setBooting] = useState(true);
+  const scrollPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollPanelRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [step, booting]);
 
   useEffect(() => {
     const init = async () => {
@@ -90,23 +95,44 @@ export default function Page() {
                     <div key={s.id} className="flex py-3 gap-3">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            s.status === "completed" || s.status === "active"
-                              ? "bg-[#0B1B3F] border border-gray-400"
-                              : "bg-white border border-gray-400"
+                          className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                            s.status === "completed"
+                              ? "bg-[#0B1B3F] border border-[#0B1B3F] shadow-[0_2px_6px_rgba(11,27,63,0.35)] scale-105"
+                              : s.status === "active"
+                              ? "bg-white border-2 border-[#0B1B3F]"
+                              : "bg-white border border-gray-300"
                           }`}
                         >
                           {s.status === "completed" ? (
-                            <span className="text-white text-xs">✓</span>
+                            <svg
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M3.5 8.5L6.5 11.5L12.5 4.5"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
                           ) : (
                             <div
-                              className={`h-2 w-2 rounded-full ${
-                                s.status === "active" ? "bg-white" : "bg-transparent"
+                              className={`h-2.5 w-2.5 rounded-full ${
+                                s.status === "active" ? "bg-[#0B1B3F]" : "bg-transparent"
                               }`}
                             />
                           )}
                         </div>
-                        {!isLast && <div className="w-px flex-1 bg-gray-800 border-1/2 mt-0 my-[-32px]" />}
+                        {!isLast && (
+                          <div
+                            className={`w-px flex-1 mt-0 my-[-32px] ${
+                              s.status === "completed" ? "bg-[#0B1B3F]" : "bg-gray-300"
+                            }`}
+                          />
+                        )}
                       </div>
                       <div className={isLast ? "pb-0" : "pb-8"}>
                         <div className="text-[11px] text-gray-400">Step {s.id}</div>
@@ -126,7 +152,10 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="w-full h-screen lg:w-1/2 flex flex-col gap-6 justify-center overflow-y-scroll py-15">
+      <div
+        ref={scrollPanelRef}
+        className="w-full h-screen bg-white lg:w-1/2 flex flex-col gap-6 justify-start lg:justify-center overflow-y-scroll py-15"
+      >
         {booting ? (
           <div className="w-full flex justify-center items-center">
             <Spin size="small" />

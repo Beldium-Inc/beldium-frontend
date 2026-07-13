@@ -4,6 +4,8 @@ import { Button, Form, Radio } from "antd";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { StepHeader } from "../component/StepHeader";
+import Logo from "../component/Logo";
+import MobileTimeline from "../component/MobileTimeline";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -81,6 +83,8 @@ export function StepFive({
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
+      <Logo />
+      <MobileTimeline />
       <StepHeader
         title="Production & Supply Signals"
         subtitle="Provide operational details to guide buyer and logistics matching"

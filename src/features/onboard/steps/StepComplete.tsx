@@ -8,6 +8,8 @@ import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
 import { minerOnboarding } from "@/src/features/onboarding/api";
 import { StepHeader } from "../component/StepHeader";
+import Logo from "../component/Logo";
+import MobileTimeline from "../component/MobileTimeline";
 
 export function StepComplete({
   data,
@@ -64,6 +66,8 @@ export function StepComplete({
   return (
     <div className="w-full flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Submitting..." />
+      <Logo />
+      <MobileTimeline />
       <StepHeader title="Declaration & Authority" subtitle="Confirm your submission and consent to compliance verification" />
 
       <Form form={form} layout="vertical" autoComplete="off" onFinish={handleSubmit}>
@@ -78,7 +82,7 @@ export function StepComplete({
         </Form.Item>
 
         <div className={clsx("mt-3 flex w-full gap-3")}>
-          <Button type="primary" htmlType="submit" size="large" className={clsx("w-full text-white")}>
+          <Button type="primary" htmlType="submit" size="large" className={clsx(" w-[60%] py-5 h-20 mb-1 text-white")}>
             Submit for review
             <Image src="/assets/icons/arrow-white-icon.svg" height={20} width={20} alt="" />
           </Button>

@@ -19,7 +19,7 @@ export function ProfileOnboardWizard() {
   };
 
   return (
-    <div className="w-full px-6 sm:px-10">
+    <div className="w-full px-6 sm:px-10 min-h-[550px] flex flex-col justify-center">
       {step === 1 && <StepOne data={data} onNext={next} />}
       {step === 2 && <StepTwo data={data} onNext={next} />}
       {step === 3 && <StepThree data={data} onNext={next} />}

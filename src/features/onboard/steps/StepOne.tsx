@@ -7,6 +7,8 @@ import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
 import { minerOnboarding } from "@/src/features/onboarding/api";
 import { StepHeader } from "../component/StepHeader";
+import Logo from "../component/Logo";
+import MobileTimeline from "../component/MobileTimeline";
 import { UploadedFilePreview } from "../component/UploadedFilePreview";
 import { NIGERIA_STATES } from "../component/nigeriaStates";
 import { MineLocationPicker, MineLocationResult } from "../component/MineLocationPicker";
@@ -76,8 +78,10 @@ export function StepOne({ data, onNext }: { data: unknown; onNext: () => void })
   };
 
   return (
-    <div className="flex flex-col overflow-y-hidden gap-6">
+    <div className="flex flex-col lg:px-20 pt-56 gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
+      <Logo />
+      <MobileTimeline />
       <StepHeader title="Miner identity" subtitle="Tell us who is registering this operation" />
       <Form form={form} layout="vertical" autoComplete="off" onFinish={handleSubmit}>
         <Form.Item

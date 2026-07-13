@@ -4,6 +4,8 @@ import { Input, Button, Form, Radio, Select } from "antd";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { StepHeader } from "../component/StepHeader";
+import Logo from "../component/Logo";
+import MobileTimeline from "../component/MobileTimeline";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { showToast } from "@/src/store/toast.store";
@@ -83,6 +85,8 @@ export function StepTwo({
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
+      <Logo />
+      <MobileTimeline />
       <StepHeader title="Mining Operation Profile" subtitle="Tell us what you do" />
 
       <div className="w-full flex flex-col gap-6">

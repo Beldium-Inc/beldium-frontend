@@ -127,6 +127,73 @@ export type ComplianceDataControlCard = {
   value: string;
 };
 
+export type NotificationSeverity = "high_risk" | "action_required" | "informational";
+
+export type ComplianceNotificationRow = {
+  id: string;
+  minerName: string;
+  minerCode: string;
+  alertType: string;
+  description: string;
+  assignedTo?: string;
+  triggeredAt: string;
+  severity: NotificationSeverity;
+  minerId?: string;
+};
+
+export const COMPLIANCE_NOTIFICATIONS: ComplianceNotificationRow[] = [
+  {
+    id: "note-1",
+    minerName: "Apex Extraction Corp",
+    minerCode: "#LST-10210",
+    alertType: "License Expiry",
+    description: "License expires in 30 days",
+    assignedTo: "K. Mohammed",
+    triggeredAt: "24 May, 2020",
+    severity: "high_risk",
+  },
+  {
+    id: "note-2",
+    minerName: "Blue Horizon Mining",
+    minerCode: "#LST-10210",
+    alertType: "EIA Overdue",
+    description: "No EIA initiated",
+    assignedTo: "O. Bello",
+    triggeredAt: "17 Oct, 2020",
+    severity: "action_required",
+  },
+  {
+    id: "note-3",
+    minerName: "DeepCore Extraction",
+    minerCode: "#LST-10210",
+    alertType: "Compliance Score",
+    description: "Compliance Score changed - Red",
+    assignedTo: "O. David",
+    triggeredAt: "1 Feb, 2020",
+    severity: "high_risk",
+  },
+  {
+    id: "note-4",
+    minerName: "GreenStone Mines",
+    minerCode: "#LST-10210",
+    alertType: "Document Upload",
+    description: "New license document uploaded",
+    assignedTo: undefined,
+    triggeredAt: "8 Sep, 2020",
+    severity: "informational",
+  },
+  {
+    id: "note-5",
+    minerName: "Apex Extraction Corp",
+    minerCode: "#LST-10210",
+    alertType: "License Expiry",
+    description: "License document expires in 60 days",
+    assignedTo: "O. David",
+    triggeredAt: "21 Sep, 2020",
+    severity: "action_required",
+  },
+];
+
 export const ADMIN_METRICS: DashboardMetric[] = [
   {
     title: "Total Miners Onboarded",

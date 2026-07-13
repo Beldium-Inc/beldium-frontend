@@ -4,6 +4,8 @@ import { Input, Button, Form, Radio, Select, DatePicker, Upload } from "antd";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { StepHeader } from "../component/StepHeader";
+import Logo from "../component/Logo";
+import MobileTimeline from "../component/MobileTimeline";
 import { UploadedFilePreview } from "../component/UploadedFilePreview";
 import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
@@ -89,6 +91,8 @@ export function StepThree({
   return (
     <div className="flex flex-col gap-6">
       <LoadingOverlay visible={loading} message="Saving..." />
+      <Logo />
+      <MobileTimeline />
       <StepHeader title="Licensing & Regulatory Status" subtitle="Tell us about your license status" />
 
       <div className="w-full flex flex-col gap-6">

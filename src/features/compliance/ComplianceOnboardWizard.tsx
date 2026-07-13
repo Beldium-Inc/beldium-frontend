@@ -19,7 +19,7 @@ export function ComplianceOnboardWizard() {
   };
 
   return (
-    <div className="w-full px-10 lg:px-16 xl:px-36 min-h-[550px]">
+    <div className="w-full px-10 lg:px-16 xl:px-36 min-h-[550px] flex flex-col justify-center">
       {step === 1 && <StepOrgIdentity data={data} onNext={next} />}
       {step === 2 && <StepOnlinePresence data={data} onNext={next} />}
       {step === 3 && <StepAuthorizedRep data={data} onNext={next} />}

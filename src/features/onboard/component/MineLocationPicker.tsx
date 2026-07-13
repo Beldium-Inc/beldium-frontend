@@ -217,7 +217,7 @@ export function MineLocationPicker({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-        <div className="relative rounded-xl overflow-hidden border border-gray-100 h-[560px]">
+        <div className="relative rounded-xl overflow-hidden border border-gray-100 h-[260px] lg:h-[700px]">
           <div ref={setMapContainer} className="w-full h-full" />
           {!GEOAPIFY_KEY && (
             <div className="absolute inset-0 bg-gray-100/90 flex items-center justify-center text-center p-6">
@@ -231,7 +231,7 @@ export function MineLocationPicker({
 
         <div>
           {tab === "pin" && (
-            <div className="flex flex-col gap-4">
+            <div className="flex pt-10 flex-col gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Place Mine Location</h3>
                 <p className="text-sm text-gray-500 mt-1">Drop a pin at the centre of your mining operation on the map.</p>
