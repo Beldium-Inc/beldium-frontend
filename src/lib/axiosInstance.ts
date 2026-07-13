@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const STAGING_BASE_URL = "https://stg-api.beldium.com";
-const PRODUCTION_BASE_URL = "https://api.beldium.com";
+const PRODUCTION_BASE_URL = "https://api-beldium-backend.onrender.com";
 const DEV_PROXY_BASE_URL = "/api";
 
 const getBaseUrl = () => {
