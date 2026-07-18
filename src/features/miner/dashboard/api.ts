@@ -30,6 +30,7 @@ export type OpenQueueItem = {
   location: string;
   logistics_method: string;
   status: string;
+  created_at: string;
 };
 
 export type OpenQueueResponse = {
@@ -180,6 +181,7 @@ export async function getActiveOrders(params?: {
   page?: number;
   per_page?: number;
   shipment_status?: string;
+  payment_status?: string;
 }) {
   const { data } = await authApi.get<ActiveOrdersResponse>("/miner/dashboard/active_orders/", {
     params,
@@ -194,6 +196,7 @@ export async function getOrderHistory(params?: {
   shipment_status?: string;
   delivered_after?: string;
   delivered_before?: string;
+  payment_status?: string;
 }) {
   const { data } = await authApi.get<OrderHistoryResponse>("/miner/dashboard/history/", {
     params,

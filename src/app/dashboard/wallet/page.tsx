@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input, Select, Table, Modal, Skeleton } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -55,6 +55,7 @@ const TIME_RANGES: Record<string, number | null> = { "7d": 7, "30d": 30, all: nu
 
 export default function WalletPage() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [timeRange, setTimeRange] = useState<string>("30d");
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
@@ -65,6 +66,17 @@ export default function WalletPage() {
   const days = TIME_RANGES[timeRange];
   const dateFrom = days ? dayjs().subtract(days, "day").format("YYYY-MM-DD") : undefined;
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  // Reset to page 1 whenever a filter changes, otherwise the user can land
+  // on a now-empty page (e.g. searching while on page 3 of unfiltered results).
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, status, dateFrom]);
+
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
     queryKey: ["walletSummary"],
     queryFn: getWalletSummary,
@@ -72,27 +84,18 @@ export default function WalletPage() {
   const summary = summaryData?.data;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["transactions", { page, status, dateFrom }],
+    queryKey: ["transactions", { page, status, dateFrom, debouncedSearch }],
     queryFn: () =>
       getTransactions({
         page,
         per_page: 10,
         payment_status: status,
         date_from: dateFrom,
+        search: debouncedSearch || undefined,
       }),
   });
 
   const rows = data?.data?.results || [];
-  const filtered = search.trim()
-    ? rows.filter((t) => {
-        const q = search.trim().toLowerCase();
-        return (
-          t.transaction_code?.toLowerCase().includes(q) ||
-          t.order_code?.toLowerCase().includes(q) ||
-          t.payment_reference?.toLowerCase().includes(q)
-        );
-      })
-    : rows;
 
   const formatCurrency = (n: number | string) => `${DEFAULT_CURRENCY_SYMBOL}${Number(n).toLocaleString()}`;
 
@@ -249,7 +252,7 @@ export default function WalletPage() {
             <Table<Transaction>
               rowKey="id"
               columns={columns}
-              dataSource={filtered}
+              dataSource={rows}
               pagination={{
                 current: data?.data?.page_number || page,
                 pageSize: data?.data?.per_page || 10,

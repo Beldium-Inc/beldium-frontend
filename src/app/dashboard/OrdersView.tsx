@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import type { Dayjs } from "dayjs";
 import {
   getOrdersOverview,
@@ -15,8 +16,15 @@ import ActiveOrdersTable from "@/src/features/miner/orders/components/ActiveOrde
 import OrderHistoryView from "@/src/features/miner/orders/components/OrderHistoryView";
 import MobileScrollableTabs from "@/src/features/miner/orders/components/MobileScrollableTabs";
 
+type OrdersTab = 'new_requests' | 'active_orders' | 'history';
+const VALID_TABS: OrdersTab[] = ['new_requests', 'active_orders', 'history'];
+
 export default function OrdersView() {
-  const [activeTab, setActiveTab] = useState<'new_requests' | 'active_orders' | 'history'>('new_requests');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<OrdersTab>(
+    VALID_TABS.includes(initialTab as OrdersTab) ? (initialTab as OrdersTab) : 'new_requests',
+  );
   const [page, setPage] = useState(1);
 
   // Active Orders filters
@@ -42,12 +50,13 @@ export default function OrdersView() {
   });
 
   const activeOrdersQ = useQuery({
-    queryKey: ["activeOrders", { page, shipmentStatus: activeShipmentStatus }],
+    queryKey: ["activeOrders", { page, shipmentStatus: activeShipmentStatus, paymentStatus: activePaymentStatus }],
     queryFn: () =>
       getActiveOrders({
         page,
         per_page: 10,
         shipment_status: activeShipmentStatus === "all" ? undefined : activeShipmentStatus,
+        payment_status: activePaymentStatus === "all" ? undefined : activePaymentStatus,
       }),
     enabled: activeTab === 'active_orders',
   });
@@ -58,6 +67,7 @@ export default function OrdersView() {
       {
         page,
         status: historyStatus,
+        paymentStatus: historyPaymentStatus,
         deliveredFrom: deliveredFrom?.format("YYYY-MM-DD"),
         deliveredTo: deliveredTo?.format("YYYY-MM-DD"),
       },
@@ -67,6 +77,7 @@ export default function OrdersView() {
         page,
         per_page: 10,
         status: historyStatus === "all" ? undefined : historyStatus,
+        payment_status: historyPaymentStatus === "all" ? undefined : historyPaymentStatus,
         delivered_after: deliveredFrom?.format("YYYY-MM-DD"),
         delivered_before: deliveredTo?.format("YYYY-MM-DD"),
       }),
@@ -127,7 +138,10 @@ export default function OrdersView() {
             perPage={10}
             onPageChange={setPage}
             paymentStatus={activePaymentStatus}
-            onPaymentStatusChange={setActivePaymentStatus}
+            onPaymentStatusChange={(value) => {
+              setActivePaymentStatus(value);
+              setPage(1);
+            }}
             shipmentStatus={activeShipmentStatus}
             onShipmentStatusChange={(value) => {
               setActiveShipmentStatus(value);
@@ -161,7 +175,10 @@ export default function OrdersView() {
               setPage(1);
             }}
             paymentStatus={historyPaymentStatus}
-            onPaymentStatusChange={setHistoryPaymentStatus}
+            onPaymentStatusChange={(value) => {
+              setHistoryPaymentStatus(value);
+              setPage(1);
+            }}
             deliveredFrom={deliveredFrom}
             onDeliveredFromChange={(value) => {
               setDeliveredFrom(value);

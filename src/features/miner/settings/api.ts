@@ -16,6 +16,9 @@ export type MinerProfile = {
   business_role: string | null;
   miner_code: string | null;
   require_two_factor_authentication: boolean;
+  notify_new_order_requests: boolean;
+  notify_payment_updates: boolean;
+  notify_compliance_reminders: boolean;
   preferred_contact_method: "email" | "phone";
   reminder_frequency: "weekly" | "monthly" | "quarterly";
   assigned_compliance_partner_name: string | null;
@@ -62,6 +65,9 @@ export type UpdateMinerProfilePayload = Partial<{
   local_government_area: string;
   business_role: string;
   require_two_factor_authentication: boolean;
+  notify_new_order_requests: boolean;
+  notify_payment_updates: boolean;
+  notify_compliance_reminders: boolean;
   preferred_contact_method: "email" | "phone";
   reminder_frequency: "weekly" | "monthly" | "quarterly";
 }>;

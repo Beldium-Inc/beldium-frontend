@@ -32,6 +32,48 @@ const SAMPLE_TYPES = [
   { value: "composite_sample", label: "Composite Sample" },
 ];
 
+const LISTING_DRAFT_STORAGE_KEY = "beldium:create-listing-draft:v1";
+// File inputs (antd UploadFile[]) hold in-memory Blob/File references that
+// can't round-trip through JSON/localStorage, so drafts only cover the rest
+// of the form — files must be re-attached after restoring a draft.
+const LISTING_DRAFT_FILE_FIELDS = ["media", "assay_report_file", "lab_report_file"] as const;
+const LISTING_DRAFT_DATE_FIELDS = ["collection_date", "lab_testing_date"] as const;
+
+function saveListingDraft(step: number, values: Record<string, unknown>) {
+  const persistable: Record<string, unknown> = { ...values };
+  for (const field of LISTING_DRAFT_FILE_FIELDS) delete persistable[field];
+  for (const field of LISTING_DRAFT_DATE_FIELDS) {
+    const value = persistable[field] as dayjs.Dayjs | undefined;
+    persistable[field] = value?.isValid?.() ? value.toISOString() : undefined;
+  }
+
+  window.localStorage.setItem(
+    LISTING_DRAFT_STORAGE_KEY,
+    JSON.stringify({ step, values: persistable, savedAt: new Date().toISOString() }),
+  );
+}
+
+function loadListingDraft(): { step: number; values: Record<string, unknown> } | null {
+  const raw = window.localStorage.getItem(LISTING_DRAFT_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as { step: number; values: Record<string, unknown> };
+    const values = { ...parsed.values };
+    for (const field of LISTING_DRAFT_DATE_FIELDS) {
+      const value = values[field];
+      values[field] = typeof value === "string" ? dayjs(value) : undefined;
+    }
+    return { step: parsed.step, values };
+  } catch {
+    return null;
+  }
+}
+
+function clearListingDraft() {
+  window.localStorage.removeItem(LISTING_DRAFT_STORAGE_KEY);
+}
+
 const STEPS = [
   { key: "product_identity", label: "Product Identity" },
   { key: "lab_report", label: "Lab Report & Chemical Specification" },
@@ -50,34 +92,75 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 function StepStepper({ current, onChange }: { current: number; onChange: (i: number) => void }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-wrap items-center gap-2">
-      {STEPS.map((s, i) => (
-        <button
-          key={s.key}
-          type="button"
-          onClick={() => onChange(i)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-            i === current
-              ? "bg-indigo-50 text-indigo-600"
-              : i < current
-              ? "text-indigo-500"
-              : "text-gray-400"
-          }`}
-        >
-          <span
-            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-              i === current ? "bg-indigo-600 text-white" : i < current ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400"
-            }`}
-          >
-            {i + 1}
-          </span>
-          {s.label}
-        </button>
-      ))}
+    <div className="flex items-center w-full py-4 px-2">
+      {STEPS.map((s, i) => {
+        const isCompleted = i < current;
+        const isActive = i === current;
+
+        return (
+          <div key={s.key} className="flex items-center flex-1 last:flex-none">
+            <button
+              type="button"
+              onClick={() => onChange(i)}
+              className="flex items-center gap-2.5 shrink-0"
+            >
+              <span
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  isActive
+                    ? "border-gray-900 bg-white"
+                    : isCompleted
+                    ? "border-gray-900 bg-gray-900"
+                    : "border-gray-300 bg-white"
+                }`}
+              >
+                {isActive && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-900" />
+                )}
+                {isCompleted && (
+                  <svg
+                    className="w-3 h-3 text-white"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 6l3 3 5-5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+              <span
+                className={`text-sm whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "text-gray-900 font-medium"
+                    : isCompleted
+                    ? "text-gray-600"
+                    : "text-gray-400"
+                }`}
+              >
+                {s.label}
+              </span>
+            </button>
+
+            {i < STEPS.length - 1 && (
+              <div className="flex-1 mx-4">
+                <div
+                  className={`h-px transition-colors ${
+                    i < current ? "bg-gray-400" : "bg-gray-300"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
-
 export default function CreateListingView() {
   const [form] = Form.useForm();
   const [uploading, setUploading] = useState(false);
@@ -127,6 +210,18 @@ export default function CreateListingView() {
       lab_testing_date: l.lab_report?.lab_testing_date ? dayjs(l.lab_report.lab_testing_date) : undefined,
     });
   }, [existingListing, form]);
+
+  useEffect(() => {
+    if (editId) return;
+
+    const draft = loadListingDraft();
+    if (!draft) return;
+
+    form.setFieldsValue(draft.values);
+    setStep(draft.step);
+    showToast("Restored your saved draft. Re-attach any files you'd uploaded.", "success");
+    // Draft is one-shot: once restored, further "Save & Exit" clicks overwrite it.
+  }, [editId, form]);
 
   const toBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -246,6 +341,7 @@ export default function CreateListingView() {
       } else {
         await createListing(payload);
         showToast("Listing created successfully", "success");
+        clearListingDraft();
       }
       form.resetFields();
       location.assign(editId ? `/dashboard/listings/${editId}` : '/dashboard?view=listings');
@@ -570,7 +666,9 @@ export default function CreateListingView() {
                   size="large"
                   block
                   onClick={() => {
-                    showToast("Draft saved", "success");
+                    saveListingDraft(step, form.getFieldsValue(true));
+                    showToast("Draft saved on this device. Files will need to be re-attached when you return.", "success");
+                    location.assign('/dashboard?view=listings');
                   }}
                 >
                   Save &amp; Exit
@@ -581,6 +679,7 @@ export default function CreateListingView() {
                 danger
                 block
                 onClick={() => {
+                  if (!editId) clearListingDraft();
                   form.resetFields();
                   location.assign(editId ? `/dashboard/listings/${editId}` : '/dashboard?view=listings');
                 }}

@@ -1,5 +1,6 @@
 import { Table, Select, Button } from "antd";
 import { EllipsisOutlined } from "@ant-design/icons";
+import { useRouter } from "next/navigation";
 import { ActiveOrderItem } from "../../dashboard/api";
 import type { ColumnsType } from "antd/es/table";
 import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
@@ -50,8 +51,10 @@ export default function ActiveOrdersTable({
   shipmentStatus = "all",
   onShipmentStatusChange,
 }: Props) {
-  const visibleItems =
-    paymentStatus === "all" ? items : items.filter((item) => getPaymentStatus(item) === paymentStatus);
+  const router = useRouter();
+  // Payment status is now filtered server-side (see OrderFilter.filter_payment_status
+  // on the backend), so `items` already reflects the selected filter.
+  const visibleItems = items;
 
   const columns: ColumnsType<ActiveOrderItem> = [
     {
@@ -113,8 +116,13 @@ export default function ActiveOrdersTable({
     {
       title: "Action",
       key: "action",
-      render: () => (
-        <Button type="text" icon={<EllipsisOutlined className="text-gray-400 text-lg" />} />
+      render: (_, record) => (
+        <Button
+          type="text"
+          aria-label="View order details"
+          icon={<EllipsisOutlined className="text-gray-400 text-lg" />}
+          onClick={() => router.push(`/dashboard/orders/${record.id}`)}
+        />
       ),
     },
   ];
@@ -218,7 +226,13 @@ export default function ActiveOrdersTable({
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <Button type="default" size="small" icon={<EllipsisOutlined />} />
+                        <Button
+                          type="default"
+                          size="small"
+                          aria-label="View order details"
+                          icon={<EllipsisOutlined />}
+                          onClick={() => router.push(`/dashboard/orders/${item.id}`)}
+                        />
                     </div>
                 </div>
             ))

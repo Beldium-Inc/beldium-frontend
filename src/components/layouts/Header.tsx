@@ -70,14 +70,15 @@ export default function Header() {
 
       {/* Right Section: Notifications + Profile */}
       <div className="flex items-center gap-3 lg:gap-6">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Button type="text" shape="circle" icon={<BellOutlined className="text-gray-600 text-lg" />} className="bg-gray-50" />
           <Button type="text" shape="circle" icon={<MessageOutlined className="text-gray-600 text-lg" />} className="bg-gray-50" />
-        </div>
+        </div> */}
 
         <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
 
-        <div className="flex items-center gap-3">
+        <Link href="/dashboard/settings" className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
           {isLoading ? (
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
@@ -98,10 +99,11 @@ export default function Header() {
                 icon={!user?.profile_picture && <UserOutlined />}
                 className="border border-gray-200"
               />
-              <DownOutlined className="text-gray-400 text-xs hidden sm:inline-block" />
+              {/* <DownOutlined className="text-gray-400 text-xs hidden sm:inline-block" /> */}
             </>
           )}
         </div>
+        </Link>
       </div>
     </header>
   );

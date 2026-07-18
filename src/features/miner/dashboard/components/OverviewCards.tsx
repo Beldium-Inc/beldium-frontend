@@ -134,9 +134,13 @@ export default function OverviewCards({
           </div>
           <p className="text-xs text-gray-400">Currently in fulfillment or transit.</p>
 
-          <button className="absolute bottom-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors">
+          <Link
+            href="/dashboard?view=orders&tab=active_orders"
+            aria-label="View active orders"
+            className="absolute bottom-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors"
+          >
             <ArrowRightOutlined className="-rotate-45" />
-          </button>
+          </Link>
         </div>
 
         {/* Pending Actions */}
@@ -151,11 +155,17 @@ export default function OverviewCards({
           <div className="mb-1">
             <span className="text-4xl font-semibold text-gray-900">{pendingCount}</span>
           </div>
-          <p className="text-xs text-gray-400">All systems clear</p>
+          <p className="text-xs text-gray-400">
+            {pendingCount > 0 ? "Orders awaiting your next step." : "All systems clear"}
+          </p>
 
-          <button className="absolute bottom-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors">
+          <Link
+            href="/dashboard?view=orders&tab=active_orders"
+            aria-label="View pending actions"
+            className="absolute bottom-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors"
+          >
             <ArrowRightOutlined className="-rotate-45" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

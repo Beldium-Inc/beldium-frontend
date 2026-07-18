@@ -10,6 +10,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
 import { useMemo, useState } from "react";
 
+import { PlusOutlined } from "@ant-design/icons";
+
+
+
 export default function ListingView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -78,17 +82,19 @@ export default function ListingView() {
   return (
     <div className="max-w-8xl mx-auto space-y-6 pb-24 px-4 md:px-6">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Listings</h1>
-          <p className="text-sm md:text-base text-gray-500">Manage your mineral listings and availability</p>
-        </div>
-        <CreateListingButton
-          ariaLabel="Create new mineral listing"
-          onClick={() => location.assign('/dashboard?view=create_listing')}
-        >
-          Create New Mineral Listing
-        </CreateListingButton>
-      </div>
+  <div>
+    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Listings</h1>
+    <p className="text-sm md:text-base text-gray-500">Manage your mineral listings and availability</p>
+  </div>
+  <button
+    aria-label="Create new mineral listing"
+    onClick={() => location.assign('/dashboard?view=create_listing')}
+    className="flex items-center gap-2 bg-[#14244a] !text-white px-5 py-4 rounded-lg text-sm font-medium hover:bg-[#1c3363] transition-colors"
+  >
+    <PlusOutlined />
+    Create new mineral listing
+  </button>
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <Card className="rounded-xl border border-gray-200 shadow-sm">

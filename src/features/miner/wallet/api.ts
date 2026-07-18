@@ -36,6 +36,7 @@ export async function getTransactions(params: {
   payment_method?: string;
   date_from?: string;
   date_to?: string;
+  search?: string;
 }) {
   const res = await authApi.get<TransactionsResponse>("/transactions/", {
     params: {
@@ -45,6 +46,7 @@ export async function getTransactions(params: {
       payment_method: params.payment_method || undefined,
       date_from: params.date_from || undefined,
       date_to: params.date_to || undefined,
+      search: params.search || undefined,
     },
   });
   return res.data;

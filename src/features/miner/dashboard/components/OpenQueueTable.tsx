@@ -1,4 +1,6 @@
 import { Table, Tag, Skeleton } from "antd";
+import Link from "next/link";
+import dayjs from "dayjs";
 import { OpenQueueItem } from "../api";
 
 type Props = {
@@ -26,8 +28,10 @@ export default function OpenQueueTable({ items, loading }: Props) {
     mineral: i.mineral_type,
     quantity: i.quantity,
     status: i.status,
-    date: "--",
+    date: i.created_at ? dayjs(i.created_at).format("D MMM, YYYY") : "--",
   }));
+
+  const viewHref = "/dashboard?view=orders&tab=new_requests";
 
   return (
     <>
@@ -59,7 +63,9 @@ export default function OpenQueueTable({ items, loading }: Props) {
               
               <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
                 <div className="text-xs text-gray-400">{item.date}</div>
-                <button className="text-gray-400">...</button>
+                <Link href={viewHref} className="text-gray-500 hover:text-gray-800 text-xs font-medium">
+                  View
+                </Link>
               </div>
             </div>
           ))
@@ -82,7 +88,14 @@ export default function OpenQueueTable({ items, loading }: Props) {
               render: (v: string) => <Tag color={statusColor(v)} className="rounded-full">{v}</Tag>,
             },
             { title: "Date", dataIndex: "date" },
-            { title: "Action", render: () => <button className="text-gray-400">...</button> },
+            {
+              title: "Action",
+              render: () => (
+                <Link href={viewHref} className="text-gray-500 hover:text-gray-800 text-xs font-medium">
+                  View
+                </Link>
+              ),
+            },
           ]}
         />
       </div>

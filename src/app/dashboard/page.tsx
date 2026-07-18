@@ -48,7 +48,12 @@ export default function MinerDashboardPage() {
   const active = overview?.active_orders;
   const pending = overview?.pending_actions;
   const items = queueQ.data?.data?.results || [];
-  const complianceBannerHref = "/onboarding?step=4";
+  // Compliance audit status is reviewed by a compliance officer after documents
+  // are uploaded — not something re-visiting the onboarding wizard can "finish"
+  // (and the wizard redirects straight back to /dashboard once onboarding is
+  // already complete, regardless of any ?step= param). Send miners to the
+  // actual Compliance page where they can upload/track required documents.
+  const complianceBannerHref = "/dashboard/compliance";
 
   return (
     <div className="space-y-6 pb-20 md:pb-0 px-4 md:px-6 max-w-full  overflow-x-hidden">
@@ -72,7 +77,7 @@ export default function MinerDashboardPage() {
         activeCount={active?.count || 0}
         activeChange={active?.percentage_change || 0}
         pendingCount={pending?.count || 0}
-        showComplianceBanner={false}
+        showComplianceBanner={Boolean(account) && account?.compliance_audit !== "approved"}
         complianceBannerHref={complianceBannerHref}
         loading={overviewQ.isLoading}
       />
@@ -141,7 +146,7 @@ export default function MinerDashboardPage() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div className="text-xl md:text-2xl font-semibold">Open Queue</div>
-          <Link href="/dashboard/orders" className="text-blue-600">View all</Link>
+          <Link href="/dashboard?view=orders" className="text-blue-600">View all</Link>
         </div>
         <OpenQueueTable items={items} loading={queueQ.isLoading} />
         <div className="text-xs text-gray-500 mt-3">

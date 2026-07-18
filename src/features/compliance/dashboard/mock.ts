@@ -24,6 +24,51 @@ export type DashboardMetric = {
   progress?: number;
 };
 
+export type MinerDocumentStatus = "verified" | "issues" | "rejected" | "unreviewed";
+
+export type MinerDocumentDetail = {
+  id: string;
+  name: string;
+  fileName?: string;
+  issuedDate: string;
+  status: MinerDocumentStatus;
+  verifiedBy?: string;
+  verifiedAt?: string;
+};
+
+export type MinerEsgStatus = "approved" | "in_progress" | "not_initiated";
+
+export type MinerEsgItemDetail = {
+  key: string;
+  title: string;
+  status: MinerEsgStatus;
+  notes: string;
+  updatedBy: string;
+  updatedAt: string;
+};
+
+export type MinerActivityLogEntry = {
+  id: string;
+  message: string;
+  by: string;
+  at: string;
+};
+
+export type MinerDetailInfo = {
+  logoInitials: string;
+  logoColor: string;
+  monthlyOutputRange: string;
+  operationType: string;
+  minerStatus: "Under review" | "Verified";
+  licenseType: string;
+  licenseNumber: string;
+  issuingAuthority: string;
+  licenseExpiry: string;
+  documents: MinerDocumentDetail[];
+  esgItems: MinerEsgItemDetail[];
+  activityLog: MinerActivityLogEntry[];
+};
+
 export type AdminPipelineRow = {
   minerId: string;
   company: string;
@@ -33,6 +78,7 @@ export type AdminPipelineRow = {
   complianceScore: number;
   reviewer: string;
   lastActionDate: string;
+  detail: MinerDetailInfo;
 };
 
 export type ComplianceAlert = {
@@ -223,6 +269,68 @@ export const ADMIN_METRICS: DashboardMetric[] = [
   },
 ];
 
+function buildDocuments(
+  status: MinerDocumentStatus,
+  verifiedBy: string,
+): MinerDocumentDetail[] {
+  return [
+    {
+      id: "doc-1",
+      name: "Mining Licensing Certificate",
+      issuedDate: "12 Mar 2024",
+      status: "unreviewed",
+    },
+    {
+      id: "doc-2",
+      name: "Mining Licensing Certificate",
+      fileName: "mining_licensing_certificate.pdf",
+      issuedDate: "12 Mar 2024",
+      status: status === "verified" ? "issues" : status,
+    },
+    {
+      id: "doc-3",
+      name: "Mining Licensing Certificate",
+      fileName: "mining_licensing_certificate.pdf",
+      issuedDate: "12 Mar 2024",
+      status,
+      verifiedBy: status === "verified" ? verifiedBy : undefined,
+      verifiedAt: status === "verified" ? "14 Jan, 2026 12:30 pm" : undefined,
+    },
+  ];
+}
+
+function buildEsgItems(status: MinerEsgStatus, updatedBy: string): MinerEsgItemDetail[] {
+  return [
+    { key: "eia-status", title: "EIA Status", status, notes: "", updatedBy, updatedAt: "15 Jan 2026" },
+    {
+      key: "environmental-consultant",
+      title: "Environmental Consultant (if any)",
+      status,
+      notes: "",
+      updatedBy,
+      updatedAt: "15 Jan 2026",
+    },
+    { key: "safety-measures", title: "Safety Measures", status, notes: "", updatedBy, updatedAt: "15 Jan 2026" },
+    {
+      key: "community-engagement",
+      title: "Community Engagement",
+      status,
+      notes: "",
+      updatedBy,
+      updatedAt: "15 Jan 2026",
+    },
+  ];
+}
+
+function buildActivityLog(reviewer: string): MinerActivityLogEntry[] {
+  return [
+    { id: "log-1", message: "EIA status updated: In Progress", by: "I. Brown", at: "Jan 24, 2025 1:39 pm" },
+    { id: "log-2", message: "License document verified", by: reviewer === "-" ? "Unassigned" : reviewer, at: "Jan 24, 2025 1:39 pm" },
+    { id: "log-3", message: "EIA status updated: In Progress", by: "I. Brown", at: "Jan 24, 2025 1:39 pm" },
+    { id: "log-4", message: "License document verified", by: reviewer === "-" ? "Unassigned" : reviewer, at: "Jan 24, 2025 1:39 pm" },
+  ];
+}
+
 export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
   {
     minerId: "BLD-01120",
@@ -233,6 +341,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 96,
     reviewer: "A. Bello",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "in",
+      logoColor: "#ee2a5c",
+      monthlyOutputRange: "100 - 200 tons",
+      operationType: "Open Pit",
+      minerStatus: "Under review",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/2345/2026",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Valid till 08/2028",
+      documents: buildDocuments("verified", "A. Bello"),
+      esgItems: buildEsgItems("approved", "I. Brown"),
+      activityLog: buildActivityLog("A. Bello"),
+    },
   },
   {
     minerId: "BLD-00126",
@@ -243,6 +365,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 68,
     reviewer: "K. Mohammed",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "ZG",
+      logoColor: "#f3a000",
+      monthlyOutputRange: "50 - 100 tons",
+      operationType: "Underground",
+      minerStatus: "Under review",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/4471/2025",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Valid till 03/2027",
+      documents: buildDocuments("issues", "K. Mohammed"),
+      esgItems: buildEsgItems("in_progress", "I. Brown"),
+      activityLog: buildActivityLog("K. Mohammed"),
+    },
   },
   {
     minerId: "BLD-00127",
@@ -253,6 +389,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 32,
     reviewer: "-",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "GR",
+      logoColor: "#7b8392",
+      monthlyOutputRange: "Not provided",
+      operationType: "Not provided",
+      minerStatus: "Under review",
+      licenseType: "Not provided",
+      licenseNumber: "Not provided",
+      issuingAuthority: "Not provided",
+      licenseExpiry: "Not provided",
+      documents: buildDocuments("rejected", "Unassigned"),
+      esgItems: buildEsgItems("not_initiated", "Unassigned"),
+      activityLog: buildActivityLog("-"),
+    },
   },
   {
     minerId: "BLD-00128",
@@ -263,6 +413,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 67,
     reviewer: "S. Okafor",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "KO",
+      logoColor: "#1d5de2",
+      monthlyOutputRange: "80 - 150 tons",
+      operationType: "Open Pit",
+      minerStatus: "Under review",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/8820/2024",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Valid till 02/2026",
+      documents: buildDocuments("issues", "S. Okafor"),
+      esgItems: buildEsgItems("in_progress", "I. Brown"),
+      activityLog: buildActivityLog("S. Okafor"),
+    },
   },
   {
     minerId: "BLD-00124",
@@ -273,6 +437,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 94,
     reviewer: "K. Mohammed",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "NR",
+      logoColor: "#1ea43b",
+      monthlyOutputRange: "150 - 250 tons",
+      operationType: "Open Pit",
+      minerStatus: "Verified",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/1190/2023",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Valid till 11/2028",
+      documents: buildDocuments("verified", "K. Mohammed"),
+      esgItems: buildEsgItems("approved", "I. Brown"),
+      activityLog: buildActivityLog("K. Mohammed"),
+    },
   },
   {
     minerId: "BLD-00136",
@@ -283,6 +461,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 66,
     reviewer: "K. Mohammed",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "in",
+      logoColor: "#ee2a5c",
+      monthlyOutputRange: "Not provided",
+      operationType: "Open Pit",
+      minerStatus: "Under review",
+      licenseType: "Not provided",
+      licenseNumber: "Not provided",
+      issuingAuthority: "Not provided",
+      licenseExpiry: "Not provided",
+      documents: buildDocuments("issues", "K. Mohammed"),
+      esgItems: buildEsgItems("in_progress", "I. Brown"),
+      activityLog: buildActivityLog("K. Mohammed"),
+    },
   },
   {
     minerId: "BLD-00138",
@@ -293,6 +485,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 30,
     reviewer: "-",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "NR",
+      logoColor: "#1ea43b",
+      monthlyOutputRange: "60 - 90 tons",
+      operationType: "Underground",
+      minerStatus: "Under review",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/2207/2021",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Expired 09/2025",
+      documents: buildDocuments("rejected", "Unassigned"),
+      esgItems: buildEsgItems("not_initiated", "Unassigned"),
+      activityLog: buildActivityLog("-"),
+    },
   },
   {
     minerId: "BLD-00140",
@@ -303,6 +509,20 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
     complianceScore: 31,
     reviewer: "-",
     lastActionDate: "14 Jan 2026",
+    detail: {
+      logoInitials: "in",
+      logoColor: "#ee2a5c",
+      monthlyOutputRange: "40 - 70 tons",
+      operationType: "Open Pit",
+      minerStatus: "Under review",
+      licenseType: "Small Scale Mining Leases",
+      licenseNumber: "ML/NGR/3391/2020",
+      issuingAuthority: "Nigeria Mining Cadastre Office (NMCO)",
+      licenseExpiry: "Expired 06/2025",
+      documents: buildDocuments("rejected", "Unassigned"),
+      esgItems: buildEsgItems("in_progress", "Unassigned"),
+      activityLog: buildActivityLog("-"),
+    },
   },
 ];
 

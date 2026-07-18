@@ -8,7 +8,7 @@ import { AppRoutes } from "@/src/constants/routes";
 import { UserOutlined, CustomerServiceOutlined, LogoutOutlined } from "@ant-design/icons";
 import { normalizePath } from "@/src/utils";
 import Image from "next/image";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 
 export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const pathname = usePathname();
@@ -135,12 +135,15 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
             <p className="text-sm mb-3 font-medium">
               Need assistance with your mining permits?
             </p>
-            <Button 
-              block 
-              className="bg-white text-teal-800 border-none font-medium h-9 hover:bg-gray-100! hover:text-teal-900!"
-            >
-              Contact Expert
-            </Button>
+            <Tooltip title="Support requests aren't wired to a backend endpoint yet">
+              <Button
+                block
+                disabled
+                className="bg-white text-teal-800 border-none font-medium h-9 hover:bg-gray-100! hover:text-teal-900!"
+              >
+                Contact Expert
+              </Button>
+            </Tooltip>
           </div>
           {/* Background decoration circles */}
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-white/10" />

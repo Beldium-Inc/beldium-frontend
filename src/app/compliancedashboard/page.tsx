@@ -45,6 +45,10 @@ import {
   UserOutlined,
   UsergroupAddOutlined,
   WarningFilled,
+  UploadOutlined,
+  FlagOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import {
   type ComplianceAlert,
@@ -60,6 +64,10 @@ import {
   type StatusBadge,
   type TrendDirection,
   type AdminPipelineRow,
+  type MinerDocumentDetail,
+  type MinerDocumentStatus,
+  type MinerEsgItemDetail,
+  type MinerEsgStatus,
   type PartnerCategory,
   type PartnerAvailability,
   type PartnerDirectoryRow,
@@ -110,6 +118,10 @@ import ComplianceTeamsRolesView from "@/src/features/compliance/dashboard/compon
 import ComplianceVerificationRulesThresholdsView from "@/src/features/compliance/dashboard/components/ComplianceVerificationRulesThresholdsView";
 import { showToast } from "@/src/store/toast.store";
 
+import { RegulatoryAlertsView } from "@/src/features/compliance/dashboard/components/RegulatoryAlertsView";
+import { ShareAltOutlined, PrinterOutlined } from "@ant-design/icons";
+
+
 type DashboardPersona = "admin" | "compliance";
 type ComplianceView =
   | "dashboard"
@@ -128,7 +140,8 @@ type ComplianceView =
   | "compliance-profile"
   | "miner-pipeline"
   | "partner-directory"
-  | "regulatory-readiness";
+  | "regulatory-readiness"
+  | "regulatory-alerts";
 
 type NavItem = {
   label: string;
@@ -161,6 +174,11 @@ function getAdminNavItems(view: ComplianceView): NavItem[] {
       active: view === "dashboard",
     },
     {
+      label: "Open Task Pool",
+      icon: <FolderOpenOutlined />,
+      href: "/compliancedashboard?persona=compliance&view=reviews",
+    },
+    {
       label: "Miner Pipeline",
       icon: <UsergroupAddOutlined />,
       href: "/compliancedashboard?persona=admin&view=miner-pipeline",
@@ -173,16 +191,16 @@ function getAdminNavItems(view: ComplianceView): NavItem[] {
       active: view === "partner-directory",
     },
     {
-      label: "Regulatory readiness",
+      label: "Regulatory Alerts",
       icon: <SafetyCertificateOutlined />,
-      href: "/compliancedashboard?persona=admin&view=regulatory-readiness",
-      active: view === "regulatory-readiness",
+      href: "/compliancedashboard?persona=admin&view=regulatory-alerts",
+      active: view === "regulatory-alerts",
     },
-    {
-      label: "Notifications",
-      icon: <BellOutlined />,
-      href: "/compliancedashboard?persona=admin&view=notifications",
-      active: view === "notifications",
+        {
+      label: "Reviews",
+      icon: <FileSearchOutlined />,
+      href: "/compliancedashboard?persona=compliance&view=reviews",
+      active: view === "reviews",
     },
   ];
 }
@@ -213,9 +231,9 @@ function getComplianceNavItems(view: ComplianceView): NavItem[] {
     {
       label: "Regulatory Alerts",
       icon: <BellOutlined />,
-      href: "/compliancedashboard?persona=compliance&view=notifications",
-      active: view === "notifications",
-      showDot: view !== "notifications",
+      href: "/compliancedashboard?persona=compliance&view=regulatory-alerts",
+      active: view === "regulatory-alerts",
+      showDot: view !== "regulatory-alerts",
     },
   ];
 }
@@ -1659,13 +1677,28 @@ function DashboardTopBar({
             <SettingOutlined />
           </Link>
 
-          <button
-            type="button"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[22px] text-[#2a3142] transition-colors hover:bg-white"
-          >
-            <BellOutlined />
-            <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-[#ff4726]" />
-          </button>
+
+<Link
+  href={`/compliancedashboard?persona=${persona}&view=notifications`}
+  onClick={() => {
+    onMenuNavigate?.();
+    setIsProfileMenuOpen(false);
+  }}
+  aria-label="Open Notifications"
+>
+  <button
+    type="button"
+    className={`relative flex h-10 w-10 items-center justify-center rounded-full border text-[22px] transition-colors
+      ${complianceView === "notifications"
+        ? "border-[#C8DDFECC] bg-[#fff1ee] text-[#C8DDFECC] shadow-[0_0_0_4px_rgba(255,71,38,0.15)]"
+        : "border-[#eceef4] bg-[#f9fafc] text-[#2a3142] hover:bg-white"
+      }`}
+  >
+    <BellOutlined />
+    <span className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-[#ff4726]" />
+  </button>
+</Link>
+
 
           <div className="hidden h-12 w-px bg-[#e4e7ee] lg:block" />
 
@@ -1811,6 +1844,7 @@ function PageHero({
   const isComplianceReviewsView =
     persona === "compliance" && complianceView === "reviews";
   const isComplianceNotificationsView = complianceView === "notifications";
+  const isRegulatoryAlertsView = complianceView === "regulatory-alerts";
   const isAdminMinerPipelineView =
     persona === "admin" && complianceView === "miner-pipeline";
   const isAdminPartnerDirectoryView =
@@ -1820,6 +1854,7 @@ function PageHero({
   const showBackAction =
     isComplianceReviewsView ||
     isComplianceNotificationsView ||
+    isRegulatoryAlertsView ||
     isAdminMinerPipelineView ||
     isAdminPartnerDirectoryView ||
     isAdminRegulatoryReadinessView;
@@ -1827,37 +1862,39 @@ function PageHero({
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div className="space-y-4">
-        <WorkspaceSwitch persona={persona} />
+        {/* <WorkspaceSwitch persona={persona} /> */}
         <div>
           <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
             {isComplianceReviewsView
               ? "Reviews"
               : isComplianceNotificationsView
-                ? persona === "admin"
-                  ? "Notifications"
-                  : "Notifications"
-                : isAdminMinerPipelineView
-                  ? "Miner Pipeline"
-                  : isAdminPartnerDirectoryView
-                    ? "Partner Directory"
-                    : isAdminRegulatoryReadinessView
-                      ? "Regulatory Readiness"
-                      : "Dashboard"}
+                ? "Notifications"
+                : isRegulatoryAlertsView
+                  ? "Regulatory Alerts"
+                  : isAdminMinerPipelineView
+                    ? "Miner Pipeline"
+                    : isAdminPartnerDirectoryView
+                      ? "Partner Directory"
+                      : isAdminRegulatoryReadinessView
+                        ? "Regulatory Readiness"
+                        : "Dashboard"}
           </h1>
           <p className="mt-2 max-w-[720px] text-[15px] text-[#7a8291]">
             {isComplianceReviewsView
               ? "Review every compliance task from the full list without losing the workspace context."
               : isComplianceNotificationsView
                 ? "Active compliance signals requiring review or action."
-                : isAdminMinerPipelineView
-                  ? "Review onboarding readiness, document status, and reviewer workload at a glance."
-                  : isAdminPartnerDirectoryView
-                    ? "Find and assign accredited environmental, legal, ESG, and government liaison partners."
-                    : isAdminRegulatoryReadinessView
-                      ? "Track, retain, and export compliance activity for legal and regulatory accountability."
-                      : persona === "admin"
-                      ? "Track miner onboarding, reviewer assignments, and regulatory readiness from a single command center."
-                      : "Stay on top of open claims, active reviews, and compliance quality without leaving the queue."}
+                : isRegulatoryAlertsView
+                  ? "Monitor regulatory risks, compliance breaches, expiring obligations, and escalated cases across all registered mining operations."
+                  : isAdminMinerPipelineView
+                    ? "Review onboarding readiness, document status, and reviewer workload at a glance."
+                    : isAdminPartnerDirectoryView
+                      ? "Find and assign accredited environmental, legal, ESG, and government liaison partners."
+                      : isAdminRegulatoryReadinessView
+                        ? "Track, retain, and export compliance activity for legal and regulatory accountability."
+                        : persona === "admin"
+                        ? "Track miner onboarding, reviewer assignments, and regulatory readiness from a single command center."
+                        : "Stay on top of open claims, active reviews, and compliance quality without leaving the queue."}
           </p>
         </div>
       </div>
@@ -5068,7 +5105,13 @@ function AdminPipelineSection({
   );
 }
 
-function AdminMinerPipelineView({ rows }: { rows: AdminPipelineRow[] }) {
+function AdminMinerPipelineView({
+  rows,
+  onSelectMiner,
+}: {
+  rows: AdminPipelineRow[];
+  onSelectMiner?: (row: AdminPipelineRow) => void;
+}) {
   return (
     <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
       <div className="overflow-hidden rounded-[24px] border border-[#e5e9f1]">
@@ -5090,8 +5133,10 @@ function AdminMinerPipelineView({ rows }: { rows: AdminPipelineRow[] }) {
               {rows.map((row, index) => (
                 <tr
                   key={`${row.minerId}-${index}`}
+                  onClick={() => onSelectMiner?.(row)}
                   className={classNames(
                     "text-[15px] text-[#4b5260]",
+                    onSelectMiner ? "cursor-pointer hover:bg-[#f4f7fc]" : "",
                     index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
                   )}
                 >
@@ -5124,6 +5169,332 @@ function AdminMinerPipelineView({ rows }: { rows: AdminPipelineRow[] }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function MinerDocumentRadioRow({
+  document,
+  onChange,
+}: {
+  document: MinerDocumentDetail;
+  onChange: (status: MinerDocumentStatus) => void;
+}) {
+  const options: { key: MinerDocumentStatus; label: string }[] = [
+    { key: "verified", label: "Verified" },
+    { key: "issues", label: "Issues found" },
+    { key: "rejected", label: "Rejected" },
+  ];
+
+  return (
+    <div className="rounded-[18px] border border-[#e8ecf4] bg-white p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 text-[20px] text-[#1ea43b]">
+            {document.fileName ? <FilePdfOutlined /> : <FileTextOutlined />}
+          </span>
+          <div>
+            <div className="text-[15px] font-medium text-[#2a2f39]">{document.name}</div>
+            {document.fileName ? (
+              <div className="mt-1 text-[13px] text-[#7b8392]">{document.fileName}</div>
+            ) : null}
+            <div className="mt-1 text-[13px] text-[#8a92a1]">Issued: {document.issuedDate}</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={!document.fileName}
+          onClick={() => showToast("Document preview isn't connected to the backend yet.", "error")}
+          className="inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[#dce3ef] px-3 text-[13px] font-medium text-[#5d6675] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          View
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-[14px] text-[#5d6675]">
+        <span>Status:</span>
+        {options.map((option) => (
+          <label key={option.key} className="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="radio"
+              name={`doc-status-${document.id}`}
+              checked={document.status === option.key}
+              onChange={() => onChange(option.key)}
+              className="h-4 w-4 accent-[#14244a]"
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+      {document.status === "verified" && document.verifiedBy ? (
+        <div className="mt-3 text-[12px] text-[#8a92a1]">
+          Verified by: {document.verifiedBy} on {document.verifiedAt}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MinerEsgReviewRow({
+  item,
+  onChangeStatus,
+  onChangeNotes,
+}: {
+  item: MinerEsgItemDetail;
+  onChangeStatus: (status: MinerEsgStatus) => void;
+  onChangeNotes: (notes: string) => void;
+}) {
+  const options: { key: MinerEsgStatus; label: string }[] = [
+    { key: "approved", label: "Approved" },
+    { key: "in_progress", label: "In progress" },
+    { key: "not_initiated", label: "Not initiated" },
+  ];
+
+  return (
+    <div className="rounded-[20px] border border-[#e8ecf4] bg-[#fafbfd] p-5">
+      <div className="text-[16px] font-medium text-[#2a2f39]">{item.title}</div>
+      <div className="mt-3 text-[13px] font-medium text-[#5d6675]">
+        Status:
+        <div className="mt-2 flex flex-wrap gap-3 text-[14px] text-[#5d6675]">
+          {options.map((option) => (
+            <label
+              key={option.key}
+              className={classNames(
+                "cursor-pointer rounded-full border px-3 py-2 transition-colors",
+                item.status === option.key
+                  ? "border-[#14244a] bg-[#14244a] text-white"
+                  : "border-[#dce3ef] bg-white",
+              )}
+            >
+              <input
+                type="radio"
+                name={`esg-status-${item.key}`}
+                checked={item.status === option.key}
+                onChange={() => onChangeStatus(option.key)}
+                className="mr-2 hidden"
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 text-[13px] font-medium text-[#5d6675]">Notes</div>
+      <textarea
+        value={item.notes}
+        onChange={(event) => onChangeNotes(event.target.value)}
+        placeholder="Type your message here"
+        className="mt-2 h-20 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+      />
+      <div className="mt-3 text-[12px] text-[#8a92a1]">
+        Updated by: {item.updatedBy} on {item.updatedAt}
+      </div>
+    </div>
+  );
+}
+
+function AdminMinerDetailView({
+  row,
+  onBack,
+  onEscalate,
+  onRequestDocuments,
+}: {
+  row: AdminPipelineRow;
+  onBack: () => void;
+  onEscalate: () => void;
+  onRequestDocuments: () => void;
+}) {
+  const [minerStatus, setMinerStatus] = useState(row.detail.minerStatus);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [documents, setDocuments] = useState(row.detail.documents);
+  const [esgItems, setEsgItems] = useState(row.detail.esgItems);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 text-[14px] text-[#7b8392]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-medium text-[#4e5665] hover:text-[#14244a]"
+        >
+          Dashboard
+        </button>
+        <ArrowRightOutlined className="text-[12px]" />
+        <span className="font-semibold text-[#2a2f39]">Miner Detail</span>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_300px]">
+        <div className="space-y-5">
+          <div className="rounded-[24px] border border-[#e8ecf4] bg-white p-6">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full text-[20px] font-semibold text-white"
+              style={{ backgroundColor: row.detail.logoColor }}
+            >
+              {row.detail.logoInitials}
+            </div>
+            <div className="mt-4 text-[20px] font-semibold text-[#2a2f39]">{row.company}</div>
+            <div className="text-[14px] text-[#8a92a1]">Miner&apos;s ID: {row.minerId}</div>
+
+            <div className="mt-4 flex items-center justify-between text-[14px] text-[#5d6675]">
+              <span className="inline-flex items-center gap-1.5 text-[#8a92a1]">
+                <EnvironmentOutlined /> Location
+              </span>
+              <span className="font-medium text-[#2a2f39]">{row.location}</span>
+            </div>
+
+            <div className="mt-4 flex h-[140px] items-center justify-center rounded-[16px] bg-[#eef1f6] text-[#8a92a1]">
+              <EnvironmentOutlined className="text-[28px]" />
+            </div>
+
+            <div className="mt-4 space-y-3 text-[14px]">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-[#8a92a1]">Monthly output range</span>
+                <span className="font-medium text-[#2a2f39]">{row.detail.monthlyOutputRange}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-[#8a92a1]">Operation type</span>
+                <span className="font-medium text-[#2a2f39]">{row.detail.operationType}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-[#8a92a1]">Miner status</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setStatusMenuOpen((open) => !open)}
+                    className="inline-flex items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-3 py-1.5 text-[13px] font-medium text-[#2a2f39]"
+                  >
+                    {minerStatus}
+                    <DownOutlined className="text-[10px]" />
+                  </button>
+                  {statusMenuOpen ? (
+                    <div className="absolute right-0 z-10 mt-2 w-40 overflow-hidden rounded-[12px] border border-[#e8ecf4] bg-white shadow-[0_18px_36px_-24px_rgba(16,30,61,0.4)]">
+                      {(["Under review", "Verified"] as const).map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => {
+                            setMinerStatus(option);
+                            setStatusMenuOpen(false);
+                          }}
+                          className={classNames(
+                            "block w-full px-4 py-2.5 text-left text-[13px]",
+                            option === minerStatus
+                              ? "bg-[#f4f7fc] font-medium text-[#14244a]"
+                              : "text-[#5d6675] hover:bg-[#fafbfd]",
+                          )}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <section className="rounded-[24px] border border-[#e8ecf4] bg-white p-6">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#eef2fb] px-4 py-2 text-[13px] font-medium text-[#1d5de2]">
+              <IdcardOutlined /> Licensing &amp; Regulatory Status
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ReviewInfoTile icon={<FileTextOutlined />} label="License type" value={row.detail.licenseType} />
+              <ReviewInfoTile icon={<IdcardOutlined />} label="License number" value={row.detail.licenseNumber} />
+              <ReviewInfoTile icon={<SafetyCertificateOutlined />} label="Issuing authority" value={row.detail.issuingAuthority} />
+              <ReviewInfoTile icon={<CalendarOutlined />} label="Expiry/Validity" value={row.detail.licenseExpiry} />
+            </div>
+          </section>
+
+          <section className="rounded-[24px] border border-[#e8ecf4] bg-white p-6">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#eef2fb] px-4 py-2 text-[13px] font-medium text-[#1d5de2]">
+              <FolderOpenOutlined /> Uploaded Documents
+            </div>
+            <div className="space-y-3">
+              {documents.map((document) => (
+                <MinerDocumentRadioRow
+                  key={document.id}
+                  document={document}
+                  onChange={(status) =>
+                    setDocuments((prev) =>
+                      prev.map((item) => (item.id === document.id ? { ...item, status } : item)),
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[24px] border border-[#e8ecf4] bg-white p-6">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#e9f9ee] px-4 py-2 text-[13px] font-medium text-[#1ea43b]">
+              <SafetyOutlined /> Environmental &amp; ESG Review
+            </div>
+            <div className="space-y-4">
+              {esgItems.map((item) => (
+                <MinerEsgReviewRow
+                  key={item.key}
+                  item={item}
+                  onChangeStatus={(status) =>
+                    setEsgItems((prev) =>
+                      prev.map((entry) => (entry.key === item.key ? { ...entry, status } : entry)),
+                    )
+                  }
+                  onChangeNotes={(notes) =>
+                    setEsgItems((prev) =>
+                      prev.map((entry) => (entry.key === item.key ? { ...entry, notes } : entry)),
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={onRequestDocuments}
+            style={primaryActionStyle}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-4 text-[14px] font-semibold text-white"
+          >
+            Request Additional Documents
+          </button>
+          <button
+            type="button"
+            onClick={() => showToast("Scheduling isn't connected to the backend yet.", "error")}
+            style={{ color: "#2a2f39" }}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[#dce3ef] bg-white px-4 text-[14px] font-medium text-[#2a2f39]"
+          >
+            Schedule Verification Call
+          </button>
+          <button
+            type="button"
+            onClick={onEscalate}
+            style={{ color: "#ef2f32" }}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[#f5c2c2] bg-white px-4 text-[14px] font-semibold text-[#ef2f32]"
+          >
+            <FlagOutlined /> Escalate (Red flag)
+          </button>
+
+          <div className="!mt-6 rounded-[24px] border border-[#e8ecf4] bg-white p-5">
+            <div className="mb-4 inline-flex items-center gap-2 text-[14px] font-semibold text-[#2a2f39]">
+              <HistoryOutlined /> Activity Log
+            </div>
+            <div className="space-y-4">
+              {row.detail.activityLog.map((entry) => (
+                <div key={entry.id} className="flex items-start gap-2 text-[13px]">
+                  <EditOutlined className="mt-0.5 text-[#8a92a1]" />
+                  <div>
+                    <div className="text-[#2a2f39]">
+                      {entry.message} By {entry.by}
+                    </div>
+                    <div className="mt-0.5 text-[#a0a7b5]">{entry.at}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -5726,6 +6097,7 @@ function ComplianceReviewsSection({
   );
 }
 
+
 function ComplianceActiveCasesSection({
   cards,
   onOpenTask,
@@ -5887,7 +6259,260 @@ function ComplianceReviewsView({
   rows: AdminReviewRow[];
   onOpenReview?: (reviewId: string) => void;
 }) {
-  return <ComplianceReviewsSection rows={rows} onOpenReview={onOpenReview} />;
+  const [selectedRow, setSelectedRow] = useState<AdminReviewRow | null>(rows[0] ?? null);
+  const [search, setSearch] = useState("");
+
+  const filteredRows = rows.filter((r) =>
+    search.trim()
+      ? r.company.toLowerCase().includes(search.toLowerCase()) ||
+        r.minerId.toLowerCase().includes(search.toLowerCase())
+      : true
+  );
+
+  const handleSelect = (row: AdminReviewRow) => {
+    setSelectedRow(row);
+    onOpenReview?.(row.id);
+  };
+
+  return (
+    <div className="flex h-[calc(100vh-160px)] gap-0 overflow-hidden rounded-[24px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+      {/* Left panel */}
+      <div className="flex w-[300px] shrink-0 flex-col border-r border-[#e8ecf4]">
+        <div className="flex items-center justify-between border-b border-[#e8ecf4] px-4 py-4">
+          <span className="text-[15px] font-semibold text-[#2a2f39]">Assigned Reviews</span>
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#14244a] text-[11px] font-semibold text-white">
+            {rows.length}
+          </span>
+        </div>
+
+        <div className="px-3 py-2">
+          <div className="relative">
+            <SearchOutlined className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a0a6b3] text-[12px]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search company or case..."
+              className="h-8 w-full rounded-[8px] border border-[#e8ecf4] bg-[#fafbfe] pl-8 pr-3 text-[12px] text-[#2d3441] outline-none placeholder:text-[#a0a6b3]"
+            />
+          </div>
+          <div className="mt-2 flex gap-1.5">
+            {["Status", "Risk", "Region"].map((f) => (
+              <button key={f} type="button" className="inline-flex h-7 items-center gap-1 rounded-[6px] border border-[#e8ecf4] bg-white px-2.5 text-[11px] font-medium text-[#5d6675]">
+                {f} <DownOutlined className="text-[9px]" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {filteredRows.map((row) => {
+            const isSelected = selectedRow?.id === row.id;
+            const mineral = row.minerId.includes("00231") ? "Lithium" : row.minerId.includes("00228") ? "Cobalt" : row.minerId.includes("00219") ? "Gold" : "Copper";
+            const stage = row.reviewStatus.label === "Under review" ? "Environmental Review" : row.reviewStatus.label === "Pending" ? "Licensing" : "Document Verification";
+            const waitTime = row.lastActionDate === "Today" ? "2h ago" : row.lastActionDate === "Yesterday" ? "5h ago" : "1d ago";
+            const openDays = row.minerId.includes("00231") ? "14d open" : row.minerId.includes("00228") ? "7d open" : row.minerId.includes("00219") ? "3d open" : "21d open";
+            const progress = row.complianceScore;
+            const dotColor = row.riskLevel.tone === "red" ? "bg-[#ef2f32]" : row.riskLevel.tone === "amber" ? "bg-[#f3a000]" : "bg-[#1ea43b]";
+
+            return (
+              <button
+                key={row.id}
+                type="button"
+                onClick={() => handleSelect(row)}
+                className={classNames(
+                  "w-full border-b border-[#f0f3f8] px-4 py-3 text-left transition-colors",
+                  isSelected ? "bg-[#f0f5ff]" : "hover:bg-[#fafbfe]"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className={classNames("mt-1 h-2 w-2 shrink-0 rounded-full", dotColor)} />
+                      <span className="truncate text-[13px] font-semibold text-[#2a2f39]">{row.company}</span>
+                    </div>
+                    <div className="mt-0.5 pl-3.5 text-[11px] text-[#8a92a1]">{row.minerId} · {mineral}</div>
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1 pl-3.5">
+                  <span className={classNames("rounded-full px-2 py-0.5 text-[10px] font-semibold", row.riskLevel.tone === "red" ? "bg-[#fff0f1] text-[#ef2f32]" : row.riskLevel.tone === "amber" ? "bg-[#fff4df] text-[#df8b19]" : "bg-[#ecfaf0] text-[#1ea43b]")}>
+                    {row.riskLevel.label}
+                  </span>
+                  {row.reviewStatus.label === "Under review" && (
+                    <span className="rounded-full bg-[#fff0f1] px-2 py-0.5 text-[10px] font-semibold text-[#ef2f32]">Urgent</span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center justify-between pl-3.5 text-[11px] text-[#8a92a1]">
+                  <span>{stage}</span>
+                  <span>{openDays}</span>
+                </div>
+                <div className="mt-1.5 pl-3.5">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
+                    <div className="h-full rounded-full bg-[#14244a]" style={{ width: `${progress}%` }} />
+                  </div>
+                  <div className="mt-1 flex justify-between text-[10px] text-[#8a92a1]">
+                    <span>{progress}% complete</span>
+                    <span>{waitTime}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Right panel */}
+      {selectedRow ? (
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf1f7] px-6 py-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[20px] font-bold text-[#2a2f39]">{selectedRow.company}</span>
+                <span className="rounded-[6px] border border-[#e5e9f1] bg-[#f7f9fc] px-2.5 py-0.5 text-[12px] font-medium text-[#5d6675]">Case {selectedRow.minerId}</span>
+                <span className={classNames("rounded-full px-2.5 py-0.5 text-[12px] font-semibold", selectedRow.riskLevel.tone === "red" ? "text-[#ef2f32]" : "text-[#df8b19]")}>
+                  {selectedRow.riskLevel.label} Risk
+                </span>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-4 text-[12px] text-[#8a92a1]">
+                <span className="inline-flex items-center gap-1"><CalendarOutlined /> Submitted Jan 08, 2026</span>
+                <span className="inline-flex items-center gap-1"><UserOutlined /> Reviewer: {selectedRow.reviewer}</span>
+                <span className="inline-flex items-center gap-1 text-[#df8b19]"><RiseOutlined /> Score: {selectedRow.complianceScore}%</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {[{ icon: <DownloadOutlined />, label: "Export" }, { icon: <ShareAltOutlined />, label: "Share" }, { icon: <PrinterOutlined />, label: "Print" }].map((btn) => (
+                <button key={btn.label} type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                  {btn.icon} {btn.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-0 overflow-x-auto border-b border-[#edf1f7] px-6">
+            {CASE_REVIEW_TABS.map((tab, i) => (
+              <button key={tab.key} type="button"
+                className={classNames("whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors",
+                  i === 0 ? "border-[#14244a] text-[#14244a]" : "border-transparent text-[#8a92a1] hover:text-[#2a2f39]"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-5">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Compliance Score", value: `${selectedRow.complianceScore}%`, sub: "Threshold: 85%", valueClass: "text-[#df8b19]" },
+                { label: "Risk Score", value: selectedRow.riskLevel.label, sub: "3 critical flags", valueClass: "text-[#ef2f32]" },
+                { label: "Open Issues", value: "7", sub: "4 pending action" },
+                { label: "Documents Verified", value: "9 / 14", sub: "5 remaining" },
+              ].map((m) => (
+                <div key={m.label} className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
+                  <div className="text-[11px] font-medium text-[#8a92a1]">{m.label}</div>
+                  <div className={classNames("mt-2 text-[24px] font-bold", m.valueClass ?? "text-[#2a2f39]")}>{m.value}</div>
+                  <div className="mt-0.5 text-[11px] text-[#a0a7b5]">{m.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
+                <div className="text-[14px] font-semibold text-[#2a2f39]">Company Profile</div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 text-[13px]">
+                  {[
+                    { label: "Company", value: `${selectedRow.company} Ltd.` },
+                    { label: "Registration No.", value: "CAC/RC/0042871" },
+                    { label: "Incorporated", value: "2018" },
+                    { label: "Country", value: "Nigeria" },
+                    { label: "Mine Location", value: selectedRow.location || "Plateau State, North-Central" },
+                    { label: "Mineral Types", value: "Lithium, Tin" },
+                    { label: "Operational Capacity", value: "12,000 MT / year" },
+                    { label: "Assigned Institution", value: "NGMC — National Geo-Minerals Corp" },
+                    { label: "Current Reviewer", value: `${selectedRow.reviewer} (Compliance Officer)` },
+                    { label: "Submission Date", value: "January 8, 2026" },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="text-[#8a92a1]">{item.label}</div>
+                      <div className="mt-0.5 font-medium text-[#2a2f39]">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-[#2a2f39]">
+                    <EnvironmentOutlined className="text-[#2661d8]" /> Mine Location
+                  </div>
+                  <div className="mt-3 flex h-[100px] items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[#8a92a1]">
+                    <div className="text-center">
+                      <EnvironmentOutlined className="text-[20px]" />
+                      <div className="mt-1 text-[11px]">Plateau State, Nigeria</div>
+                      <div className="text-[10px]">9.2°N, 9.5°E</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
+                  <div className="text-[13px] font-semibold text-[#2a2f39]">Review Progress</div>
+                  <div className="mt-3 space-y-2.5">
+                    {[
+                      { label: "Licensing", value: 100 },
+                      { label: "Environmental", value: 48 },
+                      { label: "Operational", value: 20 },
+                      { label: "Export", value: 0 },
+                    ].map((r) => (
+                      <div key={r.label}>
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-[#5d6675]">{r.label}</span>
+                          <span className={classNames("font-medium", r.value === 100 ? "text-[#1ea43b]" : r.value >= 40 ? "text-[#df8b19]" : "text-[#2a2f39]")}>{r.value}%</span>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
+                          <div className={classNames("h-full rounded-full", r.value === 100 ? "bg-[#1ea43b]" : r.value >= 40 ? "bg-[#df8b19]" : "bg-[#e8ecf2]")} style={{ width: `${r.value}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f7] bg-[#fafbfd] px-6 py-4">
+            <div className="flex items-center gap-5 text-[12px]">
+              <div>
+                <div className="text-[#8a92a1]">Compliance Score</div>
+                <div className="text-[20px] font-bold text-[#df8b19]">{selectedRow.complianceScore}%</div>
+              </div>
+              <div>
+                <div className="text-[#8a92a1]">Decision Status</div>
+                <div className="text-[13px] font-semibold text-[#df8b19]">Under Review</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f6e3bf] bg-[#fff4df] px-4 text-[13px] font-medium text-[#a5680c]">
+                <InfoCircleOutlined /> Request Information
+              </button>
+              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f3c2c4] bg-white px-4 text-[13px] font-medium text-[#ef2f32]">
+                <CloseOutlined /> Reject Application
+              </button>
+              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold text-white" style={primaryActionStyle}>
+                <CheckCircleOutlined /> Approve Compliance
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-center text-[14px] text-[#8a92a1]">
+          Select a review from the list
+        </div>
+      )}
+    </div>
+  );
 }
 
 const notificationSeverityBar: Record<NotificationSeverity, string> = {
@@ -6518,6 +7143,296 @@ function ComplianceClaimConflictModal({
   );
 }
 
+type EscalationLevel = "significant" | "critical" | "catastrophic";
+
+const ESCALATION_LEVELS: { key: EscalationLevel; label: string; caption: string }[] = [
+  { key: "significant", label: "Level 1", caption: "Significant" },
+  { key: "critical", label: "Level 2", caption: "Critical" },
+  { key: "catastrophic", label: "Level 3", caption: "Catastrophic" },
+];
+
+const ESCALATION_REASONS = [
+  "Missing or invalid license documentation",
+  "Environmental impact assessment discrepancy",
+  "Repeated non-compliance with safety measures",
+  "Community consent concerns",
+  "Suspected fraudulent submission",
+];
+
+function EscalateToSeniorReviewModal({
+  minerCode,
+  onClose,
+  onConfirm,
+}: {
+  minerCode: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [level, setLevel] = useState<EscalationLevel>("significant");
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(8,13,28,0.28)] backdrop-blur-[4px] px-4">
+      <div className="w-full max-w-[600px] overflow-hidden rounded-[24px] bg-white shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
+        <div className="h-1 w-full bg-[#ef2f32]" />
+        <div className="flex items-center justify-between px-6 py-5">
+          <div className="text-[20px] font-semibold text-[#2a2f39]">Escalate to Senior Review</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8a92a1] hover:bg-[#f4f6fa]"
+          >
+            <CloseOutlined />
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] space-y-6 overflow-y-auto px-6 pb-2">
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">
+              Risk assessment level
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              {ESCALATION_LEVELS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setLevel(item.key)}
+                  className={classNames(
+                    "rounded-[14px] border px-3 py-4 text-center transition-colors",
+                    level === item.key
+                      ? "border-[#ef2f32] bg-[#fff2f2]"
+                      : "border-[#e5e9f1] bg-white",
+                  )}
+                >
+                  <div className="text-[13px] text-[#8a92a1]">{item.label}</div>
+                  <div
+                    className={classNames(
+                      "mt-1 text-[15px] font-semibold",
+                      item.key === "catastrophic" ? "text-[#ef2f32]" : "text-[#2a2f39]",
+                    )}
+                  >
+                    {item.caption}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">
+              Select primary reason
+            </div>
+            <div className="relative mt-3">
+              <select
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                className="h-12 w-full appearance-none rounded-[12px] border border-[#dce3ef] bg-white px-4 pr-10 text-[14px] text-[#2a2f39] outline-none"
+              >
+                <option value="">Choose a reason for escalation</option>
+                {ESCALATION_REASONS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <DownOutlined className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-[#8a92a1]" />
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">
+              Evidence &amp; documentation
+            </div>
+            <button
+              type="button"
+              onClick={() => showToast("File upload isn't connected to the backend yet.", "error")}
+              className="mt-3 flex w-full flex-col items-center justify-center gap-2 rounded-[16px] border border-dashed border-[#dce3ef] bg-[#fafbfd] py-8 text-center"
+            >
+              <UploadOutlined className="text-[22px] text-[#8a92a1]" />
+              <span className="text-[14px] text-[#2a2f39]">Choose file or drag and drop it here</span>
+              <span className="text-[12px] text-[#a0a7b5]">JPEG, PNG, and PDF formats, up to 20 MB.</span>
+              <span className="mt-2 rounded-[10px] border border-[#dce3ef] bg-white px-4 py-2 text-[13px] font-medium text-[#2a2f39]">
+                Browse files
+              </span>
+            </button>
+          </div>
+
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">
+              Internal analyst notes
+            </div>
+            <textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Detail the specific findings and justification for this escalation..."
+              className="mt-3 h-28 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[#edf1f7] px-6 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[14px] font-medium text-[#5d6675]"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            disabled={submitting || !reason}
+            onClick={() => {
+              setSubmitting(true);
+              window.setTimeout(() => {
+                setSubmitting(false);
+                showToast(`Miner ${minerCode} escalated to senior review.`, "success");
+                onConfirm();
+              }, 400);
+            }}
+            style={primaryActionStyle}
+            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#ef2f32] px-5 text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Working..." : "Confirm escalation"}
+            <ArrowRightOutlined />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const REQUIRED_DOCUMENT_OPTIONS = [
+  { key: "ssml", label: "SSML / Mining Lease Copy" },
+  { key: "financial", label: "Proof of Financial Capability" },
+  { key: "eia", label: "Environmental Impact Assessment (EIA)" },
+  { key: "site-map", label: "Site Map / Coordinates" },
+  { key: "community-consent", label: "Community Consent / CDA" },
+  { key: "board-resolution", label: "Board Resolution Documents" },
+];
+
+function RequestComplianceDocumentModal({
+  minerCode,
+  onClose,
+  onConfirm,
+}: {
+  minerCode: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [selected, setSelected] = useState<Record<string, boolean>>({
+    ssml: true,
+    financial: false,
+    eia: true,
+    "site-map": true,
+    "community-consent": false,
+    "board-resolution": true,
+  });
+  const [other, setOther] = useState("");
+  const [highPriority, setHighPriority] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(8,13,28,0.28)] backdrop-blur-[4px] px-4">
+      <div className="w-full max-w-[600px] overflow-hidden rounded-[24px] bg-white shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
+        <div className="flex items-center justify-between px-6 py-5">
+          <div className="text-[20px] font-semibold text-[#2a2f39]">Request Compliance Document</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8a92a1] hover:bg-[#f4f6fa]"
+          >
+            <CloseOutlined />
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] space-y-6 overflow-y-auto px-6 pb-2">
+          <div>
+            <div className="text-[13px] font-medium text-[#5d6675]">Required Documents</div>
+            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3">
+              {REQUIRED_DOCUMENT_OPTIONS.map((option) => (
+                <label key={option.key} className="inline-flex cursor-pointer items-start gap-2 text-[14px] text-[#2a2f39]">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selected[option.key])}
+                    onChange={(event) =>
+                      setSelected((prev) => ({ ...prev, [option.key]: event.target.checked }))
+                    }
+                    className="mt-0.5 h-4 w-4 rounded accent-[#14244a]"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[13px] font-medium text-[#5d6675]">Other</div>
+            <textarea
+              value={other}
+              onChange={(event) => setOther(event.target.value)}
+              placeholder="e.g., Please provide a high-resolution scan of the back page of the license..."
+              className="mt-2 h-24 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-[16px] border border-[#e8ecf4] bg-[#fafbfd] p-4">
+            <div>
+              <div className="text-[14px] font-medium text-[#2a2f39]">Request Priority</div>
+              <div className="mt-1 max-w-[380px] text-[12px] text-[#8a92a1]">
+                High priority requests trigger a &apos;Critical&apos; flag in the Miner&apos;s notification
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHighPriority((v) => !v)}
+              className={classNames(
+                "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                highPriority ? "bg-[#1d5de2]" : "bg-[#dce3ef]",
+              )}
+            >
+              <span
+                className={classNames(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                  highPriority ? "translate-x-5" : "translate-x-0.5",
+                )}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[#edf1f7] px-6 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[14px] font-medium text-[#5d6675]"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => {
+              setSubmitting(true);
+              window.setTimeout(() => {
+                setSubmitting(false);
+                showToast(`Document request sent for ${minerCode}.`, "success");
+                onConfirm();
+              }, 400);
+            }}
+            style={primaryActionStyle}
+            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-5 text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Working..." : "Send Request"}
+            <ArrowRightOutlined />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type CaseReviewTab =
   | "overview"
   | "licensing"
@@ -7019,6 +7934,8 @@ export default function ComplianceDashboardPage() {
         ? "audits-legal-records"
       : complianceViewParam === "notifications"
         ? "notifications"
+      : complianceViewParam === "regulatory-alerts"
+        ? "regulatory-alerts"
       : persona === "admin"
         ? complianceViewParam === "miner-pipeline"
           ? "miner-pipeline"
@@ -7062,6 +7979,12 @@ export default function ComplianceDashboardPage() {
   const [dismissedAlertKey, setDismissedAlertKey] = useState<string | null>(
     null,
   );
+  const [selectedAdminMiner, setSelectedAdminMiner] =
+    useState<AdminPipelineRow | null>(null);
+  const [escalateModalMiner, setEscalateModalMiner] =
+    useState<AdminPipelineRow | null>(null);
+  const [requestDocumentModalMiner, setRequestDocumentModalMiner] =
+    useState<AdminPipelineRow | null>(null);
   const hasAccessToken =
     typeof window !== "undefined" &&
     Boolean(window.sessionStorage.getItem("accessToken"));
@@ -7482,6 +8405,13 @@ export default function ComplianceDashboardPage() {
                   }
                   onNavigate={resetCompliancePanels}
                 />
+              ) : persona === "admin" && complianceView === "miner-pipeline" && selectedAdminMiner ? (
+                <AdminMinerDetailView
+                  row={selectedAdminMiner}
+                  onBack={() => setSelectedAdminMiner(null)}
+                  onEscalate={() => setEscalateModalMiner(selectedAdminMiner)}
+                  onRequestDocuments={() => setRequestDocumentModalMiner(selectedAdminMiner)}
+                />
               ) : persona === "admin" ? (
                 <>
                   <PageHero persona={persona} complianceView={complianceView} />
@@ -7492,6 +8422,7 @@ export default function ComplianceDashboardPage() {
                         "company",
                         "location",
                       ])}
+                      onSelectMiner={setSelectedAdminMiner}
                     />
                   ) : complianceView === "partner-directory" ? (
                     <AdminPartnerDirectoryView rows={PARTNER_DIRECTORY_ROWS} />
@@ -7501,6 +8432,8 @@ export default function ComplianceDashboardPage() {
                       states={REGULATORY_RISK_STATES}
                       statusDistribution={REGULATORY_STATUS_DISTRIBUTION}
                     />
+                  ) : complianceView === "regulatory-alerts" ? (
+                    <RegulatoryAlertsView />
                   ) : complianceView === "notifications" ? (
                     <ComplianceNotificationsView rows={COMPLIANCE_NOTIFICATIONS} />
                   ) : (
@@ -7519,6 +8452,8 @@ export default function ComplianceDashboardPage() {
                       rows={complianceReviewRows}
                       onOpenReview={openReviewById}
                     />
+                  ) : complianceView === "regulatory-alerts" ? (
+                    <RegulatoryAlertsView />
                   ) : complianceView === "notifications" ? (
                     <ComplianceNotificationsView rows={COMPLIANCE_NOTIFICATIONS} />
                   ) : (
@@ -7563,6 +8498,22 @@ export default function ComplianceDashboardPage() {
             setClaimConflictTask(null);
             setClaimConflictLoggedAt(null);
           }}
+        />
+      ) : null}
+
+      {escalateModalMiner ? (
+        <EscalateToSeniorReviewModal
+          minerCode={escalateModalMiner.minerId}
+          onClose={() => setEscalateModalMiner(null)}
+          onConfirm={() => setEscalateModalMiner(null)}
+        />
+      ) : null}
+
+      {requestDocumentModalMiner ? (
+        <RequestComplianceDocumentModal
+          minerCode={requestDocumentModalMiner.minerId}
+          onClose={() => setRequestDocumentModalMiner(null)}
+          onConfirm={() => setRequestDocumentModalMiner(null)}
         />
       ) : null}
     </div>

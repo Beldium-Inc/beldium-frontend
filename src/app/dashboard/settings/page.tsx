@@ -9,7 +9,6 @@ import {
   BellOutlined,
   CreditCardOutlined,
   SafetyOutlined,
-  LockFilled,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -58,15 +57,6 @@ function SectionCard({
   );
 }
 
-function ComingSoonNote({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mt-3">
-      <LockFilled className="mt-0.5 text-gray-400" />
-      <span>{children}</span>
-    </div>
-  );
-}
-
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["userProfile"], queryFn: getUser });
@@ -94,6 +84,11 @@ export default function SettingsPage() {
   const [twoFa, setTwoFa] = useState(false);
   const [savingTwoFa, setSavingTwoFa] = useState(false);
 
+  const [notifyNewOrderRequests, setNotifyNewOrderRequests] = useState(true);
+  const [notifyPaymentUpdates, setNotifyPaymentUpdates] = useState(true);
+  const [notifyComplianceReminders, setNotifyComplianceReminders] = useState(true);
+  const [savingNotificationKey, setSavingNotificationKey] = useState<string | null>(null);
+
   const [bankName, setBankName] = useState<string | undefined>(undefined);
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
@@ -102,21 +97,6 @@ export default function SettingsPage() {
   const [contactMethod, setContactMethod] = useState<"email" | "phone">("email");
   const [reminderFrequency, setReminderFrequency] = useState<"weekly" | "monthly" | "quarterly">("monthly");
   const [savingCompliance, setSavingCompliance] = useState(false);
-  const topActionsRef = useRef<HTMLDivElement>(null);
-  const [showStickyActions, setShowStickyActions] = useState(false);
-
-  useEffect(() => {
-    const el = topActionsRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyActions(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -126,6 +106,9 @@ export default function SettingsPage() {
     setState(user.profile?.state_of_operation || undefined);
     setLga(user.profile?.local_government_area || "");
     setTwoFa(user.profile?.require_two_factor_authentication || false);
+    setNotifyNewOrderRequests(user.profile?.notify_new_order_requests ?? true);
+    setNotifyPaymentUpdates(user.profile?.notify_payment_updates ?? true);
+    setNotifyComplianceReminders(user.profile?.notify_compliance_reminders ?? true);
     setBankName(user.profile?.bank_detail?.bank_name || undefined);
     setAccountNumber(user.profile?.bank_detail?.account_number || "");
     setAccountName(user.profile?.bank_detail?.account_name || "");
@@ -193,6 +176,44 @@ export default function SettingsPage() {
       showToast(errorMessage(err, "Failed to update 2FA setting"), "error");
     } finally {
       setSavingTwoFa(false);
+    }
+  };
+
+  const NOTIFICATION_TOGGLES = {
+    new_order_requests: {
+      label: "New order requests",
+      value: notifyNewOrderRequests,
+      setValue: setNotifyNewOrderRequests,
+      payloadKey: "notify_new_order_requests" as const,
+    },
+    payment_updates: {
+      label: "Payment updates",
+      value: notifyPaymentUpdates,
+      setValue: setNotifyPaymentUpdates,
+      payloadKey: "notify_payment_updates" as const,
+    },
+    compliance_reminders: {
+      label: "Compliance reminders",
+      value: notifyComplianceReminders,
+      setValue: setNotifyComplianceReminders,
+      payloadKey: "notify_compliance_reminders" as const,
+    },
+  };
+
+  const handleToggleNotification = async (key: keyof typeof NOTIFICATION_TOGGLES, checked: boolean) => {
+    if (!profileId) return;
+    const toggle = NOTIFICATION_TOGGLES[key];
+    const previous = toggle.value;
+    toggle.setValue(checked);
+    try {
+      setSavingNotificationKey(key);
+      await updateMinerProfile(profileId, { [toggle.payloadKey]: checked });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+    } catch (err: unknown) {
+      toggle.setValue(previous);
+      showToast(errorMessage(err, "Failed to update notification preference"), "error");
+    } finally {
+      setSavingNotificationKey(null);
     }
   };
 
@@ -274,7 +295,7 @@ export default function SettingsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
           <p className="text-sm md:text-base text-gray-500">Manage your account, security, and operational preferences.</p>
         </div>
-        <div ref={topActionsRef} className="flex gap-3">
+        <div className="flex gap-3">
           <Button onClick={() => window.location.reload()}>Cancel</Button>
           <Button
             loading={saving}
@@ -308,25 +329,6 @@ export default function SettingsPage() {
                 </button>
               );
             })}
-
-            <div
-      className={`transition-all duration-300 overflow-hidden ${
-        showStickyActions ? "max-h-30 opacity-100 mt-4" : "max-h-0 opacity-0"
-      }`}
-    >
-      <div className="flex flex-col gap-2 pt-3 border-t border-gray-200">
-        <Button
-          loading={saving}
-          onClick={handleSaveProfile}
-          className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363] w-full"
-        >
-          Save Changes
-        </Button>
-        <Button onClick={() => window.location.reload()} className="w-full">
-          Cancel
-        </Button>
-      </div>
-    </div>
           </div>
         </div>
 
@@ -370,7 +372,7 @@ export default function SettingsPage() {
           </SectionCard>
 
           <SectionCard id="security" title="Account & Security" subtitle="Manage your password and authentication settings.">
-            <div className="space-y-4 max-w-md">
+            <div className="space-y-4 max-w-5xl">
               <p className="text-sm font-medium text-gray-700">Password</p>
               <div>
                 <label className="block text-sm text-gray-700 mb-1.5">Current Password</label>
@@ -427,16 +429,21 @@ export default function SettingsPage() {
           </SectionCard>
 
           <SectionCard id="notifications" title="Notifications" subtitle="Choose what you want to be notified about.">
-            <ComingSoonNote>
-              Notification preferences are not yet persisted by the backend, toggles here won&apos;t save until that&apos;s built.
-            </ComingSoonNote>
-            <div className="space-y-3 mt-3 opacity-50 pointer-events-none">
-              {["New order requests", "Payment updates", "Compliance reminders"].map((label) => (
-                <div key={label} className="flex items-center justify-between max-w-md">
-                  <span className="text-sm text-gray-700">{label}</span>
-                  <Switch disabled defaultChecked />
-                </div>
-              ))}
+            <div className="space-y-3 mt-3">
+              {(Object.keys(NOTIFICATION_TOGGLES) as Array<keyof typeof NOTIFICATION_TOGGLES>).map((key) => {
+                const toggle = NOTIFICATION_TOGGLES[key];
+                return (
+                  <div key={key} className="flex items-center justify-between max-w-5xl">
+                    <span className="text-sm text-gray-700">{toggle.label}</span>
+                    <Switch
+                      checked={toggle.value}
+                      loading={savingNotificationKey === key}
+                      onChange={(checked) => handleToggleNotification(key, checked)}
+                      style={toggle.value ? { backgroundColor: "#14244a" } : undefined}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </SectionCard>
 
@@ -456,7 +463,7 @@ export default function SettingsPage() {
                 {user?.profile?.bank_detail?.verification_status || "Unverified"}
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl">
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-700 mb-1.5">Bank Name</label>
                 <Select
@@ -486,21 +493,21 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
-            <div className="mt-4 max-w-2xl flex items-center gap-2 text-xs text-gray-500 bg-[#f3f7f8] border border-gray-100 rounded-lg px-3 py-2.5">
+            <div className="mt-4 max-w-5xl flex items-center gap-2 text-xs text-gray-500 bg-[#f3f7f8] border border-gray-100 rounded-lg px-3 py-2.5">
               <span>🔒</span>
               Your information is securely stored and encrypted.
             </div>
             <Button
               loading={savingBank}
               onClick={handleSaveBank}
-              className="mt-4 !bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+              className="mt-4 !bg-[#14244a] !mt-4 !text-white !border-none hover:!bg-[#1c3363]"
             >
               Save Bank Details
             </Button>
           </SectionCard>
 
           <SectionCard id="compliance" title="Compliance Preferences" subtitle="Configure how you manage compliance requirements.">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl">
               <div>
                 <label className="block text-sm text-gray-700 mb-1.5">Preferred Contact Method</label>
                 <Select
@@ -536,7 +543,7 @@ export default function SettingsPage() {
             <Button
               loading={savingCompliance}
               onClick={handleSaveCompliance}
-              className="mt-4 !bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+              className="mt-4 !bg-[#14244a] !mt-5 !text-white !border-none hover:!bg-[#1c3363]"
             >
               Save Preferences
             </Button>

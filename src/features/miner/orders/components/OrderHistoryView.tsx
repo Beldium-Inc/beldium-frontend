@@ -6,7 +6,6 @@ import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
 import { ORDER_STATUS } from "../../dashboard/constants";
 import { useRouter } from "next/navigation";
 import { RightOutlined } from "@ant-design/icons";
-import { getPaymentStatus } from "./ActiveOrdersTable";
 
 type Props = {
   items: OrderHistoryItem[];
@@ -49,8 +48,9 @@ export default function OrderHistoryView({
 }: Props) {
   const router = useRouter();
 
-  const visibleItems =
-    paymentStatus === "all" ? items : items.filter((item) => getPaymentStatus(item) === paymentStatus);
+  // Payment status is now filtered server-side (see OrderFilter.filter_payment_status
+  // on the backend), so `items` already reflects the selected filter.
+  const visibleItems = items;
 
   const columns: ColumnsType<OrderHistoryItem> = [
     {

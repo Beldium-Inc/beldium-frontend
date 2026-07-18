@@ -58,8 +58,13 @@ function buildRows(licenses: MinerLicense[], documents: MinerDocument[]): Row[] 
     key: d.id,
     documentType: d.document_type,
     uploaded: d.issued_date,
-    expiry: null,
-    status: d.status?.toLowerCase() === "verified" ? "completed" : "pending_review",
+    expiry: d.expiry_date,
+    status:
+      d.expiry_date && dayjs(d.expiry_date).isBefore(dayjs())
+        ? "expired"
+        : d.status?.toLowerCase() === "verified"
+          ? "completed"
+          : "pending_review",
     fileUrl: d.file,
   }));
 
@@ -135,13 +140,13 @@ export default function CompliancePage() {
       {!loading && hasExpired && (
         <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-100 rounded-xl px-5 py-4">
           <div className="flex items-center gap-3">
-            <WarningOutlined className="text-red-500" />
+            <WarningOutlined className="text-[#960805]" />
             <div>
-              <div className="text-sm font-semibold text-red-600">Expired Documents</div>
-              <div className="text-xs text-red-500">One or more documents have expired and need updating.</div>
+              <div className="text-sm font-semibold text-[#C00F0C]">Expired Documents</div>
+              <div className="text-xs text-[#960805]">One or more documents have expired and need updating.</div>
             </div>
           </div>
-          <Button danger type="primary" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
+          <Button className="!bg-[#960805]" type="primary" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
         </div>
       )}
 
@@ -190,17 +195,17 @@ export default function CompliancePage() {
                         {STATUS_LABELS[row.status]}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 float-right py-4">
                       {row.status === "expired" || row.status === "action_required" ? (
-                        <Button danger size="small" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
+                        <Button danger className="!bg-[#960805] !text-white !h-10 !border-none !text-sm !rounded-lg" size="small" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
                       ) : (
-                        <Button size="small" onClick={() => setViewRow(row)}>View</Button>
+                        <Button className="  !h-10 !border-2 !text-sm !rounded-lg" size="small" onClick={() => setViewRow(row)}>View</Button>
                       )}
                     </td>
                   </tr>
                   {(row.status === "expired" || row.status === "action_required") && (
                     <tr className="bg-red-50/50">
-                      <td colSpan={5} className="px-6 py-3 text-xs text-red-600 border-b border-red-100">
+                      <td colSpan={5} className="px-6 py-3 text-xs text-[#C00F0C] border-b border-red-100">
                         <WarningOutlined className="mr-1.5" />
                         {row.status === "expired"
                           ? "This document has expired. Please upload a valid version."
@@ -227,19 +232,27 @@ function UploadDocumentModal({ open, onClose, minerId }: { open: boolean; onClos
   const [documentType, setDocumentType] = useState<string | undefined>();
   const [file, setFile] = useState<File | null>(null);
   const [issuedDate, setIssuedDate] = useState<string>("");
+  const [expiryDate, setExpiryDate] = useState<string>("");
   const queryClient = useQueryClient();
 
   const reset = () => {
     setDocumentType(undefined);
     setFile(null);
     setIssuedDate("");
+    setExpiryDate("");
     setHasExpiry(true);
   };
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => {
       if (!documentType || !file) throw new Error("Document type and file are required");
-      return createMinerDocument({ documentType, file, issuedDate: issuedDate || null });
+      if (hasExpiry && !expiryDate) throw new Error("Expiry date is required for this document");
+      return createMinerDocument({
+        documentType,
+        file,
+        issuedDate: issuedDate || null,
+        expiryDate: hasExpiry ? expiryDate || null : null,
+      });
     },
     onSuccess: () => {
       showToast("Document uploaded successfully.", "success");
@@ -262,6 +275,10 @@ function UploadDocumentModal({ open, onClose, minerId }: { open: boolean; onClos
     }
     if (!file) {
       showToast("Choose a file to upload.", "error");
+      return;
+    }
+    if (hasExpiry && !expiryDate) {
+      showToast("Enter an expiry date, or turn off \"Document has expiry date\".", "error");
       return;
     }
     mutate();
@@ -308,7 +325,7 @@ function UploadDocumentModal({ open, onClose, minerId }: { open: boolean; onClos
         {hasExpiry && (
           <div>
             <label className="block text-sm text-gray-700 mb-1.5">Expiry Date *</label>
-            <Input type="date" placeholder="dd/mm/yyyy" disabled title="Expiry tracking isn't supported for this document type yet" />
+            <Input type="date" placeholder="dd/mm/yyyy" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
           </div>
         )}
         <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500">
@@ -329,62 +346,78 @@ function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () =>
   if (!row) return null;
 
   return (
-    <Modal open={!!row} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} title="Document Details" width={700}>
-      <div className="mt-4 flex items-start justify-between gap-3 mb-6">
+    <Modal
+      open={!!row}
+      onCancel={onClose}
+      footer={null}
+      closeIcon={<CloseOutlined />}
+      title="Document Details"
+      width={700}
+    >
+      <div className="mt-4 flex items-start justify-between gap-3 mb-8">
         <div>
-          <div className="text-xs text-gray-400">Document Type</div>
-          <div className="text-base font-semibold text-gray-900">{row.documentType}</div>
+          <div className="text-xs text-gray-400 mb-1">Document Type</div>
+          <div className="text-xl font-semibold text-gray-900">{row.documentType}</div>
         </div>
         {row.fileUrl && (
           <Button
             icon={<DownloadOutlined />}
             href={row.fileUrl}
             target="_blank"
-            className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+            size="large"
           >
             Download
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-6">
           <div>
-            <div className="text-xs text-gray-400 mb-1">Status</div>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[row.status]}`}>
+            <div className="text-xs text-gray-400 mb-2">Status</div>
+            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${STATUS_STYLES[row.status]}`}>
               {STATUS_LABELS[row.status]}
             </span>
           </div>
+
           <div>
-            <div className="text-xs text-gray-400">Upload Date</div>
-            <div className="text-sm text-gray-900">{row.uploaded ? dayjs(row.uploaded).format("MMM DD, YYYY") : "--"}</div>
+            <div className="text-xs text-gray-400 mb-1">Upload Date</div>
+            <div className="text-sm font-medium text-gray-900">
+              {row.uploaded ? dayjs(row.uploaded).format("MMM DD, YYYY") : "--"}
+            </div>
           </div>
+
           <div>
-            <div className="text-xs text-gray-400">Expiry</div>
-            <div className="text-sm text-gray-900">{row.expiry ? dayjs(row.expiry).format("MMM DD, YYYY") : "No expiry"}</div>
+            <div className="text-xs text-gray-400 mb-1">Expiry Date</div>
+            <div className="text-sm font-medium text-gray-900">
+              {row.expiry ? dayjs(row.expiry).format("MMM DD, YYYY") : "No expiry"}
+            </div>
           </div>
         </div>
+
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs text-gray-400">Document Preview</div>
-            <div className="flex items-center gap-2 text-gray-500">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm text-gray-500">Document Preview</div>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+                className="flex h-7 w-7 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
               >
                 <ZoomInOutlined className="text-xs" />
               </button>
-              <span className="text-xs text-gray-500 w-9 text-center">{zoom}%</span>
+              <span className="text-xs text-gray-500 w-10 text-center">{zoom}%</span>
               <button
                 type="button"
                 onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+                className="flex h-7 w-7 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
               >
                 <ZoomOutOutlined className="text-xs" />
               </button>
             </div>
           </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 h-64 flex items-center justify-center overflow-auto">
+
+          <div className="rounded-xl border border-gray-200 bg-white h-80 overflow-auto p-3">
             {row.fileUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -394,7 +427,9 @@ function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () =>
                 className="max-w-none object-contain transition-[width]"
               />
             ) : (
-              <span className="text-xs text-gray-400">No file uploaded</span>
+              <div className="h-full flex items-center justify-center">
+                <span className="text-xs text-gray-400">No file uploaded</span>
+              </div>
             )}
           </div>
         </div>

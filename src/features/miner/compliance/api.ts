@@ -16,6 +16,7 @@ export type MinerDocument = {
   document_type: string;
   file: string | null;
   issued_date: string | null;
+  expiry_date: string | null;
   status: "pending" | "verified" | "issues_found" | "rejected" | string;
   notes: string;
 };
@@ -46,11 +47,13 @@ export async function createMinerDocument(params: {
   documentType: string;
   file: File;
   issuedDate?: string | null;
+  expiryDate?: string | null;
 }) {
   const formData = new FormData();
   formData.append("document_type", params.documentType);
   formData.append("file", params.file);
   if (params.issuedDate) formData.append("issued_date", params.issuedDate);
+  if (params.expiryDate) formData.append("expiry_date", params.expiryDate);
 
   const res = await authApi.post<CreateMinerDocumentResponse>(
     "/compliance/miners/documents/",
