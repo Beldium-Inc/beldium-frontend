@@ -44,6 +44,7 @@ export type ComplianceAlert = {
   minerId?: string | null;
   minerName?: string | null;
   createdAt?: string;
+  expiresAt?: string;
 };
 
 export type ComplianceQueueRow = {
@@ -307,13 +308,14 @@ export const ADMIN_PIPELINE_ROWS: AdminPipelineRow[] = [
 
 export const COMPLIANCE_ALERT: ComplianceAlert = {
   title: "New Miner Onboarded",
-  detail: "Ready for review",
-  meta: "Review ID: 52fec003 • Mar 15, 2026, 5:20 PM",
+  detail: "[Miner ID: 16691080] - Ready for Review.",
+  meta: "Expires Mar 17, 2026, 5:20 PM",
   actionLabel: "Claim Task",
   reviewId: "52fec003-6b02-4543-ba36-08ff8e702db6",
   minerId: "16691080-f8c7-4f1a-8f90-87e5fa09b78c",
   minerName: "Beldium Inc (Miner1)",
   createdAt: "2026-03-15T17:20:11.111321Z",
+  expiresAt: "2026-03-17T17:20:11.111321Z",
 };
 
 export const COMPLIANCE_METRICS: DashboardMetric[] = [
@@ -673,4 +675,166 @@ export const COMPLIANCE_DATA_CONTROL_CARDS: ComplianceDataControlCard[] = [
     title: "Maximum File Size",
     value: "20 MB",
   },
+];
+
+export type PartnerCategory =
+  | "Environmental"
+  | "Legal"
+  | "ESG Auditors"
+  | "Govt Liaison";
+
+export type PartnerAvailability = "Available" | "Near capacity" | "Busy";
+
+export type PartnerDirectoryRow = {
+  id: string;
+  partnerEntity: string;
+  category: PartnerCategory;
+  accreditationStatus: string;
+  regionsCovered: string;
+  availability: PartnerAvailability;
+  activeAssignments: number;
+};
+
+export const PARTNER_DIRECTORY_ROWS: PartnerDirectoryRow[] = [
+  {
+    id: "partner-1",
+    partnerEntity: "EcoVerify Ltd",
+    category: "Environmental",
+    accreditationStatus: "NESREA-Certified",
+    regionsCovered: "Oyo, Nasarawa",
+    availability: "Available",
+    activeAssignments: 12,
+  },
+  {
+    id: "partner-2",
+    partnerEntity: "LegalLink Partners",
+    category: "Legal",
+    accreditationStatus: "MCO Licensed",
+    regionsCovered: "Federal (All)",
+    availability: "Near capacity",
+    activeAssignments: 50,
+  },
+  {
+    id: "partner-3",
+    partnerEntity: "GeoSurvey Niger",
+    category: "ESG Auditors",
+    accreditationStatus: "ISO 14001",
+    regionsCovered: "Kaduna, Kano",
+    availability: "Busy",
+    activeAssignments: 121,
+  },
+  {
+    id: "partner-4",
+    partnerEntity: "GeoSurvey Niger",
+    category: "Environmental",
+    accreditationStatus: "Kogi / Okene",
+    regionsCovered: "Kaduna, Kano",
+    availability: "Available",
+    activeAssignments: 17,
+  },
+  {
+    id: "partner-5",
+    partnerEntity: "LegalLink Partners",
+    category: "ESG Auditors",
+    accreditationStatus: "Mining Cadastre",
+    regionsCovered: "Oyo, Kwara",
+    availability: "Available",
+    activeAssignments: 12,
+  },
+  {
+    id: "partner-6",
+    partnerEntity: "EcoVerify Ltd",
+    category: "Govt Liaison",
+    accreditationStatus: "NESREA-Certified",
+    regionsCovered: "Kano, Oyo",
+    availability: "Near capacity",
+    activeAssignments: 61,
+  },
+  {
+    id: "partner-7",
+    partnerEntity: "LegalLink Partners",
+    category: "Environmental",
+    accreditationStatus: "MCO Licensed",
+    regionsCovered: "Kaduna, Kano",
+    availability: "Busy",
+    activeAssignments: 101,
+  },
+  {
+    id: "partner-8",
+    partnerEntity: "GeoSurvey Niger",
+    category: "ESG Auditors",
+    accreditationStatus: "MCO Licensed",
+    regionsCovered: "Federal (All)",
+    availability: "Near capacity",
+    activeAssignments: 47,
+  },
+  {
+    id: "partner-9",
+    partnerEntity: "EcoVerify Ltd",
+    category: "Govt Liaison",
+    accreditationStatus: "NESREA-Certified",
+    regionsCovered: "Oyo, Kwara",
+    availability: "Available",
+    activeAssignments: 18,
+  },
+];
+
+export type RegulatoryReadinessMetric = {
+  id: string;
+  title: string;
+  percentage: number;
+  tone: "blue" | "green" | "amber";
+  legendReady: string;
+  legendNotReady: string;
+};
+
+export const REGULATORY_READINESS_METRICS: RegulatoryReadinessMetric[] = [
+  {
+    id: "legal",
+    title: "Legal Readiness",
+    percentage: 75,
+    tone: "blue",
+    legendReady: "Miners with valid license",
+    legendNotReady: "Miners without valid license",
+  },
+  {
+    id: "environmental",
+    title: "EIA/Environmental Readiness",
+    percentage: 82,
+    tone: "green",
+    legendReady: "Miners with EIA initiated",
+    legendNotReady: "Miners without EIA initiated",
+  },
+  {
+    id: "esg",
+    title: "ESG/Social Readiness",
+    percentage: 63,
+    tone: "amber",
+    legendReady: "ESG ready",
+    legendNotReady: "Non-ESG ready",
+  },
+];
+
+export type RegulatoryRiskState = {
+  state: string;
+  risk: "Low" | "Medium" | "High";
+  compliancePartners: number;
+  totalMiners: number;
+};
+
+export const REGULATORY_RISK_STATES: RegulatoryRiskState[] = [
+  { state: "Lagos", risk: "Low", compliancePartners: 62, totalMiners: 54 },
+  { state: "Kwara", risk: "Low", compliancePartners: 48, totalMiners: 40 },
+  { state: "Kaduna", risk: "Medium", compliancePartners: 39, totalMiners: 61 },
+  { state: "Kano", risk: "Medium", compliancePartners: 33, totalMiners: 58 },
+  { state: "Borno", risk: "Low", compliancePartners: 55, totalMiners: 48 },
+  { state: "Zamfara", risk: "High", compliancePartners: 21, totalMiners: 72 },
+  { state: "Nasarawa", risk: "High", compliancePartners: 18, totalMiners: 66 },
+  { state: "Kogi", risk: "Medium", compliancePartners: 30, totalMiners: 52 },
+];
+
+export const REGULATORY_STATUS_DISTRIBUTION = [
+  { id: "ready", label: "Compliance-Ready", percentage: 42, count: 52, tone: "green" as const },
+  { id: "conditional", label: "Conditional/Under Review", percentage: 32, count: 43, tone: "amber" as const },
+  { id: "blocked", label: "Blocked/Missing Docs", percentage: 23, count: 52, tone: "red" as const },
 ];

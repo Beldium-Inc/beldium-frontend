@@ -59,6 +59,12 @@ import {
   type NotificationSeverity,
   type StatusBadge,
   type TrendDirection,
+  type AdminPipelineRow,
+  type PartnerCategory,
+  type PartnerAvailability,
+  type PartnerDirectoryRow,
+  type RegulatoryReadinessMetric,
+  type RegulatoryRiskState,
   COMPLIANCE_ACTIVE_RULE_ROWS,
   COMPLIANCE_DATA_CONTROL_CARDS,
   COMPLIANCE_DOCUMENT_REQUIREMENT_ROWS,
@@ -66,6 +72,11 @@ import {
   COMPLIANCE_RISK_RULE_CARDS,
   COMPLIANCE_RULE_CATEGORIES,
   COMPLIANCE_THRESHOLD_CARDS,
+  ADMIN_PIPELINE_ROWS,
+  PARTNER_DIRECTORY_ROWS,
+  REGULATORY_READINESS_METRICS,
+  REGULATORY_RISK_STATES,
+  REGULATORY_STATUS_DISTRIBUTION,
 } from "@/src/features/compliance/dashboard/mock";
 import {
   DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
@@ -114,7 +125,10 @@ type ComplianceView =
   | "security-access-controls"
   | "audits-legal-records"
   | "profile"
-  | "compliance-profile";
+  | "compliance-profile"
+  | "miner-pipeline"
+  | "partner-directory"
+  | "regulatory-readiness";
 
 type NavItem = {
   label: string;
@@ -138,29 +152,40 @@ type MetricCardProps = {
   footer?: ReactNode;
 };
 
-const adminNavItems: NavItem[] = [
-  {
-    label: "Dashboard",
-    icon: <AppstoreOutlined />,
-    active: true,
-  },
-  {
-    label: "Miner Pipeline",
-    icon: <UsergroupAddOutlined />,
-  },
-  {
-    label: "Partner directory",
-    icon: <ApartmentOutlined />,
-  },
-  {
-    label: "Regulatory readiness",
-    icon: <SafetyCertificateOutlined />,
-  },
-  {
-    label: "Notifications",
-    icon: <BellOutlined />,
-  },
-];
+function getAdminNavItems(view: ComplianceView): NavItem[] {
+  return [
+    {
+      label: "Dashboard",
+      icon: <AppstoreOutlined />,
+      href: "/compliancedashboard?persona=admin",
+      active: view === "dashboard",
+    },
+    {
+      label: "Miner Pipeline",
+      icon: <UsergroupAddOutlined />,
+      href: "/compliancedashboard?persona=admin&view=miner-pipeline",
+      active: view === "miner-pipeline",
+    },
+    {
+      label: "Partner directory",
+      icon: <ApartmentOutlined />,
+      href: "/compliancedashboard?persona=admin&view=partner-directory",
+      active: view === "partner-directory",
+    },
+    {
+      label: "Regulatory readiness",
+      icon: <SafetyCertificateOutlined />,
+      href: "/compliancedashboard?persona=admin&view=regulatory-readiness",
+      active: view === "regulatory-readiness",
+    },
+    {
+      label: "Notifications",
+      icon: <BellOutlined />,
+      href: "/compliancedashboard?persona=admin&view=notifications",
+      active: view === "notifications",
+    },
+  ];
+}
 
 function getComplianceNavItems(view: ComplianceView): NavItem[] {
   return [
@@ -175,10 +200,10 @@ function getComplianceNavItems(view: ComplianceView): NavItem[] {
       icon: <FolderOpenOutlined />,
       href: "/compliancedashboard?persona=compliance&view=reviews",
     },
-    {
-      label: "Partner directory",
-      icon: <ApartmentOutlined />,
-    },
+    // {
+    //   label: "Partner directory",
+    //   icon: <ApartmentOutlined />,
+    // },
     {
       label: "Reviews",
       icon: <FileSearchOutlined />,
@@ -199,7 +224,7 @@ const complianceProfileCard = {
   name: "David Obi",
   role: "Compliance Officer",
   email: "david.obi@nmca.gov.ng",
-  phone: "+234 803 456 7890",
+  phone: "+234 803 000 7890",
   department: "Compliance & Regulatory",
   joinedLabel: "Joined January 15, 2026",
   avatarSrc: "/assets/images/get-started.jpg",
@@ -341,6 +366,25 @@ function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+function filterBySearchTerm<T extends Record<string, unknown>>(
+  rows: T[],
+  searchTerm: string,
+  fields: Array<keyof T>,
+): T[] {
+  const term = searchTerm.trim().toLowerCase();
+
+  if (!term) {
+    return rows;
+  }
+
+  return rows.filter((row) =>
+    fields.some((field) => {
+      const value = row[field];
+      return typeof value === "string" && value.toLowerCase().includes(term);
+    }),
+  );
+}
+
 function getTrendMeta(direction: TrendDirection = "neutral") {
   switch (direction) {
     case "up":
@@ -425,16 +469,10 @@ const complianceAlertDateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "Africa/Lagos",
 });
 
-function formatComplianceAlertMeta(latestAlert: {
-  review_id: string;
-  created_at: string;
-}) {
-  const reviewRef = latestAlert.review_id.slice(0, 8);
-  const createdAt = complianceAlertDateFormatter.format(
-    new Date(latestAlert.created_at),
-  );
+const COMPLIANCE_ALERT_SLA_HOURS = 48;
 
-  return `Review ID: ${reviewRef} • ${createdAt}`;
+function formatComplianceAlertExpiry(expiresAt: string) {
+  return `Expires ${complianceAlertDateFormatter.format(new Date(expiresAt))}`;
 }
 
 function splitComplianceAlertMessage(message: string) {
@@ -444,6 +482,18 @@ function splitComplianceAlertMessage(message: string) {
     title: title?.trim() || "New Miner Onboarded",
     detail: detail?.trim() || "Ready for Review",
   };
+}
+
+function buildComplianceAlertDetail(latestAlert: {
+  miner_id: string | null;
+  message: string;
+}) {
+  if (latestAlert.miner_id) {
+    const shortMinerRef = latestAlert.miner_id.slice(0, 8);
+    return `[Miner ID: ${shortMinerRef}] - Ready for Review.`;
+  }
+
+  return splitComplianceAlertMessage(latestAlert.message).detail;
 }
 
 function mapComplianceAlert(
@@ -456,20 +506,26 @@ function mapComplianceAlert(
       meta: "New alerts will appear here as soon as they are generated.",
       actionLabel: "Claim Task",
       createdAt: undefined,
+      expiresAt: undefined,
     };
   }
 
   const alertCopy = splitComplianceAlertMessage(latestAlert.message);
+  const expiresAt = new Date(
+    new Date(latestAlert.created_at).getTime() +
+      COMPLIANCE_ALERT_SLA_HOURS * 60 * 60 * 1000,
+  ).toISOString();
 
   return {
     title: alertCopy.title,
-    detail: alertCopy.detail,
-    meta: formatComplianceAlertMeta(latestAlert),
+    detail: buildComplianceAlertDetail(latestAlert),
+    meta: formatComplianceAlertExpiry(expiresAt),
     actionLabel: "Claim Task",
     reviewId: latestAlert.review_id || undefined,
     minerId: latestAlert.miner_id,
     minerName: latestAlert.miner_name,
     createdAt: latestAlert.created_at,
+    expiresAt,
   };
 }
 
@@ -1374,7 +1430,7 @@ function DashboardMetricCard({
 
 function SidebarNavItem({ item }: { item: NavItem }) {
   const className = classNames(
-    "flex w-full items-center gap-3 rounded-r-[18px] border-r-4 px-5 py-4 text-left text-[16px] font-medium transition-colors",
+    "flex w-full items-center gap-3 rounded- border-r-4 px-5 py-4 text-left text-[16px] font-medium transition-colors",
     item.active
       ? "border-r-[#101e3d] bg-[#d9e8ff] text-[#101e3d]"
       : "border-r-transparent text-[#3b4253] hover:bg-white hover:text-[#101e3d]",
@@ -1419,7 +1475,10 @@ function DashboardSidebar({
   complianceView?: ComplianceView;
 }) {
   const navItems =
-    persona === "admin" ? adminNavItems : getComplianceNavItems(complianceView);
+    persona === "admin"
+      ? getAdminNavItems(complianceView)
+      : getComplianceNavItems(complianceView);
+  const queryClient = useQueryClient();
 
   return (
     <aside className="hidden w-[280px] flex-col border-r border-[#e9edf5] bg-white xl:flex">
@@ -1444,6 +1503,7 @@ function DashboardSidebar({
           type="button"
           onClick={() => {
             sessionStorage.clear();
+            queryClient.clear();
             window.location.href = "/login";
           }}
           className="inline-flex items-center gap-3 text-[16px] font-medium text-[#ef2f32] transition-colors hover:text-[#d72225]"
@@ -1457,15 +1517,37 @@ function DashboardSidebar({
 }
 
 function OnlineToggle() {
+  const [online, setOnline] = useState(true);
+
   return (
-    <div className="flex items-center gap-3">
-      <span className="relative flex h-8 w-[88px] rounded-full bg-[#18bf54] p-1 shadow-inner">
-        <span className="ml-auto h-6 w-6 rounded-full bg-white shadow-sm" />
+    <button
+      type="button"
+      onClick={() => setOnline((prev) => !prev)}
+      className="flex items-center gap-3"
+      aria-pressed={online}
+    >
+      <span
+        className={classNames(
+          "relative flex h-7 w-14 rounded-full p-1 transition-colors duration-200",
+          online ? "bg-[#18bf54]" : "bg-[#d1d5db]"
+        )}
+      >
+        <span
+          className={classNames(
+            "h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200",
+            online ? "translate-x-7" : "translate-x-0"
+          )}
+        />
       </span>
-      <span className="text-[14px] font-semibold tracking-[0.12em] text-[#15a93d]">
-        ONLINE
+      <span
+        className={classNames(
+          "text-[13px] font-semibold tracking-[0.1em]",
+          online ? "text-[#15a93d]" : "text-[#9ca3af]"
+        )}
+      >
+        {online ? "ONLINE" : "OFFLINE"}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -1473,13 +1555,18 @@ function DashboardTopBar({
   persona,
   complianceView,
   onMenuNavigate,
+  searchTerm,
+  onSearchTermChange,
 }: {
   persona: DashboardPersona;
   complianceView?: ComplianceView;
   onMenuNavigate?: () => void;
+  searchTerm: string;
+  onSearchTermChange: (value: string) => void;
 }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const queryClient = useQueryClient();
   const roleLabel = persona === "admin" ? "Admin" : complianceProfileCard.role;
   const isSettingsSurface =
     complianceView === "settings" ||
@@ -1492,7 +1579,7 @@ function DashboardTopBar({
     complianceView === "security-access-controls" ||
     complianceView === "audits-legal-records";
   const settingsButtonClassName = classNames(
-    "flex h-12 w-12 items-center justify-center rounded-full border text-[20px] transition-colors",
+    "flex h-10 w-10 items-center justify-center rounded-full border text-[18px] transition-colors",
     isSettingsSurface
       ? "border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b] shadow-[0_18px_30px_-26px_rgba(30,164,59,0.65)]"
       : "border-[#eceef4] bg-[#f9fafc] text-[#2a3142] hover:bg-white",
@@ -1526,7 +1613,7 @@ function DashboardTopBar({
   };
 
   return (
-    <header className="border-b border-[#e9edf5] bg-white/95 backdrop-blur">
+    <header className="relative z-40 border-b border-[#e9edf5] bg-white/95 backdrop-blur">
       <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-8">
         <div className="flex items-center gap-3 xl:hidden">
           <Image
@@ -1538,20 +1625,22 @@ function DashboardTopBar({
           <span className="text-xl font-semibold text-[#172554]">Beldium</span>
         </div>
 
-        <div className="relative w-full max-w-[410px]">
+        <div className="relative w-full max-w-[280px]">
           <input
             type="text"
+            value={searchTerm}
+            onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="Search miner"
-            className="h-14 w-full rounded-full border border-[#dbe0ea] bg-white pl-6 pr-14 text-[17px] text-[#293041] outline-none transition-shadow placeholder:text-[#8b93a1] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]"
+            className="h-12 w-full rounded-full border border-[#dbe0ea] bg-white pl-6 pr-14 text-[17px] text-[#293041] outline-none transition-shadow placeholder:text-[#8b93a1] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]"
           />
-          <SearchOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[22px] text-[#687081]" />
+          <SearchOutlined className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-[20px] text-[#687081]" />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
-          <div className="flex items-center gap-4 rounded-full bg-white px-2 py-1">
-            <span className="text-[15px] text-[#707785]">Status</span>
-            <OnlineToggle />
-          </div>
+          <div className="flex items-center gap-2 rounded-full border border-[#e4e9f2] bg-[#f9fafb] px-3 py-1.5">
+  <span className="text-[13px] text-[#707785]">Status</span>
+  <OnlineToggle />
+</div>
 
           <span className="inline-flex h-12 items-center rounded-[16px] border border-[#b8e3bf] bg-[#f1fff3] px-5 text-[15px] font-medium text-[#13a236]">
             Pilot Phase
@@ -1572,10 +1661,10 @@ function DashboardTopBar({
 
           <button
             type="button"
-            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[20px] text-[#2a3142] transition-colors hover:bg-white"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[22px] text-[#2a3142] transition-colors hover:bg-white"
           >
             <BellOutlined />
-            <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#ff4726]" />
+            <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-[#ff4726]" />
           </button>
 
           <div className="hidden h-12 w-px bg-[#e4e7ee] lg:block" />
@@ -1593,7 +1682,7 @@ function DashboardTopBar({
                   : "border-transparent bg-[#f5f7fb]",
               )}
             >
-              <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white shadow-sm">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm">
                 <Image
                   src={complianceProfileCard.avatarSrc}
                   alt={complianceProfileCard.name}
@@ -1603,10 +1692,10 @@ function DashboardTopBar({
                 />
               </div>
               <div className="leading-tight">
-                <div className="text-[16px] font-semibold text-[#1f2635]">
+                <div className="text-[12px] font-semibold text-[#1f2635]">
                   {complianceProfileCard.name}
                 </div>
-                <div className="mt-1 text-[14px] text-[#7a8291]">{roleLabel}</div>
+                <div className="mt-1 text-[12px] text-[#7a8291]">{roleLabel}</div>
               </div>
               {persona === "compliance" ? (
                 <DownOutlined
@@ -1663,6 +1752,7 @@ function DashboardTopBar({
                     onClick={() => {
                       setIsProfileMenuOpen(false);
                       sessionStorage.clear();
+                      queryClient.clear();
                       window.location.href = "/login";
                     }}
                     className="flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#ef2f32] transition-colors hover:bg-[#fff5f5]"
@@ -1720,10 +1810,19 @@ function PageHero({
 }) {
   const isComplianceReviewsView =
     persona === "compliance" && complianceView === "reviews";
-  const isComplianceNotificationsView =
-    persona === "compliance" && complianceView === "notifications";
+  const isComplianceNotificationsView = complianceView === "notifications";
+  const isAdminMinerPipelineView =
+    persona === "admin" && complianceView === "miner-pipeline";
+  const isAdminPartnerDirectoryView =
+    persona === "admin" && complianceView === "partner-directory";
+  const isAdminRegulatoryReadinessView =
+    persona === "admin" && complianceView === "regulatory-readiness";
   const showBackAction =
-    isComplianceReviewsView || isComplianceNotificationsView;
+    isComplianceReviewsView ||
+    isComplianceNotificationsView ||
+    isAdminMinerPipelineView ||
+    isAdminPartnerDirectoryView ||
+    isAdminRegulatoryReadinessView;
 
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -1734,17 +1833,31 @@ function PageHero({
             {isComplianceReviewsView
               ? "Reviews"
               : isComplianceNotificationsView
-                ? "Notifications"
-                : "Dashboard"}
+                ? persona === "admin"
+                  ? "Notifications"
+                  : "Notifications"
+                : isAdminMinerPipelineView
+                  ? "Miner Pipeline"
+                  : isAdminPartnerDirectoryView
+                    ? "Partner Directory"
+                    : isAdminRegulatoryReadinessView
+                      ? "Regulatory Readiness"
+                      : "Dashboard"}
           </h1>
           <p className="mt-2 max-w-[720px] text-[15px] text-[#7a8291]">
             {isComplianceReviewsView
               ? "Review every compliance task from the full list without losing the workspace context."
               : isComplianceNotificationsView
                 ? "Active compliance signals requiring review or action."
-                : persona === "admin"
-                ? "Track miner onboarding, reviewer assignments, and regulatory readiness from a single command center."
-                : "Stay on top of open claims, active reviews, and compliance quality without leaving the queue."}
+                : isAdminMinerPipelineView
+                  ? "Review onboarding readiness, document status, and reviewer workload at a glance."
+                  : isAdminPartnerDirectoryView
+                    ? "Find and assign accredited environmental, legal, ESG, and government liaison partners."
+                    : isAdminRegulatoryReadinessView
+                      ? "Track, retain, and export compliance activity for legal and regulatory accountability."
+                      : persona === "admin"
+                      ? "Track miner onboarding, reviewer assignments, and regulatory readiness from a single command center."
+                      : "Stay on top of open claims, active reviews, and compliance quality without leaving the queue."}
           </p>
         </div>
       </div>
@@ -1752,7 +1865,7 @@ function PageHero({
       <Link
         href={
           showBackAction
-            ? "/compliancedashboard?persona=compliance"
+            ? `/compliancedashboard?persona=${persona}`
             : "#"
         }
         className="relative inline-flex h-[60px] items-center justify-center gap-3 rounded-[18px] bg-[#14244a] px-8 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-transform hover:-translate-y-0.5"
@@ -4955,17 +5068,381 @@ function AdminPipelineSection({
   );
 }
 
+function AdminMinerPipelineView({ rows }: { rows: AdminPipelineRow[] }) {
+  return (
+    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="overflow-hidden rounded-[24px] border border-[#e5e9f1]">
+        <div className="overflow-x-auto">
+          <table className="min-w-[1120px] w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="bg-[#fbfcfe] text-[15px] font-medium text-[#353b47]">
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Miner ID</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Name / Company</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">State / LGA</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">License status</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Environmental status</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Compliance score</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Assigned reviewer</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Last action date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr
+                  key={`${row.minerId}-${index}`}
+                  className={classNames(
+                    "text-[15px] text-[#4b5260]",
+                    index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
+                  )}
+                >
+                  <td className="border-b border-[#edf1f7] px-5 py-6 font-medium text-[#4c5565]">
+                    {row.minerId}
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6 text-[#2f3541]">
+                    <div className="max-w-[220px] truncate">{row.company}</div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">{row.location}</td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <StatusBadgePill badge={row.licenseStatus} />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <StatusBadgePill badge={row.environmentalStatus} />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <ScoreMeter score={row.complianceScore} />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <div className="max-w-[180px] truncate">{row.reviewer}</div>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6 whitespace-nowrap">
+                    {row.lastActionDate}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const PARTNER_CATEGORY_FILTERS: Array<{ key: "All" | PartnerCategory; label: string }> = [
+  { key: "All", label: "All" },
+  { key: "Environmental", label: "Environmental" },
+  { key: "Legal", label: "Legal/Regulatory" },
+  { key: "ESG Auditors", label: "ESG Auditors" },
+  { key: "Govt Liaison", label: "Govt Liaison" },
+];
+
+const partnerAvailabilityDot: Record<PartnerAvailability, string> = {
+  Available: "bg-[#1fb538]",
+  "Near capacity": "bg-[#f3a000]",
+  Busy: "bg-[#ef2f32]",
+};
+
+function AdminPartnerDirectoryView({ rows }: { rows: PartnerDirectoryRow[] }) {
+  const [activeCategory, setActiveCategory] = useState<"All" | PartnerCategory>("All");
+  const [search, setSearch] = useState("");
+  const [openedPartner, setOpenedPartner] = useState<PartnerDirectoryRow | null>(null);
+
+  const filteredRows = rows.filter((row) => {
+    const matchesCategory = activeCategory === "All" || row.category === activeCategory;
+    const matchesSearch = search.trim()
+      ? row.partnerEntity.toLowerCase().includes(search.trim().toLowerCase())
+      : true;
+    return matchesCategory && matchesSearch;
+  });
+
+  if (openedPartner) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 text-[14px] text-[#7b8392]">
+          <button
+            type="button"
+            onClick={() => setOpenedPartner(null)}
+            className="inline-flex items-center gap-2 rounded-full border border-[#dce3ef] bg-white px-4 py-2 text-[14px] font-medium text-[#4e5665] shadow-sm"
+          >
+            <ArrowLeftOutlined />
+            Partner Directory
+          </button>
+          <ArrowRightOutlined className="text-[12px]" />
+          <span className="font-semibold text-[#2a2f39]">{openedPartner.partnerEntity}</span>
+        </div>
+
+        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[24px] font-semibold text-[#2a2f39]">{openedPartner.partnerEntity}</div>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <StatusBadgePill badge={{ label: openedPartner.category, tone: "cyan" }} />
+                <StatusBadgePill
+                  badge={{
+                    label: openedPartner.availability,
+                    tone:
+                      openedPartner.availability === "Available"
+                        ? "green"
+                        : openedPartner.availability === "Near capacity"
+                          ? "amber"
+                          : "red",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <ReviewInfoTile icon={<SafetyCertificateOutlined />} label="Accreditation Status" value={openedPartner.accreditationStatus} />
+            <ReviewInfoTile icon={<EnvironmentOutlined />} label="Regions Covered" value={openedPartner.regionsCovered} />
+            <ReviewInfoTile icon={<UsergroupAddOutlined />} label="Active Assignments" value={String(openedPartner.activeAssignments)} />
+            <ReviewInfoTile icon={<ApartmentOutlined />} label="Category" value={openedPartner.category} />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="inline-flex flex-wrap items-center gap-2 rounded-[16px] border border-[#e7ebf2] bg-[#fafbfd] p-1.5">
+          {PARTNER_CATEGORY_FILTERS.map((tab) => {
+            const isActive = activeCategory === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveCategory(tab.key)}
+                className={classNames(
+                  "rounded-[12px] px-4 py-2 text-[14px] font-medium transition-colors",
+                  isActive ? "bg-[#14244a]" : "text-[#5d6675] hover:bg-white",
+                )}
+                style={isActive ? primaryActionStyle : undefined}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="text"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search partner by name or license"
+          className="h-11 w-full max-w-[320px] rounded-full border border-[#dbe0ea] bg-white px-5 text-[14px] text-[#293041] outline-none"
+        />
+      </div>
+
+      <div className="overflow-hidden rounded-[24px] border border-[#e5e9f1]">
+        <div className="overflow-x-auto">
+          <table className="min-w-[960px] w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="bg-[#fbfcfe] text-[15px] font-medium text-[#353b47]">
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Partner Entity</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Category</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Accreditation Status</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Regions Covered</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Availability</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5">Active Assignments</th>
+                <th className="border-b border-[#e5e9f1] px-5 py-5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((row, index) => (
+                <tr
+                  key={row.id}
+                  className={classNames(
+                    "text-[15px] text-[#4b5260]",
+                    index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
+                  )}
+                >
+                  <td className="border-b border-[#edf1f7] px-5 py-6 font-medium text-[#2f3541]">
+                    {row.partnerEntity}
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <StatusBadgePill badge={{ label: row.category, tone: "cyan" }} />
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">{row.accreditationStatus}</td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">{row.regionsCovered}</td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">
+                    <span className="inline-flex items-center gap-2">
+                      <span className={classNames("h-2.5 w-2.5 rounded-full", partnerAvailabilityDot[row.availability])} />
+                      {row.availability}
+                    </span>
+                  </td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6">{row.activeAssignments}</td>
+                  <td className="border-b border-[#edf1f7] px-5 py-6 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setOpenedPartner(row)}
+                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[#dce3ef] bg-white px-4 text-[13px] font-medium text-[#2b3140]"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-[14px] text-[#8a92a1]">
+                    No partners match this filter.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const regulatoryReadinessToneStroke: Record<RegulatoryReadinessMetric["tone"], string> = {
+  blue: "#2661d8",
+  green: "#1ea43b",
+  amber: "#e09408",
+};
+
+function ReadinessRing({ percentage, tone }: { percentage: number; tone: RegulatoryReadinessMetric["tone"] }) {
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - percentage / 100);
+
+  return (
+    <svg viewBox="0 0 180 180" className="mx-auto h-[180px] w-[180px] -rotate-90">
+      <circle cx="90" cy="90" r={radius} fill="none" stroke="#eef1f6" strokeWidth="16" />
+      <circle
+        cx="90"
+        cy="90"
+        r={radius}
+        fill="none"
+        stroke={regulatoryReadinessToneStroke[tone]}
+        strokeWidth="16"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+      />
+    </svg>
+  );
+}
+
+function AdminRegulatoryReadinessView({
+  metrics,
+  states,
+  statusDistribution,
+}: {
+  metrics: RegulatoryReadinessMetric[];
+  states: RegulatoryRiskState[];
+  statusDistribution: typeof REGULATORY_STATUS_DISTRIBUTION;
+}) {
+  const riskToneClass: Record<RegulatoryRiskState["risk"], string> = {
+    Low: "bg-[#ecfaf0] text-[#1ea43b] border-[#caebd1]",
+    Medium: "bg-[#fff4df] text-[#e09408] border-[#f6e3bf]",
+    High: "bg-[#ffeff0] text-[#ef2f32] border-[#f7d6d7]",
+  };
+  const distributionToneClass: Record<"green" | "amber" | "red", string> = {
+    green: "bg-[#ecfaf0] text-[#1ea43b]",
+    amber: "bg-[#fff4df] text-[#e09408]",
+    red: "bg-[#ffeff0] text-[#ef2f32]",
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => showToast("Export isn't connected to the backend yet.", "error")}
+          className="inline-flex h-12 items-center gap-2 rounded-[14px] bg-[#14244a] px-5 text-[15px] font-semibold text-white"
+          style={primaryActionStyle}
+        >
+          Export regulatory report
+        </button>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        {metrics.map((metric) => (
+          <section
+            key={metric.id}
+            className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 text-center shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]"
+          >
+            <div className="text-[15px] font-medium text-[#2a2f39]">{metric.title}</div>
+            <div className="mt-1 text-[26px] font-semibold text-[#2a2f39]">{metric.percentage}%</div>
+            <ReadinessRing percentage={metric.percentage} tone={metric.tone} />
+            <div className="mt-4 space-y-2 text-left text-[13px] text-[#5d6675]">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: regulatoryReadinessToneStroke[metric.tone] }}
+                />
+                {metric.legendReady}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#e5e9f1]" />
+                {metric.legendNotReady}
+              </div>
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <div className="text-[18px] font-semibold text-[#2a2f39]">Risk Distribution by State</div>
+          <div className="mt-5 space-y-3">
+            {states.map((state) => (
+              <div
+                key={state.state}
+                className="flex items-center justify-between gap-4 rounded-[16px] border border-[#e8ecf4] bg-[#fafbfd] px-4 py-3"
+              >
+                <span className="text-[15px] font-medium text-[#2a2f39]">{state.state}</span>
+                <div className="flex items-center gap-4 text-[13px] text-[#7b8392]">
+                  <span>{state.compliancePartners} compliance partners</span>
+                  <span>{state.totalMiners} total miners</span>
+                  <span className={classNames("rounded-full border px-3 py-1 font-medium", riskToneClass[state.risk])}>
+                    {state.risk}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <div className="text-[18px] font-semibold text-[#2a2f39]">Miner Compliance Pipeline</div>
+          <div className="mt-2 text-[13px] text-[#8a92a1]">Status Distribution</div>
+          <div className="mt-5 space-y-4">
+            {statusDistribution.map((item) => (
+              <div key={item.id} className={classNames("rounded-[18px] p-5", distributionToneClass[item.tone])}>
+                <div className="text-[28px] font-semibold">{item.percentage}%</div>
+                <div className="mt-1 text-[14px] font-medium">
+                  {item.label} ({item.count} miners)
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 text-[12px] text-[#8a92a1]">
+            Aggregated data updated every 24 hours. Individual miner data is protected.
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function ComplianceAlertSection({
   alert,
   activeReviewId,
   onOpenReview,
+  onDismiss,
 }: {
   alert: ComplianceAlert;
   activeReviewId?: string;
   onOpenReview: () => void;
+  onDismiss: () => void;
 }) {
   const isActive = Boolean(alert.reviewId && activeReviewId === alert.reviewId);
   const canOpen = Boolean(alert.reviewId);
+  const canDismiss = Boolean(alert.reviewId);
 
   return (
     <section className="rounded-[28px] border border-[#e6ebf4] bg-white p-4 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-5">
@@ -4975,25 +5452,38 @@ function ComplianceAlertSection({
           <UsergroupAddOutlined />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[24px] font-semibold tracking-[-0.03em] text-[#252a34]">
+          <div className="text-[19px] font-semibold tracking-[-0.02em] text-[#252a34]">
             {alert.title}
           </div>
-          <div className="mt-1 text-[15px] text-[#7f8796]">
+          <div className="mt-1 text-[14px] text-[#7f8796]">
             {alert.detail}
           </div>
-          <div className="mt-2 text-[13px] text-[#a0a6b3]">
-            {alert.meta}
-          </div>
+          {alert.meta ? (
+            <div className="mt-1.5 text-[12px] text-[#a0a6b3]">
+              {alert.meta}
+            </div>
+          ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onOpenReview}
-          disabled={!canOpen}
-          aria-pressed={isActive}
-          className="inline-flex h-12 items-center justify-center rounded-[14px] border border-[#dfe3eb] bg-white px-5 text-[15px] font-medium text-[#404655] shadow-sm transition-colors hover:bg-[#f9fafc] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {alert.actionLabel}
-        </button>
+        <div className="flex items-center gap-2">
+          {canDismiss ? (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="inline-flex h-12 items-center justify-center rounded-[14px] px-4 text-[14px] font-medium text-[#8a92a1] transition-colors hover:bg-[#f9fafc] hover:text-[#404655]"
+            >
+              Cancel
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onOpenReview}
+            disabled={!canOpen}
+            aria-pressed={isActive}
+            className="inline-flex h-12 items-center justify-center rounded-[14px] border border-[#dfe3eb] bg-white px-5 text-[15px] font-medium text-[#404655] shadow-sm transition-colors hover:bg-[#f9fafc] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {alert.actionLabel}
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -5162,8 +5652,10 @@ function ComplianceQueueSection({
 
 function ComplianceReviewsSection({
   rows = [],
+  onOpenReview,
 }: {
   rows?: AdminReviewRow[];
+  onOpenReview?: (reviewId: string) => void;
 }) {
   return (
     <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
@@ -5195,8 +5687,10 @@ function ComplianceReviewsSection({
               {rows.map((row, index) => (
                 <tr
                   key={row.id}
+                  onClick={() => onOpenReview?.(row.id)}
                   className={classNames(
                     "text-[15px] text-[#4b5260]",
+                    onOpenReview ? "cursor-pointer hover:bg-[#f4f7fc]" : undefined,
                     index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]",
                   )}
                 >
@@ -5336,6 +5830,7 @@ function AdminDashboardView({
 
 function ComplianceDashboardView({
   alert,
+  alertDismissed,
   metrics,
   queueRows,
   activeTaskCards,
@@ -5343,9 +5838,11 @@ function ComplianceDashboardView({
   activeReviewId,
   onOpenQueueReview,
   onOpenAlertReview,
+  onDismissAlert,
   onOpenActiveTask,
 }: {
   alert: ComplianceAlert;
+  alertDismissed: boolean;
   metrics: DashboardMetric[];
   queueRows: ComplianceQueueRow[];
   activeTaskCards: ComplianceActiveTaskCard[];
@@ -5353,15 +5850,19 @@ function ComplianceDashboardView({
   activeReviewId?: string;
   onOpenQueueReview: (reviewId: string) => void;
   onOpenAlertReview: () => void;
+  onDismissAlert: () => void;
   onOpenActiveTask: (reviewId: string) => void;
 }) {
   return (
     <div className="space-y-6">
-      <ComplianceAlertSection
-        alert={alert}
-        activeReviewId={activeReviewId}
-        onOpenReview={onOpenAlertReview}
-      />
+      {alertDismissed ? null : (
+        <ComplianceAlertSection
+          alert={alert}
+          activeReviewId={activeReviewId}
+          onOpenReview={onOpenAlertReview}
+          onDismiss={onDismissAlert}
+        />
+      )}
       <ComplianceMetricsSection metrics={metrics} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.92fr)]">
         <ComplianceQueueSection
@@ -5381,10 +5882,12 @@ function ComplianceDashboardView({
 
 function ComplianceReviewsView({
   rows,
+  onOpenReview,
 }: {
   rows: AdminReviewRow[];
+  onOpenReview?: (reviewId: string) => void;
 }) {
-  return <ComplianceReviewsSection rows={rows} />;
+  return <ComplianceReviewsSection rows={rows} onOpenReview={onOpenReview} />;
 }
 
 const notificationSeverityBar: Record<NotificationSeverity, string> = {
@@ -5679,7 +6182,7 @@ function ReviewDocumentRow({
       <div className="flex items-center gap-2">
         <span
           className={classNames(
-            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-medium",
+            "inline-flex items-center gap-2 rounded-xl px-3 py-3 text-[12px] font-medium",
             locked
               ? "border border-[#e8ecf4] bg-[#f7f9fc] text-[#7f8796]"
               : "border border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b]",
@@ -5688,12 +6191,12 @@ function ReviewDocumentRow({
           {locked ? (
             <>
               <InfoCircleOutlined />
-              Locked
+              
             </>
           ) : (
             <>
               <CheckCircleOutlined />
-              Uploaded
+              
             </>
           )}
         </span>
@@ -5711,7 +6214,7 @@ function ReviewDocumentRow({
           )}
         >
           <EyeOutlined />
-          View
+          
         </a>
 
         <a
@@ -5728,7 +6231,7 @@ function ReviewDocumentRow({
           )}
         >
           <DownloadOutlined />
-          Download
+          
         </a>
       </div>
     </div>
@@ -5932,7 +6435,7 @@ function ComplianceReviewDrawer({
               </section>
             </div>
 
-            <div className="border-t border-[#edf1f7] bg-white p-6">
+            <div className="border-t border-[#edf1f7] flex flex-col gap-4 bg-white p-6">
               <button
                 type="button"
                 onClick={() => onAction(primaryAction)}
@@ -6015,23 +6518,131 @@ function ComplianceClaimConflictModal({
   );
 }
 
+type CaseReviewTab =
+  | "overview"
+  | "licensing"
+  | "environmental-esg"
+  | "operational"
+  | "export-compliance"
+  | "documents"
+  | "internal-notes"
+  | "timeline";
+
+const CASE_REVIEW_TABS: { key: CaseReviewTab; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "licensing", label: "Licensing" },
+  { key: "environmental-esg", label: "Environmental & ESG" },
+  { key: "operational", label: "Operational" },
+  { key: "export-compliance", label: "Export Compliance" },
+  { key: "documents", label: "Documents" },
+  { key: "internal-notes", label: "Internal Notes" },
+  { key: "timeline", label: "Timeline" },
+];
+
+type CaseChecklistItem = {
+  title: string;
+  detail: string;
+  status: "verified" | "pending" | "flagged";
+};
+
+const CASE_OPERATIONAL_ITEMS: CaseChecklistItem[] = [
+  { title: "Production Reports", detail: "Latest declared output verified against Ministry data.", status: "verified" },
+  { title: "Mining Permit", detail: "Active. No violations recorded.", status: "verified" },
+  { title: "Inspection Reports", detail: "Latest site inspection report awaited.", status: "pending" },
+  { title: "Equipment Compliance", detail: "All heavy equipment certified under NIS standards.", status: "verified" },
+  { title: "Operational Incidents", detail: "Minor incidents on file. Remediation plans submitted.", status: "flagged" },
+  { title: "Site Visits", detail: "Scheduled site visit not yet completed.", status: "pending" },
+  { title: "Production Consistency", detail: "Declared capacity aligns with production data.", status: "verified" },
+];
+
+const CASE_EXPORT_ITEMS: CaseChecklistItem[] = [
+  { title: "Export License", detail: "Valid and on file with the export authority.", status: "verified" },
+  { title: "Shipment Manifests", detail: "Latest manifest pending upload.", status: "pending" },
+  { title: "Customs Declarations", detail: "All declarations reconciled with export volumes.", status: "verified" },
+  { title: "Mineral Origin Certificate", detail: "Discrepancy flagged against declared origin state.", status: "flagged" },
+];
+
+function caseChecklistStatusMeta(status: CaseChecklistItem["status"]) {
+  switch (status) {
+    case "verified":
+      return { label: "Verified", className: "border border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b]", icon: <CheckCircleOutlined className="text-[#1ea43b]" /> };
+    case "flagged":
+      return { label: "Flagged", className: "border border-[#f6d9c2] bg-[#fff2e6] text-[#e0781a]", icon: <WarningFilled className="text-[#e0781a]" /> };
+    case "pending":
+    default:
+      return { label: "Pending", className: "border border-[#f6e3bf] bg-[#fff4df] text-[#e09408]", icon: <ClockCircleOutlined className="text-[#e09408]" /> };
+  }
+}
+
+function CaseChecklistCard({ item }: { item: CaseChecklistItem }) {
+  const meta = caseChecklistStatusMeta(item.status);
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-[18px] border border-[#e8ecf4] bg-white px-5 py-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 text-[18px]">{meta.icon}</span>
+        <div>
+          <div className="text-[15px] font-semibold text-[#2a2f39]">{item.title}</div>
+          <div className="mt-1 text-[13px] text-[#7b8392]">{item.detail}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={classNames("rounded-full px-3 py-1 text-[12px] font-medium", meta.className)}>
+          {meta.label}
+        </span>
+        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[14px] text-[#7b8392]">
+          <EyeOutlined />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OverviewMetricTile({
+  label,
+  value,
+  valueClassName,
+  footnote,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+  footnote?: string;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[#e8ecf4] bg-white p-5">
+      <div className="text-[13px] font-medium text-[#8a92a1]">{label}</div>
+      <div className={classNames("mt-3 text-[26px] font-semibold text-[#2a2f39]", valueClassName)}>{value}</div>
+      {footnote ? <div className="mt-2 text-[12px] text-[#a0a7b5]">{footnote}</div> : null}
+    </div>
+  );
+}
+
 function ComplianceMinerDetailView({
   selection,
   reviewDetail,
   minerDetail,
   isLoading,
   onBack,
+  onAction,
+  activeAction,
 }: {
   selection: ComplianceReviewSelection;
   reviewDetail?: ComplianceReviewDetail | null;
   minerDetail?: ComplianceMinerDetailResponse;
   isLoading: boolean;
   onBack: () => void;
+  onAction: (action: "approve" | "reject" | "request_information") => void;
+  activeAction?: "approve" | "reject" | "request_information";
 }) {
+  const [activeTab, setActiveTab] = useState<CaseReviewTab>("overview");
   const minerSummary = getMinerDetailSummary(minerDetail);
   const documents = getMinerDetailDocuments(minerDetail);
   const reviewStatus = reviewDetail?.status ?? "under_review";
-  const minerStatus = formatReviewStatusText(reviewStatus);
+  const riskBadge = formatRiskLevelBadge(reviewDetail?.risk_level ?? null);
+  const scoreText = formatReviewScore(reviewDetail?.compliance_score);
+  const companyName = selection.company ?? selection.minerName ?? "Miner Profile";
+  const caseCode = selection.minerCode ?? selection.reviewId.slice(0, 8).toUpperCase();
+  const documentsVerifiedCount = documents.length;
   const activityItems = [
     reviewDetail?.reviewed_at
       ? {
@@ -6071,103 +6682,134 @@ function ComplianceMinerDetailView({
         <span className="font-semibold text-[#2a2f39]">Miner Detail</span>
       </div>
 
-      <div className="grid gap-6 2xl:grid-cols-[340px_minmax(0,1fr)_280px]">
-        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#ff4678] text-[54px] font-semibold italic text-white">
-              {selection.company?.slice(0, 2).toLowerCase() || "in"}
-            </div>
-            <div className="mt-6 text-[34px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
-              {selection.company ?? selection.minerName ?? "Miner Profile"}
-            </div>
-            <div className="mt-2 text-[18px] text-[#6f7786]">
-              Miner&apos;s ID: {selection.minerCode ?? selection.reviewId.slice(0, 8).toUpperCase()}
-            </div>
-          </div>
-
-          <div className="mt-8 space-y-4">
-            <div className="flex items-center justify-between gap-3 text-[15px] text-[#4f5664]">
-              <span className="inline-flex items-center gap-2 text-[#7b8392]">
-                <EnvironmentOutlined />
-                Location
+      <div className="overflow-hidden rounded-[28px] border border-[#e8ecf4] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf1f7] px-6 py-5">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[22px] font-semibold text-[#2a2f39]">{companyName}</span>
+              <span className="rounded-[8px] border border-[#e5e9f1] bg-[#f7f9fc] px-3 py-1 text-[13px] font-medium text-[#5d6675]">
+                Case {caseCode}
               </span>
-              <span className="font-medium text-[#2a2f39]">
-                {selection.location ?? "Pending location data"}
+              <StatusBadgePill badge={riskBadge.label === "Unrated" ? { label: "Risk pending", tone: "slate" } : { label: `${riskBadge.label} Risk`, tone: riskBadge.tone }} />
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-[13px] text-[#8a92a1]">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarOutlined /> Submitted {selection.createdAt ? formatReviewDateTime(selection.createdAt) : "Not yet"}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <UserOutlined /> Reviewer: {reviewDetail?.assigned_to || "Unassigned"}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <RiseOutlined /> Score: {scoreText}
               </span>
             </div>
-
-            <div className="h-[138px] overflow-hidden rounded-[18px] border border-[#e6ebf4] bg-[radial-gradient(circle_at_top,#8cb9ff,transparent_32%),linear-gradient(135deg,#202d42,#4f6b95)] p-4 text-white">
-              <div className="text-[13px] font-medium text-white/85">
-                Site overview
-              </div>
-              <div className="mt-10 grid grid-cols-3 gap-3 text-[11px] uppercase tracking-[0.08em] text-white/75">
-                <span className="rounded-full bg-white/10 px-3 py-2">North ridge</span>
-                <span className="rounded-full bg-white/10 px-3 py-2">Processing</span>
-                <span className="rounded-full bg-white/10 px-3 py-2">Field camp</span>
-              </div>
-            </div>
-
-            <div className="space-y-4 text-[15px] text-[#4f5664]">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#7b8392]">Monthly output range</span>
-                <span className="font-medium text-[#2a2f39]">
-                  {minerSummary?.activeTasks != null
-                    ? `${minerSummary.activeTasks * 50} - ${minerSummary.activeTasks * 100} tons`
-                    : "Pending review"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#7b8392]">Operation type</span>
-                <span className="font-medium text-[#2a2f39]">
-                  {reviewStatus === "under_review" ? "Open Pit" : "Artisanal"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#7b8392]">Miner status</span>
-                <span className="rounded-[12px] border border-[#dce3ef] bg-[#f7f9fc] px-4 py-2 font-medium text-[#2a2f39]">
-                  {minerStatus}
-                </span>
-              </div>
-            </div>
           </div>
-        </section>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => showToast("Export isn't connected to the backend yet.", "error")}
+              className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-4 text-[13px] font-medium text-[#2b3140]"
+            >
+              <DownloadOutlined /> Export
+            </button>
+            <button
+              type="button"
+              onClick={() => showToast("Share isn't connected to the backend yet.", "error")}
+              className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-4 text-[13px] font-medium text-[#2b3140]"
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-4 text-[13px] font-medium text-[#2b3140]"
+            >
+              Print
+            </button>
+          </div>
+        </div>
 
-        <div className="space-y-6">
-          <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#cfe0ff] bg-[#f5f9ff] px-4 py-2 text-[16px] font-medium text-[#2661d8]">
-              <InfoCircleOutlined />
-              Licensing & Regulatory Status
-            </div>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <ReviewInfoTile
-                icon={<CheckCircleOutlined />}
-                label="Review status"
-                value={minerStatus}
-              />
-              <ReviewInfoTile
-                icon={<MailOutlined />}
-                label="Assigned to"
-                value={reviewDetail?.assigned_to || "Unassigned"}
-              />
-              <ReviewInfoTile
-                icon={<CalendarOutlined />}
-                label="Claimed at"
-                value={formatReviewDateTime(reviewDetail?.claimed_at)}
-              />
-              <ReviewInfoTile
-                icon={<ClockCircleOutlined />}
-                label="Reviewed at"
-                value={formatReviewDateTime(reviewDetail?.reviewed_at)}
-              />
-            </div>
-          </section>
+        <div className="flex gap-1 overflow-x-auto border-b border-[#edf1f7] px-6">
+          {CASE_REVIEW_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={classNames(
+                "whitespace-nowrap border-b-2 px-3 py-4 text-[14px] font-medium transition-colors",
+                activeTab === tab.key
+                  ? "border-[#14244a] text-[#14244a]"
+                  : "border-transparent text-[#8a92a1] hover:text-[#2a2f39]",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#dbe4f2] bg-[#f8fbff] px-4 py-2 text-[16px] font-medium text-[#2a3447]">
-              <FolderOpenOutlined />
-              Uploaded Documents
+        <div className="p-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              <div className="h-24 animate-pulse rounded-[18px] bg-[#f3f6fb]" />
+              <div className="h-44 animate-pulse rounded-[18px] bg-[#f3f6fb]" />
             </div>
-            <div className="mt-6 space-y-4">
+          ) : activeTab === "overview" ? (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <OverviewMetricTile label="Compliance Score" value={scoreText} valueClassName="text-[#e0781a]" />
+                <OverviewMetricTile label="Risk Score" value={riskBadge.label} footnote={reviewDetail?.notes ? undefined : undefined} />
+                <OverviewMetricTile label="Open Issues" value={String(activityItems.length)} />
+                <OverviewMetricTile label="Documents Verified" value={`${documentsVerifiedCount} / ${documentsVerifiedCount || "-"}`} />
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+                <section className="rounded-[20px] border border-[#e8ecf4] bg-white p-5">
+                  <div className="text-[16px] font-semibold text-[#2a2f39]">Company Profile</div>
+                  <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                    <ReviewInfoTile icon={<ApartmentOutlined />} label="Company" value={companyName} />
+                    <ReviewInfoTile icon={<IdcardOutlined />} label="Miner ID" value={caseCode} />
+                    <ReviewInfoTile icon={<EnvironmentOutlined />} label="Mine Location" value={selection.location ?? "Pending location data"} />
+                    <ReviewInfoTile icon={<UserOutlined />} label="Current Reviewer" value={reviewDetail?.assigned_to || "Unassigned"} />
+                    <ReviewInfoTile icon={<CalendarOutlined />} label="Submission Date" value={selection.createdAt ? formatReviewDateTime(selection.createdAt) : "Not yet"} />
+                    <ReviewInfoTile icon={<CheckCircleOutlined />} label="Review Status" value={formatReviewStatusText(reviewStatus)} />
+                  </div>
+                </section>
+
+                <aside className="space-y-4">
+                  <section className="rounded-[20px] border border-[#e8ecf4] bg-white p-5">
+                    <div className="flex items-center gap-2 text-[15px] font-semibold text-[#2a2f39]">
+                      <EnvironmentOutlined /> Mine Location
+                    </div>
+                    <div className="mt-4 flex h-[110px] items-center justify-center rounded-[14px] bg-[#f4f7fb] text-[#8a92a1]">
+                      <EnvironmentOutlined className="text-[24px]" />
+                    </div>
+                    <div className="mt-3 text-[13px] text-[#5d6675]">{selection.location ?? "Location pending"}</div>
+                  </section>
+
+                  <section className="rounded-[20px] border border-[#e8ecf4] bg-white p-5">
+                    <div className="text-[15px] font-semibold text-[#2a2f39]">Review Progress</div>
+                    <div className="mt-4 space-y-4">
+                      {[
+                        { label: "Licensing", value: 100 },
+                        { label: "Environmental", value: 48 },
+                        { label: "Operational", value: 20 },
+                        { label: "Export", value: 0 },
+                      ].map((row) => (
+                        <div key={row.label}>
+                          <div className="flex items-center justify-between text-[13px] text-[#5d6675]">
+                            <span>{row.label}</span>
+                            <span className="font-medium text-[#2a2f39]">{row.value}%</span>
+                          </div>
+                          <LinearProgress value={row.value} tone={row.value >= 80 ? "green" : row.value >= 30 ? "amber" : "red"} />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </aside>
+              </div>
+            </div>
+          ) : activeTab === "licensing" ? (
+            <div className="space-y-4">
               {documents.length > 0 ? (
                 documents.map((document) => (
                   <ReviewDocumentRow
@@ -6181,37 +6823,24 @@ function ComplianceMinerDetailView({
                 ))
               ) : (
                 <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
-                  No document links were returned by the miner detail endpoint for
-                  this miner yet.
+                  No licensing documents were returned by the miner detail endpoint for this miner yet.
                 </div>
               )}
             </div>
-          </section>
-
-          <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d8efcf] bg-[#f2fff0] px-4 py-2 text-[16px] font-medium text-[#2e9d25]">
-              <CheckCircleOutlined />
-              Environmental & ESG Review
-            </div>
-            <div className="mt-6 space-y-6">
+          ) : activeTab === "environmental-esg" ? (
+            <div className="space-y-6">
               {[
                 "EIA Status",
                 "Environmental Consultant",
                 "Safety Measures",
                 "Community Engagement",
               ].map((item) => (
-                <div key={item} className="rounded-[20px] bg-[#fafbfd] p-4">
-                  <div className="text-[18px] font-medium text-[#2a2f39]">{item}</div>
+                <div key={item} className="rounded-[20px] border border-[#e8ecf4] bg-[#fafbfd] p-5">
+                  <div className="text-[16px] font-medium text-[#2a2f39]">{item}</div>
                   <div className="mt-4 flex flex-wrap gap-3 text-[14px] text-[#5d6675]">
-                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">
-                      Approved
-                    </span>
-                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">
-                      In progress
-                    </span>
-                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">
-                      Not initiated
-                    </span>
+                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">Approved</span>
+                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">In progress</span>
+                    <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">Not initiated</span>
                   </div>
                   <textarea
                     readOnly
@@ -6221,75 +6850,85 @@ function ComplianceMinerDetailView({
                 </div>
               ))}
             </div>
-          </section>
-        </div>
-
-        <aside className="space-y-6">
-          <div className="space-y-3">
-            <button
-              type="button"
-              className="inline-flex h-14 w-full items-center justify-center rounded-[16px] border border-[#dce3ef] bg-white px-5 text-[15px] font-medium text-[#2a3142]"
-            >
-              Request Additional Documents
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-14 w-full items-center justify-center rounded-[16px] border border-[#dce3ef] bg-white px-5 text-[15px] font-medium text-[#2a3142]"
-            >
-              Schedule Verification Call
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-14 w-full items-center justify-center rounded-[16px] border border-[#f3c2c4] bg-white px-5 text-[15px] font-medium text-[#ef2f32]"
-            >
-              Escalate (Red flag)
-            </button>
-          </div>
-
-          <section className="rounded-[24px] border border-[#dff0f6] bg-[#eefbff] p-5">
-            <div className="flex items-center gap-2 text-[16px] font-medium text-[#1c7b95]">
-              <InfoCircleOutlined />
-              Review Snapshot
+          ) : activeTab === "operational" ? (
+            <div className="space-y-4">
+              {CASE_OPERATIONAL_ITEMS.map((item) => (
+                <CaseChecklistCard key={item.title} item={item} />
+              ))}
             </div>
-
-            <div className="mt-5 space-y-4 text-[15px] text-[#516070]">
-              <div className="flex items-center justify-between gap-3">
-                <span>Active tasks</span>
-                <span className="font-semibold text-[#2a2f39]">
-                  {isLoading ? "..." : formatWholeNumber(minerSummary?.activeTasks ?? 0)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Average review time</span>
-                <span className="font-semibold text-[#2a2f39]">
-                  {isLoading ? "..." : `${minerSummary?.avgReviewTime ?? 0}m`}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Quality score</span>
-                <span className="font-semibold text-[#2a2f39]">
-                  {isLoading ? "..." : `${minerSummary?.qualityScore ?? 0}%`}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Queue load</span>
-                <span className="font-semibold text-[#2a2f39]">
-                  {isLoading ? "..." : formatWholeNumber(minerSummary?.queueLoad ?? 0)}
-                </span>
+          ) : activeTab === "export-compliance" ? (
+            <div className="space-y-4">
+              {CASE_EXPORT_ITEMS.map((item) => (
+                <CaseChecklistCard key={item.title} item={item} />
+              ))}
+            </div>
+          ) : activeTab === "documents" ? (
+            <div className="overflow-x-auto rounded-[18px] border border-[#e8ecf4]">
+              <table className="w-full min-w-[720px] text-[14px]">
+                <thead>
+                  <tr className="border-b border-[#edf1f7] bg-[#fafbfd] text-left text-[#8a92a1]">
+                    <th className="px-4 py-3 font-medium">Document</th>
+                    <th className="px-4 py-3 font-medium">Uploaded By</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.length > 0 ? (
+                    documents.map((document) => (
+                      <tr key={document.id} className="border-b border-[#f2f4f8] last:border-b-0">
+                        <td className="px-4 py-3 font-medium text-[#2a2f39]">{document.name}</td>
+                        <td className="px-4 py-3 text-[#5d6675]">{companyName}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full border border-[#caebd1] bg-[#ecfaf0] px-3 py-1 text-[12px] font-medium text-[#1ea43b]">
+                            Verified
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex items-center gap-2">
+                            <a href={document.viewUrl} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[#5d6675]">
+                              <EyeOutlined />
+                            </a>
+                            <a href={document.downloadUrl} target="_blank" rel="noreferrer" download={document.name} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[#5d6675]">
+                              <DownloadOutlined />
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-[#8a92a1]">
+                        No documents were returned for this miner yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : activeTab === "internal-notes" ? (
+            <div className="space-y-4">
+              <textarea
+                placeholder="Add an internal note..."
+                className="h-32 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
+                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold text-white"
+                style={primaryActionStyle}
+              >
+                Post Note
+              </button>
+              <div className="rounded-[18px] border border-[#e8ecf4] bg-[#fafbfd] p-5 text-[14px] leading-6 text-[#5d6675]">
+                {reviewDetail?.notes?.trim() || "No internal notes captured for this review yet."}
               </div>
             </div>
-
-            <div className="mt-5">
-              <LinearProgress value={minerSummary?.qualityScore ?? 0} tone="green" />
-            </div>
-          </section>
-
-          <section className="rounded-[24px] border border-[#e8ecf4] bg-white p-5">
-            <div className="text-[16px] font-medium text-[#2a2f39]">Activity Log</div>
-            <div className="mt-5 space-y-4">
+          ) : (
+            <div className="space-y-4">
               {activityItems.length > 0 ? (
                 activityItems.map((item) => (
-                  <div key={item.label} className="flex gap-3">
+                  <div key={item.label} className="flex gap-3 rounded-[18px] border border-[#e8ecf4] bg-white px-5 py-4">
                     <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f6fb] text-[#52607a]">
                       <CalendarOutlined />
                     </span>
@@ -6300,13 +6939,53 @@ function ComplianceMinerDetailView({
                   </div>
                 ))
               ) : (
-                <div className="text-[14px] text-[#8a92a1]">
-                  Activity will appear here once the review progresses.
+                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
+                  Timeline activity will appear here once the review progresses.
                 </div>
               )}
             </div>
-          </section>
-        </aside>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#edf1f7] bg-[#fafbfd] px-6 py-5">
+          <div className="flex items-center gap-6">
+            <div>
+              <div className="text-[12px] text-[#8a92a1]">Compliance Score</div>
+              <div className="text-[18px] font-semibold text-[#e0781a]">{scoreText}</div>
+            </div>
+            <div>
+              <div className="text-[12px] text-[#8a92a1]">Decision Status</div>
+              <div className="text-[15px] font-semibold text-[#e09408]">{formatReviewStatusText(reviewStatus)}</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={activeAction != null}
+              onClick={() => onAction("request_information")}
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#f6e3bf] bg-[#fff4df] px-4 text-[14px] font-medium text-[#a5680c] disabled:opacity-60"
+            >
+              Request Information
+            </button>
+            <button
+              type="button"
+              disabled={activeAction != null}
+              onClick={() => onAction("reject")}
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#f3c2c4] bg-white px-4 text-[14px] font-medium text-[#ef2f32] disabled:opacity-60"
+            >
+              {activeAction === "reject" ? "Working..." : "Reject Application"}
+            </button>
+            <button
+              type="button"
+              disabled={activeAction != null}
+              onClick={() => onAction("approve")}
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold text-white disabled:opacity-60"
+              style={primaryActionStyle}
+            >
+              {activeAction === "approve" ? "Working..." : "Approve Compliance"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -6338,12 +7017,18 @@ export default function ComplianceDashboardPage() {
         ? "security-access-controls"
       : complianceViewParam === "audits-legal-records"
         ? "audits-legal-records"
-      : persona !== "compliance"
-        ? "dashboard"
+      : complianceViewParam === "notifications"
+        ? "notifications"
+      : persona === "admin"
+        ? complianceViewParam === "miner-pipeline"
+          ? "miner-pipeline"
+          : complianceViewParam === "partner-directory"
+            ? "partner-directory"
+          : complianceViewParam === "regulatory-readiness"
+            ? "regulatory-readiness"
+            : "dashboard"
       : complianceViewParam === "reviews"
         ? "reviews"
-        : complianceViewParam === "notifications"
-          ? "notifications"
         : complianceViewParam === "compliance-profile"
           ? "compliance-profile"
         : complianceViewParam === "profile"
@@ -6364,6 +7049,7 @@ export default function ComplianceDashboardPage() {
   const isComplianceStaticSurface =
     isComplianceProfileSurface || isComplianceSettingsSurface;
   const [now, setNow] = useState(() => Date.now());
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedReview, setSelectedReview] =
     useState<ComplianceReviewSelection | null>(null);
   const [openedMinerDetail, setOpenedMinerDetail] =
@@ -6371,6 +7057,9 @@ export default function ComplianceDashboardPage() {
   const [claimConflictTask, setClaimConflictTask] =
     useState<ComplianceReviewSelection | null>(null);
   const [claimConflictLoggedAt, setClaimConflictLoggedAt] = useState<Date | null>(
+    null,
+  );
+  const [dismissedAlertKey, setDismissedAlertKey] = useState<string | null>(
     null,
   );
   const hasAccessToken =
@@ -6578,16 +7267,29 @@ export default function ComplianceDashboardPage() {
   const adminMetrics = mapAdminCardMetrics(
     adminCardsQ.data?.data ?? DEFAULT_COMPLIANCE_REVIEW_DASHBOARD_CARDS.data,
   );
-  const adminRows = mapAdminReviewRows(
-    adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+  const adminRows = filterBySearchTerm(
+    mapAdminReviewRows(
+      adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+    ),
+    searchTerm,
+    ["minerId", "company", "location"],
   );
   const complianceSummary =
     complianceSummaryQ.data?.data ?? DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY.data;
   const complianceAlert = mapComplianceAlert(complianceSummary.latest_alert);
+  const complianceAlertKey = complianceAlert.reviewId ?? "none";
+  const isComplianceAlertDismissed = dismissedAlertKey === complianceAlertKey;
+  const dismissComplianceAlert = () => {
+    setDismissedAlertKey(complianceAlertKey);
+  };
   const complianceMetrics = mapComplianceMetrics(complianceSummary);
-  const complianceQueueRows = mapComplianceQueueRows(
-    complianceQueueQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEW_QUEUE.data.results,
-    now,
+  const complianceQueueRows = filterBySearchTerm(
+    mapComplianceQueueRows(
+      complianceQueueQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEW_QUEUE.data.results,
+      now,
+    ),
+    searchTerm,
+    ["minerId", "company", "location"],
   );
   const complianceQueuePreviewRows = complianceQueueRows.slice(0, 5);
   const complianceQueueCount =
@@ -6596,8 +7298,12 @@ export default function ComplianceDashboardPage() {
   const complianceActiveTaskCards = mapComplianceActiveTaskCards(
     complianceMyTasksQ.data?.data?.results ?? DEFAULT_COMPLIANCE_MY_TASKS.data.results,
   );
-  const complianceReviewRows = mapAdminReviewRows(
-    adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+  const complianceReviewRows = filterBySearchTerm(
+    mapAdminReviewRows(
+      adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+    ),
+    searchTerm,
+    ["minerId", "company", "location"],
   );
   const reviewLookup = new Map<string, ComplianceReviewItem>();
   for (const item of [
@@ -6718,6 +7424,8 @@ export default function ComplianceDashboardPage() {
             persona={persona}
             complianceView={complianceView}
             onMenuNavigate={resetCompliancePanels}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
           />
 
           <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 xl:px-8">
@@ -6729,6 +7437,26 @@ export default function ComplianceDashboardPage() {
                   minerDetail={complianceMinerDetailQ.data}
                   isLoading={complianceMinerDetailQ.isLoading}
                   onBack={() => setOpenedMinerDetail(null)}
+                  activeAction={
+                    reviewWorkflowMutation.isPending &&
+                    reviewWorkflowMutation.variables.reviewId === openedMinerDetail.selection.reviewId &&
+                    (reviewWorkflowMutation.variables.action === "approve" ||
+                      reviewWorkflowMutation.variables.action === "reject")
+                      ? reviewWorkflowMutation.variables.action
+                      : undefined
+                  }
+                  onAction={(action) => {
+                    if (action === "request_information") {
+                      showToast("Request Information isn't connected to the backend yet.", "error");
+                      return;
+                    }
+
+                    reviewWorkflowMutation.mutate({
+                      reviewId: openedMinerDetail.selection.reviewId,
+                      action,
+                      ...(action === "reject" ? { reason: "Not Okay" } : {}),
+                    });
+                  }}
                 />
               ) : isComplianceSettingsSurface ? (
                 <ComplianceSettingsView
@@ -6757,7 +7485,27 @@ export default function ComplianceDashboardPage() {
               ) : persona === "admin" ? (
                 <>
                   <PageHero persona={persona} complianceView={complianceView} />
-                  <AdminDashboardView metrics={adminMetrics} rows={adminRows} />
+                  {complianceView === "miner-pipeline" ? (
+                    <AdminMinerPipelineView
+                      rows={filterBySearchTerm(ADMIN_PIPELINE_ROWS, searchTerm, [
+                        "minerId",
+                        "company",
+                        "location",
+                      ])}
+                    />
+                  ) : complianceView === "partner-directory" ? (
+                    <AdminPartnerDirectoryView rows={PARTNER_DIRECTORY_ROWS} />
+                  ) : complianceView === "regulatory-readiness" ? (
+                    <AdminRegulatoryReadinessView
+                      metrics={REGULATORY_READINESS_METRICS}
+                      states={REGULATORY_RISK_STATES}
+                      statusDistribution={REGULATORY_STATUS_DISTRIBUTION}
+                    />
+                  ) : complianceView === "notifications" ? (
+                    <ComplianceNotificationsView rows={COMPLIANCE_NOTIFICATIONS} />
+                  ) : (
+                    <AdminDashboardView metrics={adminMetrics} rows={adminRows} />
+                  )}
                 </>
               ) : complianceView === "compliance-profile" ? (
                 <ComplianceInstitutionProfileView />
@@ -6767,12 +7515,16 @@ export default function ComplianceDashboardPage() {
                 <>
                   <PageHero persona={persona} complianceView={complianceView} />
                   {complianceView === "reviews" ? (
-                    <ComplianceReviewsView rows={complianceReviewRows} />
+                    <ComplianceReviewsView
+                      rows={complianceReviewRows}
+                      onOpenReview={openReviewById}
+                    />
                   ) : complianceView === "notifications" ? (
                     <ComplianceNotificationsView rows={COMPLIANCE_NOTIFICATIONS} />
                   ) : (
                     <ComplianceDashboardView
                       alert={complianceAlert}
+                      alertDismissed={isComplianceAlertDismissed}
                       metrics={complianceMetrics}
                       queueRows={complianceQueuePreviewRows}
                       activeTaskCards={complianceActiveTaskCards}
@@ -6780,6 +7532,7 @@ export default function ComplianceDashboardPage() {
                       activeReviewId={activeReviewId}
                       onOpenQueueReview={openReviewById}
                       onOpenAlertReview={openAlertReview}
+                      onDismissAlert={dismissComplianceAlert}
                       onOpenActiveTask={openReviewById}
                     />
                   )}

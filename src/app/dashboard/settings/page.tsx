@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Select, Switch, Tooltip, Skeleton } from "antd";
 import {
@@ -102,6 +102,21 @@ export default function SettingsPage() {
   const [contactMethod, setContactMethod] = useState<"email" | "phone">("email");
   const [reminderFrequency, setReminderFrequency] = useState<"weekly" | "monthly" | "quarterly">("monthly");
   const [savingCompliance, setSavingCompliance] = useState(false);
+  const topActionsRef = useRef<HTMLDivElement>(null);
+  const [showStickyActions, setShowStickyActions] = useState(false);
+
+  useEffect(() => {
+    const el = topActionsRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyActions(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -217,8 +232,39 @@ export default function SettingsPage() {
     }
   };
 
+  const [activeSection, setActiveSection] = useState(NAV_ITEMS[0].key);
+  const isClickScrolling = useRef(false);
+
+  useEffect(() => {
+    const sections = NAV_ITEMS.map((item) => document.getElementById(item.key)).filter(
+      (el): el is HTMLElement => Boolean(el),
+    );
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isClickScrolling.current) return;
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]?.target.id) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      { rootMargin: "-96px 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+
+    sections.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   const scrollTo = (id: string) => {
+    isClickScrolling.current = true;
+    setActiveSection(id);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    window.setTimeout(() => {
+      isClickScrolling.current = false;
+    }, 700);
   };
 
   return (
@@ -228,29 +274,59 @@ export default function SettingsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
           <p className="text-sm md:text-base text-gray-500">Manage your account, security, and operational preferences.</p>
         </div>
-        <div className="flex gap-3">
+        <div ref={topActionsRef} className="flex gap-3">
           <Button onClick={() => window.location.reload()}>Cancel</Button>
-          <Button type="primary" loading={saving} onClick={handleSaveProfile}>Save Changes</Button>
+          <Button
+            loading={saving}
+            onClick={handleSaveProfile}
+            className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+          >
+            Save Changes
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left nav */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-100 p-2 lg:sticky lg:top-6">
+          <div className="bg-none flex flex-col gap-2 p-2 lg:sticky lg:top-6">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
+              const isActive = activeSection === item.key;
               return (
                 <button
                   key={item.key}
                   onClick={() => scrollTo(item.key)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors"
+                  className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-colors ${
+                    isActive
+                      ? "bg-gray-300 text-gray-900 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <Icon className="text-sm" />
                   {item.label}
                 </button>
               );
             })}
+
+            <div
+      className={`transition-all duration-300 overflow-hidden ${
+        showStickyActions ? "max-h-30 opacity-100 mt-4" : "max-h-0 opacity-0"
+      }`}
+    >
+      <div className="flex flex-col gap-2 pt-3 border-t border-gray-200">
+        <Button
+          loading={saving}
+          onClick={handleSaveProfile}
+          className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363] w-full"
+        >
+          Save Changes
+        </Button>
+        <Button onClick={() => window.location.reload()} className="w-full">
+          Cancel
+        </Button>
+      </div>
+    </div>
           </div>
         </div>
 
@@ -308,18 +384,27 @@ export default function SettingsPage() {
                 <label className="block text-sm text-gray-700 mb-1.5">Confirm Password</label>
                 <Input.Password value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
-              <Button type="primary" loading={changingPassword} onClick={handleUpdatePassword}>
+              <Button
+                loading={changingPassword}
+                onClick={handleUpdatePassword}
+                className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+              >
                 Update Password
               </Button>
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between max-w-md">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Two-Factor Authentication</p>
                   <p className="text-xs text-gray-500 mt-0.5">Add an extra layer of security to your account.</p>
                 </div>
-                <Switch checked={twoFa} loading={savingTwoFa} onChange={handleToggleTwoFa} />
+                <Switch
+                  checked={twoFa}
+                  loading={savingTwoFa}
+                  onChange={handleToggleTwoFa}
+                  style={twoFa ? { backgroundColor: "#14244a" } : undefined}
+                />
               </div>
             </div>
 
@@ -330,16 +415,12 @@ export default function SettingsPage() {
               ) : loginActivity.length === 0 ? (
                 <p className="text-xs text-gray-400">No login activity recorded yet.</p>
               ) : (
-                <div className="space-y-3 max-w-md">
-                  {loginActivity.slice(0, 5).map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between text-xs border-b border-gray-50 pb-2">
-                      <div>
-                        <div className="text-gray-900 font-medium">{entry.device || "Unknown device"}</div>
-                        <div className="text-gray-400">{entry.ip_address}{entry.location ? ` · ${entry.location}` : ""}</div>
-                      </div>
-                      <div className="text-gray-400">{dayjs(entry.created_at).format("MMM DD, YYYY h:mm A")}</div>
-                    </div>
-                  ))}
+                <div className="space-y-1 text-sm text-gray-700">
+                  <div>
+                    Last login: {dayjs(loginActivity[0].created_at).format("MMMM D, YYYY [at] h:mm A")}
+                  </div>
+                  <div>Device: {loginActivity[0].device || "Unknown device"}</div>
+                  {loginActivity[0].location ? <div>Location: {loginActivity[0].location}</div> : null}
                 </div>
               )}
             </div>
@@ -360,10 +441,13 @@ export default function SettingsPage() {
           </SectionCard>
 
           <SectionCard id="bank" title="Bank & Payment Details" subtitle="Manage your payout and transaction information.">
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-              <span>Verification Status</span>
+            <div className="flex items-center justify-between gap-2 text-sm text-gray-700 mb-4 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+              <span className="flex items-center gap-2">
+                <LockOutlined className="text-gray-400" />
+                Verification Status
+              </span>
               <span
-                className={`px-2.5 py-0.5 rounded-full text-xs capitalize ${
+                className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
                   user?.profile?.bank_detail?.verification_status === "verified"
                     ? "bg-green-50 text-green-600"
                     : "bg-gray-100 text-gray-500"
@@ -390,14 +474,27 @@ export default function SettingsPage() {
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   maxLength={10}
+                  suffix={<LockOutlined className="text-gray-300" />}
                 />
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1.5">Account Name</label>
-                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+                <Input
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  suffix={<LockOutlined className="text-gray-300" />}
+                />
               </div>
             </div>
-            <Button type="primary" className="mt-4" loading={savingBank} onClick={handleSaveBank}>
+            <div className="mt-4 max-w-2xl flex items-center gap-2 text-xs text-gray-500 bg-[#f3f7f8] border border-gray-100 rounded-lg px-3 py-2.5">
+              <span>🔒</span>
+              Your information is securely stored and encrypted.
+            </div>
+            <Button
+              loading={savingBank}
+              onClick={handleSaveBank}
+              className="mt-4 !bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+            >
               Save Bank Details
             </Button>
           </SectionCard>
@@ -412,12 +509,14 @@ export default function SettingsPage() {
                   onChange={setContactMethod}
                   options={[{ value: "email", label: "Email" }, { value: "phone", label: "Phone" }]}
                 />
+                <p className="text-xs text-gray-400 mt-1.5">How you prefer to be contacted regarding compliance matters</p>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1.5">Assigned Compliance Partner</label>
                 <Tooltip title="Assigned by your compliance team, not editable here">
-                  <Input value={user?.profile?.assigned_compliance_partner_name || "Not assigned yet"} disabled />
+                  <Input placeholder="Jane Okafor" value={user?.profile?.assigned_compliance_partner_name || ""} disabled />
                 </Tooltip>
+                <p className="text-xs text-gray-400 mt-1.5">Your dedicated compliance officer for document reviews</p>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1.5">Reminder Frequency</label>
@@ -431,9 +530,14 @@ export default function SettingsPage() {
                     { value: "quarterly", label: "Quarterly" },
                   ]}
                 />
+                <p className="text-xs text-gray-400 mt-1.5">How often you want to receive reminders for expiring documents</p>
               </div>
             </div>
-            <Button type="primary" className="mt-4" loading={savingCompliance} onClick={handleSaveCompliance}>
+            <Button
+              loading={savingCompliance}
+              onClick={handleSaveCompliance}
+              className="mt-4 !bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+            >
               Save Preferences
             </Button>
           </SectionCard>

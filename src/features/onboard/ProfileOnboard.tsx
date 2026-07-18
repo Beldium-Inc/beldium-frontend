@@ -177,9 +177,14 @@ export function ProfileOnboard({
                   </Button>
                 </Form.Item>
 
-                <p className="text-sm">
-                  <Link href="/">Save and Exit</Link>
-                </p>
+                <div>
+                  <p className="text-sm">
+                    <Link href="/" className="underline! text-gray-600! hover:text-gray-900!">Save Progress</Link>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You can continue later
+                  </p>
+                </div>
               </div>
             </Form>
           </div>

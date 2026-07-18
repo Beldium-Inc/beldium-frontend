@@ -265,8 +265,11 @@ export function StepFour(props: {
                 disabled={exiting}
                 className="text-sm flex justify-center md:block text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
               >
-                {exiting ? "Saving..." : "Save and Exit"}
+                {exiting ? "Saving..." : "Save Progress"}
               </button>
+              <p className="text-xs text-gray-500 flex justify-center md:block mt-1">
+                You can continue later
+              </p>
             </div>
           </div>
         </Form>

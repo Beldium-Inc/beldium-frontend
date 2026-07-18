@@ -197,14 +197,19 @@ export function StepThree({
                 />
               </Button>
             </Form.Item>
-            <button
-              type="button"
-              onClick={handleSaveAndExit}
-              disabled={exiting}
-              className="text-sm whitespace-nowrap text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
-            >
-              {exiting ? "Saving..." : "Save and exit"}
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={handleSaveAndExit}
+                disabled={exiting}
+                className="text-sm whitespace-nowrap text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+              >
+                {exiting ? "Saving..." : "Save Progress"}
+              </button>
+              <p className="text-xs text-gray-500 whitespace-nowrap mt-1">
+                You can continue later
+              </p>
+            </div>
           </div>
         </Form>
       </div>

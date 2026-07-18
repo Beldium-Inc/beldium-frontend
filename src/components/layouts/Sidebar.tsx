@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/src/store/ui/ui.store";
 import { AppRoutes } from "@/src/constants/routes";
 import { UserOutlined, CustomerServiceOutlined, LogoutOutlined } from "@ant-design/icons";
@@ -14,6 +15,7 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const searchParams = useSearchParams();
   const view = searchParams.get('view');
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { sidebarCollapsed, closeMobileSidebar } = useUIStore();
 
   return (
@@ -107,7 +109,8 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
           type="button"
           onClick={() => {
             sessionStorage.clear();
-            router.push("/login");
+            queryClient.clear();
+            window.location.href = "/login";
           }}
           className={clsx(
             "flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors",

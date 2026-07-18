@@ -1,12 +1,21 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Modal, Select, Input, Upload, Switch, Skeleton, Drawer } from "antd";
-import { InboxOutlined, WarningOutlined, UploadOutlined, CloseOutlined } from "@ant-design/icons";
+import type { UploadFile } from "antd";
+import {
+  InboxOutlined,
+  WarningOutlined,
+  UploadOutlined,
+  CloseOutlined,
+  DownloadOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { getUser } from "@/src/features/miner/settings/api";
-import { getMinerComplianceDetail, MinerDocument, MinerLicense } from "@/src/features/miner/compliance/api";
+import { createMinerDocument, getMinerComplianceDetail, MinerDocument, MinerLicense } from "@/src/features/miner/compliance/api";
 import { showToast } from "@/src/store/toast.store";
 
 // Fixed set of document types the design expects to see a row for, even
@@ -117,7 +126,7 @@ export default function CompliancePage() {
         </div>
         <div className="flex gap-3">
           <Button onClick={() => setRequirementsOpen(true)}>View Requirements</Button>
-          <Button type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>
+          <Button className="!h-12 !rounded-xl !px-8 !text-base" type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>
             Upload Documents
           </Button>
         </div>
@@ -206,37 +215,83 @@ export default function CompliancePage() {
         )}
       </div>
 
-      <UploadDocumentModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <UploadDocumentModal open={uploadOpen} onClose={() => setUploadOpen(false)} minerId={minerId} />
       <DocumentDetailModal row={viewRow} onClose={() => setViewRow(null)} />
       <RequirementsDrawer open={requirementsOpen} onClose={() => setRequirementsOpen(false)} />
     </div>
   );
 }
 
-function UploadDocumentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function UploadDocumentModal({ open, onClose, minerId }: { open: boolean; onClose: () => void; minerId?: string }) {
   const [hasExpiry, setHasExpiry] = useState(true);
+  const [documentType, setDocumentType] = useState<string | undefined>();
+  const [file, setFile] = useState<File | null>(null);
+  const [issuedDate, setIssuedDate] = useState<string>("");
+  const queryClient = useQueryClient();
+
+  const reset = () => {
+    setDocumentType(undefined);
+    setFile(null);
+    setIssuedDate("");
+    setHasExpiry(true);
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => {
+      if (!documentType || !file) throw new Error("Document type and file are required");
+      return createMinerDocument({ documentType, file, issuedDate: issuedDate || null });
+    },
+    onSuccess: () => {
+      showToast("Document uploaded successfully.", "success");
+      queryClient.invalidateQueries({ queryKey: ["complianceDetail", minerId] });
+      reset();
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to upload document. Please try again.";
+      showToast(message, "error");
+    },
+  });
 
   const submit = () => {
-    // The backend has no create/upload endpoint for miner licenses or
-    // documents yet, only admin-side verify actions exist. Flagged in
-    // BACKEND_REQUESTS_compliance.md.
-    showToast("Uploads aren't connected to the backend yet, this is a UI preview.", "error");
+    if (!documentType) {
+      showToast("Select a document type.", "error");
+      return;
+    }
+    if (!file) {
+      showToast("Choose a file to upload.", "error");
+      return;
+    }
+    mutate();
   };
 
   return (
-    <Modal open={open} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} title="Upload Document">
-      <div className="space-y-4 mt-4">
+    <Modal open={open} onCancel={onClose} width={700} footer={null} closeIcon={<CloseOutlined />} title="Upload Document">
+      <div className="space-y-5 mt-4">
         <div>
           <label className="block text-sm text-gray-700 mb-1.5">Document Type *</label>
           <Select
             className="w-full"
             placeholder="Select the document type"
+            value={documentType}
+            onChange={setDocumentType}
             options={REQUIRED_DOCUMENT_TYPES.map((t) => ({ value: t, label: t }))}
           />
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1.5">File Upload *</label>
-          <Upload.Dragger beforeUpload={() => false} maxCount={1} accept=".jpg,.jpeg,.png,.pdf">
+          <Upload.Dragger
+            beforeUpload={(f) => {
+              setFile(f);
+              return false;
+            }}
+            onRemove={() => setFile(null)}
+            fileList={file ? ([{ uid: "1", name: file.name, status: "done" }] as UploadFile[]) : []}
+            maxCount={1}
+            accept=".jpg,.jpeg,.png,.pdf"
+          >
             <p className="ant-upload-drag-icon"><InboxOutlined /></p>
             <p className="text-sm">Choose file or drag and drop it here</p>
             <p className="text-xs text-gray-400">JPEG, PNG, and PDF formats, up to 20 MB.</p>
@@ -244,7 +299,7 @@ function UploadDocumentModal({ open, onClose }: { open: boolean; onClose: () => 
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1.5">Issue Date *</label>
-          <Input type="date" placeholder="dd/mm/yyyy" />
+          <Input type="date" placeholder="dd/mm/yyyy" value={issuedDate} onChange={(e) => setIssuedDate(e.target.value)} />
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-700">Document has expiry date</span>
@@ -253,7 +308,7 @@ function UploadDocumentModal({ open, onClose }: { open: boolean; onClose: () => 
         {hasExpiry && (
           <div>
             <label className="block text-sm text-gray-700 mb-1.5">Expiry Date *</label>
-            <Input type="date" placeholder="dd/mm/yyyy" />
+            <Input type="date" placeholder="dd/mm/yyyy" disabled title="Expiry tracking isn't supported for this document type yet" />
           </div>
         )}
         <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500">
@@ -261,7 +316,7 @@ function UploadDocumentModal({ open, onClose }: { open: boolean; onClose: () => 
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" onClick={submit}>Send Invitation</Button>
+          <Button type="primary" loading={isPending} onClick={submit}>Upload</Button>
         </div>
       </div>
     </Modal>
@@ -269,15 +324,30 @@ function UploadDocumentModal({ open, onClose }: { open: boolean; onClose: () => 
 }
 
 function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () => void }) {
+  const [zoom, setZoom] = useState(100);
+
   if (!row) return null;
+
   return (
-    <Modal open={!!row} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} title="Document Details" width={720}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+    <Modal open={!!row} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} title="Document Details" width={700}>
+      <div className="mt-4 flex items-start justify-between gap-3 mb-6">
+        <div>
+          <div className="text-xs text-gray-400">Document Type</div>
+          <div className="text-base font-semibold text-gray-900">{row.documentType}</div>
+        </div>
+        {row.fileUrl && (
+          <Button
+            icon={<DownloadOutlined />}
+            href={row.fileUrl}
+            target="_blank"
+            className="!bg-[#14244a] !text-white !border-none hover:!bg-[#1c3363]"
+          >
+            Download
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div>
-            <div className="text-xs text-gray-400">Document Type</div>
-            <div className="text-base font-semibold text-gray-900">{row.documentType}</div>
-          </div>
           <div>
             <div className="text-xs text-gray-400 mb-1">Status</div>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[row.status]}`}>
@@ -292,18 +362,37 @@ function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () =>
             <div className="text-xs text-gray-400">Expiry</div>
             <div className="text-sm text-gray-900">{row.expiry ? dayjs(row.expiry).format("MMM DD, YYYY") : "No expiry"}</div>
           </div>
-          {row.fileUrl && (
-            <Button icon={<InboxOutlined />} href={row.fileUrl} target="_blank">
-              Download
-            </Button>
-          )}
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-2">Document Preview</div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 h-64 flex items-center justify-center overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs text-gray-400">Document Preview</div>
+            <div className="flex items-center gap-2 text-gray-500">
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(200, z + 25))}
+                className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+              >
+                <ZoomInOutlined className="text-xs" />
+              </button>
+              <span className="text-xs text-gray-500 w-9 text-center">{zoom}%</span>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(50, z - 25))}
+                className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+              >
+                <ZoomOutOutlined className="text-xs" />
+              </button>
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 h-64 flex items-center justify-center overflow-auto">
             {row.fileUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={row.fileUrl} alt={row.documentType} className="max-h-full max-w-full object-contain" />
+              <img
+                src={row.fileUrl}
+                alt={row.documentType}
+                style={{ width: `${zoom}%` }}
+                className="max-w-none object-contain transition-[width]"
+              />
             ) : (
               <span className="text-xs text-gray-400">No file uploaded</span>
             )}

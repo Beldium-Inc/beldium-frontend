@@ -59,14 +59,14 @@ export default function Header() {
       </div>
 
       {/* Center Section: Search */}
-      <div className="flex-1 max-w-xl mx-4 hidden md:block">
+      {/* <div className="flex-1 max-w-xl mx-4 hidden md:block">
         <Input
           prefix={<SearchOutlined className="text-gray-400" />}
           placeholder="Search miner"
           className="rounded-full bg-gray-50 border-gray-200 hover:bg-white focus:bg-white"
           size="large"
         />
-      </div>
+      </div> */}
 
       {/* Right Section: Notifications + Profile */}
       <div className="flex items-center gap-3 lg:gap-6">

@@ -316,7 +316,7 @@ function TransactionDetailModal({
   };
 
   return (
-    <Modal open={!!transactionId} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} width={720}>
+    <Modal open={!!transactionId} onCancel={onClose} footer={null} closeIcon={<CloseOutlined />} width={700}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">{txn.transaction_code}</h2>
         <StatusPill status={txn.payment_status} />

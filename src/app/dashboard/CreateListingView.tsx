@@ -561,7 +561,8 @@ export default function CreateListingView() {
           <div className="lg:col-span-1 lg:sticky lg:top-6 space-y-6">
             <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900 mb-1">Actions</h3>
-              <Button htmlType="submit" type="primary" size="large" block loading={uploading}>
+              <div className="gap-5 mt-9 px-10 flex flex-col">
+                <Button htmlType="submit" type="primary" size="large" block loading={uploading}>
                 {editId ? "Update Listing" : "Submit Listing"}
               </Button>
               {!editId && (
@@ -586,6 +587,7 @@ export default function CreateListingView() {
               >
                 {editId ? "Cancel" : "Discard"}
               </Button>
+              </div>
             </div>
           </div>
         </div>

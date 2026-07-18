@@ -353,6 +353,7 @@ export default function ListingDetailPage() {
         title="Publish Listing"
         open={publishModalOpen}
         onCancel={() => setPublishModalOpen(false)}
+        width={700}
         footer={[
           <Button key="cancel" onClick={() => setPublishModalOpen(false)}>Cancel</Button>,
           <Button key="confirm" type="primary" loading={publishing} onClick={handlePublish}>Confirm &amp; Publish</Button>,
@@ -367,6 +368,7 @@ export default function ListingDetailPage() {
         title="Delete Listing"
         open={deleteModalOpen}
         onCancel={() => setDeleteModalOpen(false)}
+        width={700}
         footer={[
           <Button key="cancel" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>,
           <Button key="confirm" danger type="primary" loading={deleting} onClick={handleDelete}>Delete</Button>,

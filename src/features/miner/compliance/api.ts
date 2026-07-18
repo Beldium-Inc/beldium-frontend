@@ -31,9 +31,31 @@ export type ComplianceDetailResponse = {
   message: string | null;
 };
 
-// GET-only. The backend has no create/upload endpoint for miner
-// licenses/documents yet, only admin-side verify actions.
 export async function getMinerComplianceDetail(minerId: string) {
   const res = await authApi.get<ComplianceDetailResponse>(`/compliance/miners/${minerId}/detail/`);
+  return res.data;
+}
+
+export type CreateMinerDocumentResponse = {
+  status: string;
+  data: MinerDocument;
+  message: string | null;
+};
+
+export async function createMinerDocument(params: {
+  documentType: string;
+  file: File;
+  issuedDate?: string | null;
+}) {
+  const formData = new FormData();
+  formData.append("document_type", params.documentType);
+  formData.append("file", params.file);
+  if (params.issuedDate) formData.append("issued_date", params.issuedDate);
+
+  const res = await authApi.post<CreateMinerDocumentResponse>(
+    "/compliance/miners/documents/",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
   return res.data;
 }

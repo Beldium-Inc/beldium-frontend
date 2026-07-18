@@ -38,6 +38,10 @@ const AntProviders = ({ children }: { children: React.ReactNode }) => {
             borderRadius: 8,
           },
           Button: {
+            controlHeight: 48,
+            fontSize: 16,
+            borderRadius: 12,
+            paddingInline: 32,
             colorBgBase: "#101E3D",
             textTextColor: "#ffffff",
           },

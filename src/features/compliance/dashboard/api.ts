@@ -483,9 +483,7 @@ function getBrowserAccessToken() {
 }
 
 function getProxyUrl(path: string) {
-  return typeof window !== "undefined"
-    ? new URL(path, window.location.origin).toString()
-    : path;
+  return path;
 }
 
 function getWorkflowHeaders(accessToken: string | null) {
@@ -505,7 +503,7 @@ export async function getComplianceReviewDetail(reviewId: string) {
   }
 
   const { data } = await authApi.get<ComplianceReviewDetail>(
-    getProxyUrl(`/review-detail/${reviewId}/`),
+    getProxyUrl(`/compliance/reviews/${reviewId}/`),
     {
       headers: getWorkflowHeaders(accessToken),
     },
@@ -526,9 +524,8 @@ export async function submitComplianceReviewWorkflow({
   }
 
   const { data } = await authApi.post<ComplianceWorkflowResponse>(
-    getProxyUrl(`/review-action/${reviewId}/`),
+    getProxyUrl(`/compliance/reviews/${reviewId}/${action}/`),
     {
-      action,
       ...(reason ? { reason } : {}),
     },
     {
@@ -560,7 +557,7 @@ export async function claimComplianceReview({
   pathId,
   bodyId,
 }: ComplianceReviewClaimRequest) {
-  const claimUrl = getProxyUrl(`/review-claim/${pathId}/`);
+  const claimUrl = getProxyUrl(`/compliance/reviews/${pathId}/claim/`);
   const accessToken = getBrowserAccessToken();
 
   if (!accessToken) {
