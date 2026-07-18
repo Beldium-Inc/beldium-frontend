@@ -1,12 +1,12 @@
-import { Table, Select, DatePicker, Button, Tag, Modal, message } from "antd";
+import { Table, Select, DatePicker, Button, Tag } from "antd";
 import { OrderHistoryItem } from "../../dashboard/api";
 import type { ColumnsType } from "antd/es/table";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
 import { ORDER_STATUS } from "../../dashboard/constants";
 import { useRouter } from "next/navigation";
-import { RightOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { RightOutlined } from "@ant-design/icons";
+import { getPaymentStatus } from "./ActiveOrdersTable";
 
 type Props = {
   items: OrderHistoryItem[];
@@ -18,47 +18,39 @@ type Props = {
   totalVolume?: string;
   totalRevenue?: string;
   lastTransactionDate?: string;
+  status?: string;
+  onStatusChange?: (value: string) => void;
+  paymentStatus?: string;
+  onPaymentStatusChange?: (value: string) => void;
+  deliveredFrom?: Dayjs | null;
+  onDeliveredFromChange?: (value: Dayjs | null) => void;
+  deliveredTo?: Dayjs | null;
+  onDeliveredToChange?: (value: Dayjs | null) => void;
 };
 
-export default function OrderHistoryView({ 
-  items, 
-  loading, 
-  total, 
-  page, 
-  perPage, 
+export default function OrderHistoryView({
+  items,
+  loading,
+  total,
+  page,
+  perPage,
   onPageChange,
   totalVolume,
   totalRevenue,
-  lastTransactionDate
+  lastTransactionDate,
+  status = "all",
+  onStatusChange,
+  paymentStatus = "all",
+  onPaymentStatusChange,
+  deliveredFrom,
+  onDeliveredFromChange,
+  deliveredTo,
+  onDeliveredToChange,
 }: Props) {
   const router = useRouter();
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: onSelectChange,
-  };
-
-  const handleBulkArchive = () => {
-    Modal.confirm({
-      title: 'Archive Orders',
-      content: `Are you sure you want to archive ${selectedRowKeys.length} selected order(s)?`,
-      okText: 'Archive',
-      okType: 'danger',
-      cancelText: 'Cancel',
-      onOk() {
-        // Simulate API call
-        setTimeout(() => {
-            message.success(`${selectedRowKeys.length} orders archived successfully`);
-            setSelectedRowKeys([]);
-        }, 500);
-      },
-    });
-  };
+  const visibleItems =
+    paymentStatus === "all" ? items : items.filter((item) => getPaymentStatus(item) === paymentStatus);
 
   const columns: ColumnsType<OrderHistoryItem> = [
     {
@@ -104,12 +96,12 @@ export default function OrderHistoryView({
       render: (text) => {
         let bg = 'bg-green-100';
         let textCol = 'text-green-700';
-        
+
         if (text === ORDER_STATUS.CANCELLED) {
             bg = 'bg-red-100';
             textCol = 'text-red-700';
         }
-        
+
         return (
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${bg} ${textCol} capitalize`}>
             {text}
@@ -122,7 +114,7 @@ export default function OrderHistoryView({
       key: "action",
       width: 120,
       render: (_, record) => (
-        <button 
+        <button
           className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 group min-w-[44px] min-h-[44px]"
           aria-label={`View details for order ${record.order_code}`}
           onClick={(e) => {
@@ -161,11 +153,17 @@ export default function OrderHistoryView({
 
       <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
         {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-gray-500">Status</span>
-                <Select defaultValue="all" className="w-32" size="middle" bordered={false} style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+                <Select
+                  value={status}
+                  onChange={onStatusChange}
+                  className="w-32"
+                  size="middle"
+                  bordered={false}
+                  style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}
+                >
                     <Select.Option value="all">All status</Select.Option>
                     <Select.Option value="completed">Completed</Select.Option>
                     <Select.Option value="cancelled">Cancelled</Select.Option>
@@ -173,41 +171,45 @@ export default function OrderHistoryView({
             </div>
             <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-gray-500">Payment</span>
-                <Select defaultValue="all" className="w-32" size="middle" bordered={false} style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+                <Select
+                  value={paymentStatus}
+                  onChange={onPaymentStatusChange}
+                  className="w-36"
+                  size="middle"
+                  bordered={false}
+                  style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}
+                >
                     <Select.Option value="all">All</Select.Option>
-                    <Select.Option value="paid">Paid</Select.Option>
-                    <Select.Option value="unpaid">Unpaid</Select.Option>
+                    <Select.Option value="completed">Completed</Select.Option>
+                    <Select.Option value="partial">Partially paid</Select.Option>
+                    <Select.Option value="not_started">Not started</Select.Option>
                 </Select>
             </div>
             <div className="flex items-center gap-2">
                  <span className="text-xs font-medium text-gray-500">From</span>
-                 <DatePicker className="w-40 bg-gray-100 border-none" placeholder="Select start date" />
+                 <DatePicker
+                   value={deliveredFrom}
+                   onChange={onDeliveredFromChange}
+                   className="w-40 bg-gray-100 border-none"
+                   placeholder="Select start date"
+                 />
             </div>
             <div className="flex items-center gap-2">
                  <span className="text-xs font-medium text-gray-500">To</span>
-                 <DatePicker className="w-40 bg-gray-100 border-none" placeholder="Select end date" />
+                 <DatePicker
+                   value={deliveredTo}
+                   onChange={onDeliveredToChange}
+                   className="w-40 bg-gray-100 border-none"
+                   placeholder="Select end date"
+                 />
             </div>
-          </div>
-          
-          {selectedRowKeys.length > 0 && (
-             <Button 
-                type="primary" 
-                danger 
-                icon={<DeleteOutlined />} 
-                onClick={handleBulkArchive}
-                className="rounded-lg animate-fade-in"
-             >
-                Archive ({selectedRowKeys.length})
-             </Button>
-          )}
         </div>
 
         {/* Desktop Table View */}
         <div className="hidden lg:block overflow-x-auto">
           <Table
-            rowSelection={rowSelection}
             columns={columns}
-            dataSource={items}
+            dataSource={visibleItems}
             rowKey="id"
             loading={loading}
             onRow={(record) => ({
@@ -237,10 +239,10 @@ export default function OrderHistoryView({
              <div className="space-y-4">
                  {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-50 rounded-xl animate-pulse" />)}
              </div>
-          ) : items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
              <div className="text-center py-8 text-gray-500">No order history found</div>
           ) : (
-             items.map((item) => (
+             visibleItems.map((item) => (
                 <button
                   key={item.id}
                   className="w-full text-left border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3 active:bg-gray-100 transition-colors duration-200"
@@ -290,10 +292,10 @@ export default function OrderHistoryView({
              ))
           )}
         </div>
-        
+
         {!loading && total ? (
             <div className="mt-4 text-xs text-gray-400">
-                You have {total} orders (Displaying {items.length} per page)
+                You have {total} orders (Displaying {visibleItems.length} per page)
             </div>
         ) : null}
       </div>

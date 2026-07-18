@@ -56,6 +56,9 @@ export type OrdersOverview = {
     active_orders: number;
     compliance_pending: number;
     completed_orders: number;
+    total_volume_sold: string | number;
+    total_revenue: string | number;
+    last_transaction_date: string | null;
   };
 };
 
@@ -66,6 +69,7 @@ export type ActiveOrderItem = {
   buyer_name: string;
   agreed_tonnage: string;
   total_value: string;
+  amount_paid: string;
   status: string;
   shipment_status: string;
   created_at: string;
@@ -95,6 +99,7 @@ export type OrderHistoryItem = {
   delivered_date: string | null;
   payment_date: string;
   total_value: string;
+  amount_paid: string;
   status: string;
 };
 
@@ -171,14 +176,25 @@ export async function getOrdersOverview() {
   return data;
 }
 
-export async function getActiveOrders(params?: { page?: number; per_page?: number }) {
+export async function getActiveOrders(params?: {
+  page?: number;
+  per_page?: number;
+  shipment_status?: string;
+}) {
   const { data } = await authApi.get<ActiveOrdersResponse>("/miner/dashboard/active_orders/", {
     params,
   });
   return data;
 }
 
-export async function getOrderHistory(params?: { page?: number; per_page?: number }) {
+export async function getOrderHistory(params?: {
+  page?: number;
+  per_page?: number;
+  status?: string;
+  shipment_status?: string;
+  delivered_after?: string;
+  delivered_before?: string;
+}) {
   const { data } = await authApi.get<OrderHistoryResponse>("/miner/dashboard/history/", {
     params,
   });

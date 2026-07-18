@@ -8,6 +8,7 @@ export type MarketplaceFilterValues = {
   country: string | null;
   state_of_operation: string | null;
   mining_method: string | null;
+  mineral_type: string | null;
   complianceScoreMin: number;
 };
 
@@ -16,6 +17,16 @@ const MINING_METHOD_OPTIONS = [
   { label: "Open Pit", value: "open_pit" },
   { label: "Shaft / Underground", value: "shaft_or_underground" },
   { label: "Exploration", value: "exploration" },
+];
+
+const MINERAL_TYPE_OPTIONS = [
+  { label: "All minerals", value: undefined },
+  { label: "Lithium", value: "Lithium" },
+  { label: "Gold", value: "Gold" },
+  { label: "Cobalt", value: "Cobalt" },
+  { label: "Tantalite", value: "Tantalite" },
+  { label: "Cassiterite", value: "Cassiterite" },
+  { label: "Tin Ore", value: "Tin Ore" },
 ];
 
 function FilterFields({
@@ -56,6 +67,18 @@ function FilterFields({
           allowClear
           onChange={(v) => onChange({ mining_method: v ?? null })}
           options={MINING_METHOD_OPTIONS}
+        />
+      </div>
+
+      <div>
+        <div className="text-xs font-medium text-gray-500 mb-1">Mineral Type</div>
+        <Select
+          className="w-full"
+          placeholder="All minerals"
+          value={values.mineral_type ?? undefined}
+          allowClear
+          onChange={(v) => onChange({ mineral_type: v ?? null })}
+          options={MINERAL_TYPE_OPTIONS}
         />
       </div>
 

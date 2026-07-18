@@ -93,9 +93,17 @@ export default function OrderDetailsPage() {
           <div className="flex m-4 flex-col md:flex-row md:items-center gap-2 md:gap-3">
             <h1 className="text-xl md:text-3xl font-bold text-gray-900">Order #{order.order_code}</h1>
             <div className="flex items-center gap-2 mt-1 md:mt-0">
-                {order.status === 'completed' && (
+                {order.status === 'completed' ? (
                 <Tag color="success" className="rounded-full px-3 py-0.5 font-medium border-0 bg-green-50 text-green-600 m-0 flex items-center gap-1">
                     <SafetyCertificateOutlined /> COMPLETED
+                </Tag>
+                ) : order.status === 'cancelled' ? (
+                <Tag className="rounded-full px-3 py-0.5 font-medium border-0 bg-red-50 text-red-600 m-0">
+                    CANCELLED
+                </Tag>
+                ) : (
+                <Tag className="rounded-full px-3 py-0.5 font-medium border-0 bg-blue-50 text-blue-600 m-0 uppercase">
+                    {order.status.replace(/_/g, " ")}
                 </Tag>
                 )}
                 <Tag className="rounded-full px-3 py-0.5 font-medium border-0 bg-gray-100 text-gray-500 m-0">

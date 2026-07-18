@@ -48,6 +48,7 @@ export type MinerProfileListParams = {
   country?: string;
   state_of_operation?: string;
   mining_method?: string;
+  mineral_type?: string;
   ordering?: string;
 };
 
@@ -60,6 +61,7 @@ export async function getMinerProfiles(params: MinerProfileListParams) {
       country: params.country || undefined,
       state_of_operation: params.state_of_operation || undefined,
       mining_method: params.mining_method || undefined,
+      mineral_type: params.mineral_type || undefined,
       ordering: params.ordering || undefined,
     },
   });

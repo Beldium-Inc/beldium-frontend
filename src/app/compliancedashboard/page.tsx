@@ -1440,13 +1440,17 @@ function DashboardSidebar({
       </nav>
 
       <div className="px-6 pb-10">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.clear();
+            window.location.href = "/login";
+          }}
           className="inline-flex items-center gap-3 text-[16px] font-medium text-[#ef2f32] transition-colors hover:text-[#d72225]"
         >
           <LogoutOutlined className="text-[18px]" />
           Logout
-        </Link>
+        </button>
       </div>
     </aside>
   );
@@ -1654,14 +1658,18 @@ function DashboardTopBar({
                 </div>
 
                 <div className="border-t border-[#edf1f7] p-2">
-                  <Link
-                    href="/"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#ef2f32] transition-colors hover:bg-[#fff5f5]"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      sessionStorage.clear();
+                      window.location.href = "/login";
+                    }}
+                    className="flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-[15px] font-medium text-[#ef2f32] transition-colors hover:bg-[#fff5f5]"
                   >
                     <LogoutOutlined className="text-[18px]" />
                     Logout
-                  </Link>
+                  </button>
                 </div>
               </div>
             ) : null}

@@ -547,7 +547,7 @@ export async function getComplianceMinerDetail(minerId: string) {
   }
 
   const { data } = await authApi.get<ComplianceMinerDetailResponse>(
-    getProxyUrl(`/miner-detail/${minerId}/`),
+    getProxyUrl(`/miner-detail/${minerId}/proxy/`),
     {
       headers: getWorkflowHeaders(accessToken),
     },

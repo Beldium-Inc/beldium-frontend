@@ -29,6 +29,7 @@ export default function MarketplacePage() {
     country: null,
     state_of_operation: null,
     mining_method: null,
+    mineral_type: null,
     complianceScoreMin: 0,
   });
   const [sort, setSort] = useState<SortOption>("newest");
@@ -49,6 +50,7 @@ export default function MarketplacePage() {
         country: filters.country || undefined,
         state_of_operation: filters.state_of_operation || undefined,
         mining_method: filters.mining_method || undefined,
+        mineral_type: filters.mineral_type || undefined,
         ordering: sort === "newest" ? "-created_at" : undefined,
       }),
   });

@@ -27,10 +27,20 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   async rewrites() {
+    const origin = getApiOrigin();
     return [
+      // Next.js drops the trailing slash from the `:path*` wildcard capture,
+      // which breaks Django's APPEND_SLASH-based routes (they 301-redirect,
+      // and the redirect's Location header isn't rewritten back through /api,
+      // sending the browser to a non-existent un-proxied path). Matching the
+      // trailing slash explicitly preserves it in the destination.
+      {
+        source: "/api/:path*/",
+        destination: `${origin}/:path*/`,
+      },
       {
         source: "/api/:path*",
-        destination: `${getApiOrigin()}/:path*`,
+        destination: `${origin}/:path*`,
       },
     ];
   },

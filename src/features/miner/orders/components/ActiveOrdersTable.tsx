@@ -3,7 +3,27 @@ import { EllipsisOutlined } from "@ant-design/icons";
 import { ActiveOrderItem } from "../../dashboard/api";
 import type { ColumnsType } from "antd/es/table";
 import { DEFAULT_CURRENCY_SYMBOL } from "@/src/constants";
-import { ORDER_STATUS, LOGISTICS_STATUS } from "../../dashboard/constants";
+import { LOGISTICS_STATUS } from "../../dashboard/constants";
+
+export function getPaymentStatus(item: { total_value: string; amount_paid: string }) {
+  const total = Number(item.total_value);
+  const paid = Number(item.amount_paid);
+  if (paid <= 0) return "not_started" as const;
+  if (paid >= total) return "completed" as const;
+  return "partial" as const;
+}
+
+const PAYMENT_STATUS_LABEL: Record<ReturnType<typeof getPaymentStatus>, string> = {
+  not_started: "Not started",
+  partial: "Partially paid",
+  completed: "Completed",
+};
+
+const PAYMENT_STATUS_COLOR: Record<ReturnType<typeof getPaymentStatus>, string> = {
+  not_started: "bg-gray-300",
+  partial: "bg-amber-500",
+  completed: "bg-green-500",
+};
 
 type Props = {
   items: ActiveOrderItem[];
@@ -12,9 +32,27 @@ type Props = {
   page?: number;
   perPage?: number;
   onPageChange?: (page: number) => void;
+  paymentStatus?: string;
+  onPaymentStatusChange?: (value: string) => void;
+  shipmentStatus?: string;
+  onShipmentStatusChange?: (value: string) => void;
 };
 
-export default function ActiveOrdersTable({ items, loading, total, page, perPage, onPageChange }: Props) {
+export default function ActiveOrdersTable({
+  items,
+  loading,
+  total,
+  page,
+  perPage,
+  onPageChange,
+  paymentStatus = "all",
+  onPaymentStatusChange,
+  shipmentStatus = "all",
+  onShipmentStatusChange,
+}: Props) {
+  const visibleItems =
+    paymentStatus === "all" ? items : items.filter((item) => getPaymentStatus(item) === paymentStatus);
+
   const columns: ColumnsType<ActiveOrderItem> = [
     {
       title: "Order ID",
@@ -36,14 +74,13 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
     },
     {
       title: "Payment Status",
-      key: "status",
+      key: "payment_status",
       render: (_, record) => {
-        // Mock logic as API returns generic 'status'
-        const isPaid = record.status === ORDER_STATUS.COMPLETED; 
+        const paymentState = getPaymentStatus(record);
         return (
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-green-500' : 'bg-gray-300'}`} />
-            <span className="text-gray-600">{isPaid ? 'Completed' : 'Not started'}</span>
+            <div className={`w-2 h-2 rounded-full ${PAYMENT_STATUS_COLOR[paymentState]}`} />
+            <span className="text-gray-600">{PAYMENT_STATUS_LABEL[paymentState]}</span>
           </div>
         );
       },
@@ -88,17 +125,33 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
       <div className="flex flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-500">Payment Status</span>
-            <Select defaultValue="all" className="w-32" size="middle" bordered={false} style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+            <Select
+              value={paymentStatus}
+              onChange={onPaymentStatusChange}
+              className="w-36"
+              size="middle"
+              bordered={false}
+              style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}
+            >
                 <Select.Option value="all">All status</Select.Option>
-                <Select.Option value="paid">Paid</Select.Option>
-                <Select.Option value="unpaid">Unpaid</Select.Option>
+                <Select.Option value="completed">Completed</Select.Option>
+                <Select.Option value="partial">Partially paid</Select.Option>
+                <Select.Option value="not_started">Not started</Select.Option>
             </Select>
         </div>
         <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-500">Logistics status</span>
-             <Select defaultValue="all" className="w-32" size="middle" bordered={false} style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+             <Select
+               value={shipmentStatus}
+               onChange={onShipmentStatusChange}
+               className="w-32"
+               size="middle"
+               bordered={false}
+               style={{ backgroundColor: '#f3f4f6', borderRadius: '6px' }}
+             >
                 <Select.Option value="all">All</Select.Option>
-                <Select.Option value="transit">In Transit</Select.Option>
+                <Select.Option value="pending">Awaiting pickup</Select.Option>
+                <Select.Option value="shipped">In transit</Select.Option>
                 <Select.Option value="delivered">Delivered</Select.Option>
             </Select>
         </div>
@@ -108,7 +161,7 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
       <div className="hidden lg:block overflow-x-auto">
         <Table
           columns={columns}
-          dataSource={items}
+          dataSource={visibleItems}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -134,10 +187,10 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
             <div className="space-y-4">
                 {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-50 rounded-xl animate-pulse" />)}
             </div>
-        ) : items.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
             <div className="text-center py-8 text-gray-500">No active orders found</div>
         ) : (
-            items.map((item) => (
+            visibleItems.map((item) => (
                 <div key={item.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
                     <div className="flex justify-between items-start">
                         <div>
@@ -149,7 +202,7 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
                              <div className="font-semibold text-gray-900">₦{Number(item.total_value).toLocaleString()}</div>
                         </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-3">
                         <div>
                              <div className="text-xs text-gray-500 mb-1">Quantity</div>
@@ -175,7 +228,7 @@ export default function ActiveOrdersTable({ items, loading, total, page, perPage
       {/* Custom footer text if needed matching Figma "You have 241 orders..." */}
       {!loading && total ? (
           <div className="mt-4 text-xs text-gray-400">
-              You have {total} orders (Displaying {items.length} per page)
+              You have {total} orders (Displaying {visibleItems.length} per page)
           </div>
       ) : null}
     </div>

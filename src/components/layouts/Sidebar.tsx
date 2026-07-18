@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useUIStore } from "@/src/store/ui/ui.store";
@@ -104,16 +103,20 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
 
       {/* Logout - moved up and enhanced */}
       <div className="px-4 pb-2">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.clear();
+            router.push("/login");
+          }}
           className={clsx(
-            "flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors",
+            "flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors",
             sidebarCollapsed && "justify-center px-2"
           )}
         >
           <LogoutOutlined className="text-lg" />
           {!sidebarCollapsed && <span className="font-medium">Logout</span>}
-        </Link>
+        </button>
       </div>
 
       {/* Support Card */}
