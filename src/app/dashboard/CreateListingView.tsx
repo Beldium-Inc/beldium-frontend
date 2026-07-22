@@ -547,7 +547,8 @@ export default function CreateListingView() {
                   <Form.Item label="Min. Order Quantity (MOQ)" name="min_order_quantity" rules={[{ required: true, message: "Required" }]}>
                     <Input type="number" min={0} placeholder="e.g. 90" />
                   </Form.Item>
-                  <Form.Item label="Repeat Supply Capability" name="repeat_supply_capability" valuePropName="checked" extra="Enable if this is a continuous production asset">
+                  <Form.Item   className="[&_.ant-form-item-control]:flex-none [&_.ant-form-item-control-input]:min-h-0 [&_.ant-form-item-control-input]:mt-[-32px] [&_.ant-form-item-control-input-content]:flex [&_.ant-form-item-control-input-content]:justify-end [&_.ant-form-item-extra]:mt-0"
+ label="Repeat Supply Capability" name="repeat_supply_capability" valuePropName="checked" extra="Enable if this is a continuous production asset">
                     <Switch />
                   </Form.Item>
                 </div>
@@ -612,10 +613,11 @@ export default function CreateListingView() {
                   </Checkbox.Group>
                 </Form.Item>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Form.Item label="Inspection Allowed" name="inspection_allowed" valuePropName="checked" extra="Enable verification">
+                  <Form.Item
+                  className="[&_.ant-form-item-control]:flex-none [&_.ant-form-item-control-input]:min-h-0 [&_.ant-form-item-control-input]:mt-[-32px] [&_.ant-form-item-control-input-content]:flex [&_.ant-form-item-control-input-content]:justify-end [&_.ant-form-item-extra]:mt-0" label="Inspection Allowed" name="inspection_allowed" valuePropName="checked" extra="Enable verification">
                     <Switch />
                   </Form.Item>
-                  <Form.Item label="Sample Available" name="sample_available" valuePropName="checked" extra="Provide small samples for testing">
+                  <Form.Item className="[&_.ant-form-item-control]:flex-none [&_.ant-form-item-control-input]:min-h-0 [&_.ant-form-item-control-input]:mt-[-32px] [&_.ant-form-item-control-input-content]:flex [&_.ant-form-item-control-input-content]:justify-end [&_.ant-form-item-extra]:mt-0" label="Sample Available" name="sample_available" valuePropName="checked" extra="Provide small samples for testing">
                     <Switch />
                   </Form.Item>
                 </div>

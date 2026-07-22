@@ -92,12 +92,12 @@ export function RoleSelection({
 
       <div className="flex-1 overflow-y-auto px-4 py-6 lg:py-10 flex flex-col justify-start lg:justify-center">
         <div className="relative w-full max-w-5xl mx-auto h-6 mb-4 flex-shrink-0">
-          <button
+          {/* <button
             onClick={() => router.back()}
             className="absolute left-0 top-0 flex items-center justify-center h-8 w-8 text-gray-700"
           >
             <ArrowLeftIcon />
-          </button>
+          </button> */}
         </div>
 
         <div className="text-center px-2 mb-8 flex-shrink-0">
