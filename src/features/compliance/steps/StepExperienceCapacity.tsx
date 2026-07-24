@@ -103,7 +103,7 @@ export function StepExperienceCapacity({
             </div>
             <div>
               <p className="text-sm flex justify-center md:block">
-                <Link href="/compliancedashboard" className="underline! text-gray-600! hover:text-gray-900!">Save Progress</Link>
+                <Link href="/compliancedashboard?persona=compliance" className="underline! text-gray-600! hover:text-gray-900!">Save Progress</Link>
               </p>
               <p className="text-xs text-gray-500 flex justify-center md:block mt-1">
                 You can continue later

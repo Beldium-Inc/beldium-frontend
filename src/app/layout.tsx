@@ -3,7 +3,6 @@ import { Geist, Poppins, Bungee } from "next/font/google";
 import "antd/dist/reset.css";
 import "@/src/styles/global.css";
 import "@/src/lib/nprogress";
-import "@/src/lib/AxiosInterceptor";
 import NProgressProvider from "./NProgressProvider";
 import AntProviders from "./AntProvider";
 import { ReactQueryProvider } from "@/src/providers/ReactQueryProvider";

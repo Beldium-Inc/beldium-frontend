@@ -1,18 +1,14 @@
-import { AxiosError } from "axios";
-import { authApi, publicApi } from "./axiosInstance";
+"use client";
 
+import { AxiosError } from "axios";
+import { authApi } from "./axiosInstance";
+
+// Attach the current access token to every authenticated request. Actual
+// expiry is enforced server-side; a 401 below is what triggers a refresh,
+// not a client-side clock, so a stale local clock can't log a user out from
+// under them mid-session.
 authApi.interceptors.request.use(
   (config) => {
-    // Check for expiration
-    const expiresAt = sessionStorage.getItem("tokenExpiration");
-    if (expiresAt && Date.now() > Number(expiresAt)) {
-      sessionStorage.clear();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      return Promise.reject(new Error("Token expired"));
-    }
-
     const token = sessionStorage.getItem("accessToken");
     if (token) {
       config.headers = config.headers || {};
@@ -42,17 +38,24 @@ authApi.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        const { data } = await publicApi.post("/auth/refresh", {
-          token: refreshToken,
+        // POST /user/refresh_token, not /auth/refresh (that route doesn't
+        // exist on the backend). Requires the current (soon-to-expire)
+        // access token on the Authorization header, hence authApi.
+        const { data } = await authApi.post("/user/refresh_token", {
+          refresh_token: refreshToken,
         });
+        const newAccessToken = data?.data?.access;
+        if (!newAccessToken) {
+          throw new Error("Refresh response missing access token");
+        }
 
-        sessionStorage.setItem("accessToken", data.accessToken);
-        sessionStorage.setItem("refreshToken", data.refreshToken);
-        // Reset expiration on refresh
+        sessionStorage.setItem("accessToken", newAccessToken);
+        // The backend doesn't rotate the refresh token on this endpoint, so
+        // the existing one stays valid until it expires or is blacklisted.
         const expiresAt = Date.now() + 3600 * 1000;
         sessionStorage.setItem("tokenExpiration", String(expiresAt));
 
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return authApi(originalRequest);
       } catch (refreshError) {
         sessionStorage.clear();

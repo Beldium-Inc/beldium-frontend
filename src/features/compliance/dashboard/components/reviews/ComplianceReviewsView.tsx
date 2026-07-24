@@ -17,7 +17,17 @@ import {
 } from "@ant-design/icons";
 import type { AdminReviewRow } from "@/src/features/compliance/dashboard/types";
 import { classNames, primaryActionStyle } from "@/src/features/compliance/dashboard/lib/style";
-import { CASE_REVIEW_TABS } from "@/src/features/compliance/dashboard/components/reviews/constants";
+import { showToast } from "@/src/store/toast.store";
+import {
+  type CaseReviewTab,
+  CASE_REVIEW_TABS,
+} from "@/src/features/compliance/dashboard/components/reviews/constants";
+import {
+  CASE_OPERATIONAL_ITEMS,
+  CASE_EXPORT_ITEMS,
+  CaseChecklistCard,
+  OverviewMetricTile,
+} from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 
 export default function ComplianceReviewsView({
   rows,
@@ -28,6 +38,7 @@ export default function ComplianceReviewsView({
 }) {
   const [selectedRow, setSelectedRow] = useState<AdminReviewRow | null>(rows[0] ?? null);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<CaseReviewTab>("overview");
 
   const filteredRows = rows.filter((r) =>
     search.trim()
@@ -38,6 +49,7 @@ export default function ComplianceReviewsView({
 
   const handleSelect = (row: AdminReviewRow) => {
     setSelectedRow(row);
+    setActiveTab("overview");
     onOpenReview?.(row.id);
   };
 
@@ -158,10 +170,13 @@ export default function ComplianceReviewsView({
 
           {/* Tabs */}
           <div className="flex gap-0 overflow-x-auto border-b border-[#edf1f7] px-6">
-            {CASE_REVIEW_TABS.map((tab, i) => (
-              <button key={tab.key} type="button"
+            {CASE_REVIEW_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
                 className={classNames("whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors",
-                  i === 0 ? "border-[#14244a] text-[#14244a]" : "border-transparent text-[#8a92a1] hover:text-[#2a2f39]"
+                  activeTab === tab.key ? "border-[#14244a] text-[#14244a]" : "border-transparent text-[#8a92a1] hover:text-[#2a2f39]"
                 )}
               >
                 {tab.label}
@@ -171,81 +186,162 @@ export default function ComplianceReviewsView({
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Compliance Score", value: `${selectedRow.complianceScore}%`, sub: "Threshold: 85%", valueClass: "text-[#df8b19]" },
-                { label: "Risk Score", value: selectedRow.riskLevel.label, sub: "3 critical flags", valueClass: "text-[#ef2f32]" },
-                { label: "Open Issues", value: "7", sub: "4 pending action" },
-                { label: "Documents Verified", value: "9 / 14", sub: "5 remaining" },
-              ].map((m) => (
-                <div key={m.label} className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
-                  <div className="text-[11px] font-medium text-[#8a92a1]">{m.label}</div>
-                  <div className={classNames("mt-2 text-[24px] font-bold", m.valueClass ?? "text-[#2a2f39]")}>{m.value}</div>
-                  <div className="mt-0.5 text-[11px] text-[#a0a7b5]">{m.sub}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
-              <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
-                <div className="text-[14px] font-semibold text-[#2a2f39]">Company Profile</div>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 text-[13px]">
+            {activeTab === "overview" ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {[
-                    { label: "Company", value: `${selectedRow.company} Ltd.` },
-                    { label: "Registration No.", value: "CAC/RC/0042871" },
-                    { label: "Incorporated", value: "2018" },
-                    { label: "Country", value: "Nigeria" },
-                    { label: "Mine Location", value: selectedRow.location || "Plateau State, North-Central" },
-                    { label: "Mineral Types", value: "Lithium, Tin" },
-                    { label: "Operational Capacity", value: "12,000 MT / year" },
-                    { label: "Assigned Institution", value: "NGMC — National Geo-Minerals Corp" },
-                    { label: "Current Reviewer", value: `${selectedRow.reviewer} (Compliance Officer)` },
-                    { label: "Submission Date", value: "January 8, 2026" },
-                  ].map((item) => (
-                    <div key={item.label}>
-                      <div className="text-[#8a92a1]">{item.label}</div>
-                      <div className="mt-0.5 font-medium text-[#2a2f39]">{item.value}</div>
-                    </div>
+                    { label: "Compliance Score", value: `${selectedRow.complianceScore}%`, sub: "Threshold: 85%", valueClass: "text-[#df8b19]" },
+                    { label: "Risk Score", value: selectedRow.riskLevel.label, sub: "3 critical flags", valueClass: "text-[#ef2f32]" },
+                    { label: "Open Issues", value: "7", sub: "4 pending action" },
+                    { label: "Documents Verified", value: "9 / 14", sub: "5 remaining" },
+                  ].map((m) => (
+                    <OverviewMetricTile key={m.label} label={m.label} value={m.value} valueClassName={m.valueClass} footnote={m.sub} />
                   ))}
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
-                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-[#2a2f39]">
-                    <EnvironmentOutlined className="text-[#2661d8]" /> Mine Location
+                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+                  <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
+                    <div className="text-[14px] font-semibold text-[#2a2f39]">Company Profile</div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 text-[13px]">
+                      {[
+                        { label: "Company", value: `${selectedRow.company} Ltd.` },
+                        { label: "Registration No.", value: "CAC/RC/0042871" },
+                        { label: "Incorporated", value: "2018" },
+                        { label: "Country", value: "Nigeria" },
+                        { label: "Mine Location", value: selectedRow.location || "Plateau State, North-Central" },
+                        { label: "Mineral Types", value: "Lithium, Tin" },
+                        { label: "Operational Capacity", value: "12,000 MT / year" },
+                        { label: "Assigned Institution", value: "NGMC — National Geo-Minerals Corp" },
+                        { label: "Current Reviewer", value: `${selectedRow.reviewer} (Compliance Officer)` },
+                        { label: "Submission Date", value: "January 8, 2026" },
+                      ].map((item) => (
+                        <div key={item.label}>
+                          <div className="text-[#8a92a1]">{item.label}</div>
+                          <div className="mt-0.5 font-medium text-[#2a2f39]">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-3 flex h-[100px] items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[#8a92a1]">
-                    <div className="text-center">
-                      <EnvironmentOutlined className="text-[20px]" />
-                      <div className="mt-1 text-[11px]">Plateau State, Nigeria</div>
-                      <div className="text-[10px]">9.2°N, 9.5°E</div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
+                      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-[#2a2f39]">
+                        <EnvironmentOutlined className="text-[#2661d8]" /> Mine Location
+                      </div>
+                      <div className="mt-3 flex h-[100px] items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[#8a92a1]">
+                        <div className="text-center">
+                          <EnvironmentOutlined className="text-[20px]" />
+                          <div className="mt-1 text-[11px]">Plateau State, Nigeria</div>
+                          <div className="text-[10px]">9.2°N, 9.5°E</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
+                      <div className="text-[13px] font-semibold text-[#2a2f39]">Review Progress</div>
+                      <div className="mt-3 space-y-2.5">
+                        {[
+                          { label: "Licensing", value: 100 },
+                          { label: "Environmental", value: 48 },
+                          { label: "Operational", value: 20 },
+                          { label: "Export", value: 0 },
+                        ].map((r) => (
+                          <div key={r.label}>
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-[#5d6675]">{r.label}</span>
+                              <span className={classNames("font-medium", r.value === 100 ? "text-[#1ea43b]" : r.value >= 40 ? "text-[#df8b19]" : "text-[#2a2f39]")}>{r.value}%</span>
+                            </div>
+                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
+                              <div className={classNames("h-full rounded-full", r.value === 100 ? "bg-[#1ea43b]" : r.value >= 40 ? "bg-[#df8b19]" : "bg-[#e8ecf2]")} style={{ width: `${r.value}%` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-4">
-                  <div className="text-[13px] font-semibold text-[#2a2f39]">Review Progress</div>
-                  <div className="mt-3 space-y-2.5">
-                    {[
-                      { label: "Licensing", value: 100 },
-                      { label: "Environmental", value: 48 },
-                      { label: "Operational", value: 20 },
-                      { label: "Export", value: 0 },
-                    ].map((r) => (
-                      <div key={r.label}>
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-[#5d6675]">{r.label}</span>
-                          <span className={classNames("font-medium", r.value === 100 ? "text-[#1ea43b]" : r.value >= 40 ? "text-[#df8b19]" : "text-[#2a2f39]")}>{r.value}%</span>
-                        </div>
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
-                          <div className={classNames("h-full rounded-full", r.value === 100 ? "bg-[#1ea43b]" : r.value >= 40 ? "bg-[#df8b19]" : "bg-[#e8ecf2]")} style={{ width: `${r.value}%` }} />
-                        </div>
-                      </div>
-                    ))}
+              </>
+            ) : activeTab === "licensing" ? (
+              <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+                No licensing documents were returned by the miner detail endpoint for this miner yet.
+              </div>
+            ) : activeTab === "environmental-esg" ? (
+              <div className="space-y-6">
+                {[
+                  "EIA Status",
+                  "Environmental Consultant",
+                  "Safety Measures",
+                  "Community Engagement",
+                ].map((item) => (
+                  <div key={item} className="rounded-[20px] border border-[#e8ecf4] bg-[#fafbfd] p-5">
+                    <div className="text-[16px] font-medium text-[#2a2f39]">{item}</div>
+                    <div className="mt-4 flex flex-wrap gap-3 text-[14px] text-[#5d6675]">
+                      <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">Approved</span>
+                      <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">In progress</span>
+                      <span className="rounded-full border border-[#dce3ef] bg-white px-3 py-2">Not initiated</span>
+                    </div>
+                    <textarea
+                      readOnly
+                      value="Type your message here"
+                      className="mt-4 h-24 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#5d6675] outline-none"
+                    />
                   </div>
+                ))}
+              </div>
+            ) : activeTab === "operational" ? (
+              <div className="space-y-4">
+                {CASE_OPERATIONAL_ITEMS.map((item) => (
+                  <CaseChecklistCard key={item.title} item={item} />
+                ))}
+              </div>
+            ) : activeTab === "export-compliance" ? (
+              <div className="space-y-4">
+                {CASE_EXPORT_ITEMS.map((item) => (
+                  <CaseChecklistCard key={item.title} item={item} />
+                ))}
+              </div>
+            ) : activeTab === "documents" ? (
+              <div className="overflow-x-auto rounded-[18px] border border-[#e8ecf4]">
+                <table className="w-full min-w-[720px] text-[14px]">
+                  <thead>
+                    <tr className="border-b border-[#edf1f7] bg-[#fafbfd] text-left text-[#8a92a1]">
+                      <th className="px-4 py-3 font-medium">Document</th>
+                      <th className="px-4 py-3 font-medium">Uploaded By</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-[#8a92a1]">
+                        No documents were returned for this miner yet.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : activeTab === "internal-notes" ? (
+              <div className="space-y-4">
+                <textarea
+                  placeholder="Add an internal note..."
+                  className="h-32 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
+                  className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold text-white"
+                  style={primaryActionStyle}
+                >
+                  Post Note
+                </button>
+                <div className="rounded-[18px] border border-[#e8ecf4] bg-[#fafbfd] p-5 text-[14px] leading-6 text-[#5d6675]">
+                  No internal notes captured for this review yet.
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
+                Timeline activity will appear here once the review progresses.
+              </div>
+            )}
           </div>
 
           {/* Footer actions */}

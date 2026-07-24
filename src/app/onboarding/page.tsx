@@ -41,7 +41,7 @@ export default function Page() {
         if (completed) {
           const role = res?.data?.role;
           if (role === "Compliance") {
-            router.replace("/compliancedashboard");
+            router.replace("/compliancedashboard?persona=compliance");
           } else {
             router.replace("/dashboard");
           }

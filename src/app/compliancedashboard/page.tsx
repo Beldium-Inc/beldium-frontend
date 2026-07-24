@@ -217,10 +217,7 @@ export default function ComplianceDashboardPage() {
   const selectedReviewDetailQ = useQuery({
     queryKey: ["complianceReviewDetail", selectedReview?.reviewId],
     queryFn: () => getComplianceReviewDetail(selectedReview!.reviewId),
-    enabled:
-      persona === "compliance" &&
-      Boolean(selectedReview?.reviewId) &&
-      hasAccessToken,
+    enabled: Boolean(selectedReview?.reviewId) && hasAccessToken,
     retry: false,
   });
   const claimReviewMutation = useMutation({
@@ -267,9 +264,7 @@ export default function ComplianceDashboardPage() {
     queryFn: () =>
       getComplianceMinerDetail(openedMinerDetail!.selection.minerId!),
     enabled:
-      persona === "compliance" &&
-      Boolean(openedMinerDetail?.selection.minerId) &&
-      hasAccessToken,
+      Boolean(openedMinerDetail?.selection.minerId) && hasAccessToken,
     retry: false,
   });
   const reviewWorkflowMutation = useMutation({
@@ -580,7 +575,9 @@ export default function ComplianceDashboardPage() {
                 />
               ) : persona === "admin" ? (
                 <>
-                  <PageHero persona={persona} complianceView={complianceView} />
+                  {complianceView !== "regulatory-alerts" ? (
+                    <PageHero persona={persona} complianceView={complianceView} />
+                  ) : null}
                   {complianceView === "miner-pipeline" ? (
                     <AdminMinerPipelineView
                       rows={filterBySearchTerm(ADMIN_PIPELINE_ROWS, searchTerm, [
@@ -603,7 +600,12 @@ export default function ComplianceDashboardPage() {
                   ) : complianceView === "notifications" ? (
                     <ComplianceNotificationsView rows={COMPLIANCE_NOTIFICATIONS} />
                   ) : (
-                    <AdminDashboardView metrics={adminMetrics} rows={adminRows} />
+                    <AdminDashboardView
+                      metrics={adminMetrics}
+                      rows={adminRows}
+                      activeReviewId={activeReviewId}
+                      onOpenReview={openReviewById}
+                    />
                   )}
                 </>
               ) : complianceView === "compliance-profile" ? (
@@ -612,7 +614,9 @@ export default function ComplianceDashboardPage() {
                 <ComplianceProfileView />
               ) : (
                 <>
-                  <PageHero persona={persona} complianceView={complianceView} />
+                  {complianceView !== "regulatory-alerts" ? (
+                    <PageHero persona={persona} complianceView={complianceView} />
+                  ) : null}
                   {complianceView === "reviews" ? (
                     <ComplianceReviewsView
                       rows={complianceReviewRows}
@@ -644,7 +648,7 @@ export default function ComplianceDashboardPage() {
         </div>
       </div>
 
-      {persona === "compliance" && !isComplianceStaticSurface && selectedReview ? (
+      {!isComplianceStaticSurface && selectedReview ? (
         <ComplianceReviewDrawer
           selection={selectedReview}
           detail={selectedReviewDetailQ.data}

@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 function hasValidSession(): boolean {
-  const token = sessionStorage.getItem("accessToken");
-  const expiration = sessionStorage.getItem("tokenExpiration");
-  if (!token) return false;
-  if (expiration && Date.now() >= Number(expiration)) return false;
-  return true;
+  // Only gate on token presence. Actual expiry is enforced server-side and
+  // handled by the axios 401 -> refresh flow, so this doesn't boot users to
+  // /login on a stale client clock while their session is still good.
+  return Boolean(sessionStorage.getItem("accessToken"));
 }
 
 /**

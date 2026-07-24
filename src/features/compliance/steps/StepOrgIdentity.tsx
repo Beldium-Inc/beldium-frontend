@@ -57,7 +57,7 @@ export function StepOrgIdentity({
       setExiting(true);
       await complianceOnboarding(buildFormData(values));
       showToast("Progress saved. You can resume anytime.", "success");
-      router.push("/compliancedashboard");
+      router.push("/compliancedashboard?persona=compliance");
     } catch (error: unknown) {
       const e = error as { response?: { data?: { message?: string } } };
       const msg = e?.response?.data?.message || "Failed to save progress";

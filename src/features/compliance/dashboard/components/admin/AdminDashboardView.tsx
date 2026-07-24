@@ -56,8 +56,12 @@ export function AdminMetricsSection({ metrics }: { metrics: DashboardMetric[] })
 
 export function AdminPipelineSection({
   rows = [],
+  activeReviewId,
+  onOpenReview,
 }: {
   rows?: AdminReviewRow[];
+  activeReviewId?: string;
+  onOpenReview?: (reviewId: string) => void;
 }) {
   return (
     <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
@@ -80,12 +84,6 @@ export function AdminPipelineSection({
             <span className="rounded-full bg-white px-3 py-1 text-[#353b47] shadow-sm">
               Mining Method
             </span>
-          </button>
-          <button
-            type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-[14px] border border-[#dce3ef] bg-[#f4f6fa] text-[24px] text-[#4b5260] shadow-sm"
-          >
-            +
           </button>
         </div>
       </div>
@@ -131,7 +129,19 @@ export function AdminPipelineSection({
                     <ScoreMeter score={row.complianceScore} />
                   </td>
                   <td className="border-b border-[#edf1f7] px-5 py-6">
-                    <div className="max-w-[180px] truncate">{row.reviewer}</div>
+                    {row.reviewer === "Unassigned" && onOpenReview ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenReview(row.id)}
+                        disabled={activeReviewId === row.id}
+                        className="inline-flex h-9 items-center gap-2 rounded-[10px] bg-[#101e3d] px-4 text-[13px] font-semibold !text-white shadow-[0_14px_24px_-18px_rgba(16,30,61,0.8)] transition-colors hover:bg-[#16284f] disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        <UserOutlined />
+                        {activeReviewId === row.id ? "Selected" : "Claim"}
+                      </button>
+                    ) : (
+                      <div className="max-w-[180px] truncate">{row.reviewer}</div>
+                    )}
                   </td>
                   <td className="border-b border-[#edf1f7] px-5 py-6 whitespace-nowrap">
                     {row.lastActionDate}
@@ -149,14 +159,22 @@ export function AdminPipelineSection({
 export default function AdminDashboardView({
   metrics,
   rows = [],
+  activeReviewId,
+  onOpenReview,
 }: {
   metrics: DashboardMetric[];
   rows?: AdminReviewRow[];
+  activeReviewId?: string;
+  onOpenReview?: (reviewId: string) => void;
 }) {
   return (
     <div className="space-y-6">
       <AdminMetricsSection metrics={metrics} />
-      <AdminPipelineSection rows={rows} />
+      <AdminPipelineSection
+        rows={rows}
+        activeReviewId={activeReviewId}
+        onOpenReview={onOpenReview}
+      />
     </div>
   );
 }
