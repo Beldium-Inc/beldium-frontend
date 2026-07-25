@@ -409,6 +409,259 @@ export const fleetStatus = {
   readinessPct: 93,
 };
 
+// ---------------- Transport Opportunities page ----------------
+
+export const opportunitiesStats = [
+  { label: "Open Opportunities", value: "18", sub: "Available transport jobs" },
+  { label: "Closing Soon", value: "4", sub: "Response deadline within 12 hours" },
+  { label: "Best Fleet Matches", value: "11", sub: "Jobs compatible with your fleet" },
+  { label: "Submitted Interests", value: "6", sub: "Awaiting assignment" },
+];
+
+export interface TransportListing {
+  trpId: string;
+  title: string;
+  postedBy: string;
+  priority: "High Priority" | "Medium Priority" | "Low Priority";
+  hoursRemaining: string;
+  origin: { name: string; sub: string };
+  destination: { name: string; sub: string };
+  mineral: string;
+  cargoWeight: string;
+  packaging: string;
+  pickupWindow: string;
+  deliveryWindow: string;
+  vehicleRequirement: string;
+  distanceKm: string;
+  transitDays: string;
+  tags: { label: string; met: boolean }[];
+  fleetCompatibilityPct: number;
+  availableVehicles: string;
+  certifiedDrivers: string;
+  insuranceStatus: string;
+  roadworthiness: string;
+  postedAgo: string;
+}
+
+export const transportListings: TransportListing[] = [
+  {
+    trpId: "TRP-20481",
+    title: "Lithium Ore Transport",
+    postedBy: "ABC Battery Ltd",
+    priority: "High Priority",
+    hoursRemaining: "18 Hours Remaining",
+    origin: { name: "Kaduna Processing Facility", sub: "Origin · Kaduna State" },
+    destination: { name: "Lagos Port Terminal", sub: "Destination" },
+    mineral: "Lithium Ore",
+    cargoWeight: "1,200 Metric Tons",
+    packaging: "Bulk Loose",
+    pickupWindow: "12–14 Aug 2026",
+    deliveryWindow: "18–20 Aug 2026",
+    vehicleRequirement: "12 Dump Trucks",
+    distanceKm: "780 km",
+    transitDays: "2 Days",
+    tags: [
+      { label: "Insurance Required", met: true },
+      { label: "Roadworthiness Certificate", met: true },
+      { label: "Licensed Drivers", met: true },
+      { label: "Fleet Tracking Required", met: false },
+      { label: "Escort · No", met: true },
+      { label: "Covered Transport", met: true },
+    ],
+    fleetCompatibilityPct: 92,
+    availableVehicles: "10 / 12",
+    certifiedDrivers: "12",
+    insuranceStatus: "Valid",
+    roadworthiness: "Valid",
+    postedAgo: "Posted 2 hours ago",
+  },
+  {
+    trpId: "TRP-20477",
+    title: "Lithium Concentrate Transport",
+    postedBy: "Nordmin Concentrates Ltd",
+    priority: "Medium Priority",
+    hoursRemaining: "2 Days Remaining",
+    origin: { name: "Jos Processing Facility", sub: "Origin · Plateau State" },
+    destination: { name: "Onne Port Terminal", sub: "Destination" },
+    mineral: "Lithium Concentrate",
+    cargoWeight: "480 Metric Tons",
+    packaging: "Bulk Bags",
+    pickupWindow: "15–16 Aug 2026",
+    deliveryWindow: "19–20 Aug 2026",
+    vehicleRequirement: "6 Flatbeds",
+    distanceKm: "512 km",
+    transitDays: "1 Day",
+    tags: [
+      { label: "Insurance Required", met: true },
+      { label: "Roadworthiness Certificate", met: true },
+      { label: "Licensed Drivers", met: false },
+      { label: "Fleet Tracking Required", met: true },
+      { label: "Escort · No", met: true },
+      { label: "Covered Transport", met: true },
+    ],
+    fleetCompatibilityPct: 78,
+    availableVehicles: "5 / 6",
+    certifiedDrivers: "6",
+    insuranceStatus: "Valid",
+    roadworthiness: "Valid",
+    postedAgo: "Posted 5 hours ago",
+  },
+  {
+    trpId: "TRP-20460",
+    title: "Lithium Ore Transport",
+    postedBy: "Barite Cross River Group",
+    priority: "Medium Priority",
+    hoursRemaining: "3 Days Remaining",
+    origin: { name: "Cross River Bulk Yard", sub: "Origin · Cross River State" },
+    destination: { name: "Port Harcourt Terminal", sub: "Destination" },
+    mineral: "Lithium Ore",
+    cargoWeight: "750 Metric Tons",
+    packaging: "Bulk Loose",
+    pickupWindow: "18–20 Aug 2026",
+    deliveryWindow: "23–24 Aug 2026",
+    vehicleRequirement: "8 Tippers",
+    distanceKm: "398 km",
+    transitDays: "1 Day",
+    tags: [
+      { label: "Insurance Required", met: true },
+      { label: "Roadworthiness Certificate", met: true },
+      { label: "Licensed Drivers", met: true },
+      { label: "Fleet Tracking Required", met: true },
+      { label: "Escort · No", met: true },
+      { label: "Covered Transport", met: false },
+    ],
+    fleetCompatibilityPct: 85,
+    availableVehicles: "8 / 8",
+    certifiedDrivers: "8",
+    insuranceStatus: "Valid",
+    roadworthiness: "Valid",
+    postedAgo: "Posted yesterday",
+  },
+];
+
+// ---------------- Assigned Jobs page ----------------
+
+export const assignedJobsStats: { label: string; value: string; sub: string; suffix?: string }[] = [
+  { label: "Active Jobs", value: "18", sub: "Currently being executed" },
+  { label: "Awaiting Pickup", value: "4", sub: "Ready for vehicle dispatch" },
+  { label: "In Transit", value: "11", sub: "Cargo currently moving" },
+  { label: "Completed", suffix: "this month", value: "6", sub: "Successfully delivered" },
+];
+
+export type FullStage = "Assigned" | "Vehicle Assigned" | "Loading" | "In Transit" | "Delivered" | "Payment";
+export const fullStages: FullStage[] = ["Assigned", "Vehicle Assigned", "Loading", "In Transit", "Delivered", "Payment"];
+
+export interface AssignedJobCard {
+  trpId: string;
+  title: string;
+  postedBy: string;
+  statusLabel: string;
+  currentStage: FullStage;
+  etaLabel: string;
+  origin: { name: string; sub: string };
+  destination: { name: string; sub: string };
+  distanceKm: string;
+  progressKm: string;
+  progressPct: number;
+  driver: { name: string; phone: string };
+  vehicle: { id: string; type: string };
+  cargo: string;
+  pickupDeliveryWindow: string;
+  buyer: string;
+  buyerRole: string;
+}
+
+export const assignedJobCards: AssignedJobCard[] = [
+  {
+    trpId: "TRP-20481",
+    title: "Lithium Ore Transport",
+    postedBy: "ABC Battery Ltd",
+    statusLabel: "In Transit",
+    currentStage: "In Transit",
+    etaLabel: "Tomorrow, 10:30",
+    origin: { name: "Kaduna Processing Facility", sub: "Origin · Kaduna State" },
+    destination: { name: "Lagos Port Terminal", sub: "Destination" },
+    distanceKm: "780 km",
+    progressKm: "540 km · 69%",
+    progressPct: 69,
+    driver: { name: "James Okoro", phone: "+234 801 234 5678" },
+    vehicle: { id: "Truck A - 14", type: "12-Ton Dump Truck" },
+    cargo: "1,200 MT · Lithium Ore",
+    pickupDeliveryWindow: "12 Aug – 14 Aug",
+    buyer: "Mana Mines",
+    buyerRole: "Miner",
+  },
+  {
+    trpId: "TRP-20481",
+    title: "Lithium Concentrate",
+    postedBy: "ABC Battery Ltd",
+    statusLabel: "Vehicle Assigned",
+    currentStage: "Vehicle Assigned",
+    etaLabel: "Tomorrow, 10:30",
+    origin: { name: "Kaduna Processing Facility", sub: "Origin · Kaduna State" },
+    destination: { name: "Lagos Port Terminal", sub: "Destination" },
+    distanceKm: "780 km",
+    progressKm: "540 km · 69%",
+    progressPct: 69,
+    driver: { name: "Mikel Obi", phone: "+234 801 234 5678" },
+    vehicle: { id: "Truck B - 10", type: "12-Ton Dump Truck" },
+    cargo: "1,200 MT · Lithium Ore",
+    pickupDeliveryWindow: "12 Aug – 14 Aug",
+    buyer: "Mana Mines",
+    buyerRole: "Miner",
+  },
+];
+
+// ---------------- Wallet page ----------------
+
+export const walletStats = [
+  { label: "Available Balance", value: "₦19,580,024.00", sub: "Ready for withdrawal", accent: "text-green-600" },
+  { label: "Pending Payments", value: "₦9,678,000.00", sub: "Awaiting delivery confirmation", accent: "text-orange-500" },
+  { label: "Total Earnings", value: "₦189,68,000.00", sub: "Lifetime Earnings", accent: "text-gray-900" },
+  { label: "Completed Jobs Paid", value: "49", sub: "Successfully settled", accent: "text-gray-900" },
+];
+
+export const cashFlowSeries = {
+  months: ["Mar 2026", "Apr 2026", "May 2026", "Jun 2026", "Jul 2026", "Aug 2026"],
+  income: [12, 32, 34, 33, 34, 58],
+  withdrawals: [8, 22, 30, 22, 30, 35],
+  pending: [3, 8, 12, 8, 9, 10],
+};
+
+export const pendingPayout = {
+  amount: "₦4,678,000",
+  jobId: "TRP-20481",
+  status: "Awaiting delivery confirmation",
+  estimatedRelease: "18th Aug, 2026",
+};
+
+export interface Transaction {
+  txnId: string;
+  jobId: string;
+  buyer: string;
+  amount: string;
+  status: "Paid" | "Pending" | "Processing";
+  paymentDate: string;
+  createdDate: string;
+}
+
+export const transactions: Transaction[] = [
+  { txnId: "TXN-40182", jobId: "TRP-20481", buyer: "ABC Battery Ltd", amount: "₦890,002.00", status: "Paid", paymentDate: "1 Feb, 2020", createdDate: "26 Dec, 2023" },
+  { txnId: "TXN-40817", jobId: "TRP-20481", buyer: "Global Minerals", amount: "₦234,089.01", status: "Paid", paymentDate: "8 Sep, 2020", createdDate: "26 Dec, 2023" },
+  { txnId: "TXN-40019", jobId: "TRP-20481", buyer: "BUA Minerals", amount: "₦150,987.88", status: "Pending", paymentDate: "8 Sep, 2020", createdDate: "26 Dec, 2023" },
+  { txnId: "TXN-41987", jobId: "TRP-20481", buyer: "Lithium Exporters", amount: "₦2,109,100.00", status: "Processing", paymentDate: "17 Oct, 2020", createdDate: "26 Dec, 2023" },
+  { txnId: "TXN-42009", jobId: "TRP-20481", buyer: "Earth Resources", amount: "₦718,009.00", status: "Pending", paymentDate: "8 Sep, 2020", createdDate: "26 Dec, 2023" },
+];
+
+export const walletRecentActivity = [
+  { title: "Payment released", amount: "₦9,678,000.00", jobId: "TRP-20481 · ABC Batteries", time: "Today, 8:25 AM", kind: "in" as const },
+  { title: "Escrow Updated", amount: "₦6,400,000.00", jobId: "TRP-20981 · Lithium Miners", time: "Yesterday, 4:20 PM", kind: "escrow" as const },
+  { title: "Delivery Confirmed", jobId: "TRP-20499 · BUA Batteries", time: "Yesterday, 8:25 AM", kind: "check" as const },
+  { title: "Payment released", amount: "₦9,678,000.00", jobId: "TRP-20481 · ABC Batteries", time: "Today, 8:25 AM", kind: "in" as const },
+  { title: "Transport Completed", jobId: "TRP-20481 · ABC Batteries", time: "Today, 8:25 AM", kind: "truck" as const },
+  { title: "Delivery Confirmed", jobId: "TRP-20499 · BUA Batteries", time: "Yesterday, 8:25 AM", kind: "check" as const },
+];
+
 export interface AllocationVehicle {
   id: string;
   type: string;

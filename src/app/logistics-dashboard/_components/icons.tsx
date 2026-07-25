@@ -1,3 +1,19 @@
+export function AvatarPlaceholder({ className = "w-9 h-9" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 36 36" fill="none">
+      <defs>
+        <linearGradient id="avatarGradient" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#f59e0b" />
+          <stop offset="1" stopColor="#d97706" />
+        </linearGradient>
+      </defs>
+      <circle cx="18" cy="18" r="18" fill="url(#avatarGradient)" />
+      <circle cx="18" cy="14.5" r="6" fill="#fff" fillOpacity="0.9" />
+      <path d="M6 31c1.8-6.5 7-10 12-10s10.2 3.5 12 10" fill="#fff" fillOpacity="0.9" />
+    </svg>
+  );
+}
+
 export function IconGrid({ className = "w-5 h-5" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">

@@ -167,6 +167,7 @@ export function mapAdminReviewRows(
 ): AdminReviewRow[] {
   return results.map((item) => ({
     id: item.id,
+    minerUuid: item.miner,
     minerId: item.miner_code,
     company: item.miner_company_name,
     location: [item.state_of_operation, item.local_government_area]

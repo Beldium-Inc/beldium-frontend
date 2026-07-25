@@ -21,6 +21,7 @@ import {
   FireOutlined,
   EnvironmentOutlined,
   LineChartOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 
 function classNames(...classes: Array<string | false | null | undefined>) {
@@ -81,7 +82,7 @@ const POLICY_ALERTS: PolicyAlert[] = [
   },
   {
     id: "p2",
-    title: "New Export Regulation — Critical Minerals",
+    title: "New Export Regulation: Critical Minerals",
     severity: "Critical",
     category: "Export Regulation",
     date: "Jan 18, 2026",
@@ -89,7 +90,7 @@ const POLICY_ALERTS: PolicyAlert[] = [
   },
   {
     id: "p3",
-    title: "Mining Act Amendment — Section 44",
+    title: "Mining Act Amendment: Section 44",
     severity: "Medium",
     category: "Legislative Update",
     date: "Jan 15, 2026",
@@ -190,7 +191,7 @@ function RiskInsightsSidebar({ onClose }: { onClose: () => void }) {
     <aside className="w-[280px] shrink-0 rounded-[18px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-[15px] font-semibold text-[#2a2f39]">
-          <span className="text-[#f3a000]">⚡</span>
+          <span className="text-[#f3a000]"><ThunderboltOutlined /></span>
           Risk Insights
         </div>
         <button type="button" onClick={onClose} className="text-[#8a92a1] hover:text-[#2a2f39]">
@@ -247,9 +248,9 @@ function RiskInsightsSidebar({ onClose }: { onClose: () => void }) {
           <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8a92a1] mb-3">Upcoming Expiries</div>
           <div className="space-y-2">
             {[
-              { label: "EIA Certificate — GreenRock", days: "14d", color: "text-[#ef2f32]" },
-              { label: "Export License — Meridian", days: "21d", color: "text-[#df8b19]" },
-              { label: "Mining License — KogiteMin", days: "28d", color: "text-[#df8b19]" },
+              { label: "EIA Certificate, GreenRock", days: "14d", color: "text-[#ef2f32]" },
+              { label: "Export License, Meridian", days: "21d", color: "text-[#df8b19]" },
+              { label: "Mining License, KogiteMin", days: "28d", color: "text-[#df8b19]" },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between">
                 <span className="text-[#4b5260] truncate max-w-[180px]">{item.label}</span>
@@ -263,8 +264,8 @@ function RiskInsightsSidebar({ onClose }: { onClose: () => void }) {
           <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8a92a1] mb-3">Pending Escalations</div>
           <div className="space-y-2">
             {[
-              { label: "Document Tampering — DeltaOre", color: "bg-[#ef2f32]" },
-              { label: "Production Cap — TriVault", color: "bg-[#f3a000]" },
+              { label: "Document Tampering, DeltaOre", color: "bg-[#ef2f32]" },
+              { label: "Production Cap, TriVault", color: "bg-[#f3a000]" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
                 <span className={classNames("h-2 w-2 rounded-full shrink-0", item.color)} />
@@ -412,7 +413,7 @@ export function RegulatoryAlertsView() {
           <div key={item.label} className="flex items-center gap-2 text-[#4b5260]">
             <span className={classNames("h-2 w-2 rounded-full", item.dot)} />
             <span className="font-medium">{item.label}</span>
-            <span className="text-[#8a92a1]">— {item.desc}</span>
+            <span className="text-[#8a92a1]">{item.desc}</span>
           </div>
         ))}
       </div>
@@ -458,7 +459,7 @@ export function RegulatoryAlertsView() {
                 onClick={() => setShowInsights(true)}
                 className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[#dce7ff] bg-[#eef4ff] px-4 text-[13px] font-medium text-[#2661d8]"
               >
-                ⚡ Insights
+                <ThunderboltOutlined /> Insights
               </button>
             )}
             {showInsights && (
@@ -467,7 +468,7 @@ export function RegulatoryAlertsView() {
                 onClick={() => setShowInsights(true)}
                 className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[#dce7ff] bg-[#eef4ff] px-4 text-[13px] font-medium text-[#2661d8]"
               >
-                ⚡ Insights
+                <ThunderboltOutlined /> Insights
               </button>
             )}
           </div>

@@ -575,7 +575,7 @@ export default function ComplianceDashboardPage() {
                 />
               ) : persona === "admin" ? (
                 <>
-                  {complianceView !== "regulatory-alerts" ? (
+                  {complianceView !== "regulatory-alerts" && complianceView !== "reviews" ? (
                     <PageHero persona={persona} complianceView={complianceView} />
                   ) : null}
                   {complianceView === "miner-pipeline" ? (
@@ -614,7 +614,7 @@ export default function ComplianceDashboardPage() {
                 <ComplianceProfileView />
               ) : (
                 <>
-                  {complianceView !== "regulatory-alerts" ? (
+                  {complianceView !== "regulatory-alerts" && complianceView !== "reviews" ? (
                     <PageHero persona={persona} complianceView={complianceView} />
                   ) : null}
                   {complianceView === "reviews" ? (

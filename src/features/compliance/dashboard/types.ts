@@ -47,6 +47,7 @@ export type MetricCardProps = {
 
 export type AdminReviewRow = {
   id: string;
+  minerUuid: string;
   minerId: string;
   company: string;
   location: string;

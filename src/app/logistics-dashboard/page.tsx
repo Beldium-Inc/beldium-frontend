@@ -13,7 +13,20 @@ import RecentEarnings from "./_components/RecentEarnings";
 import OpportunityDetailPanel from "./_components/OpportunityDetailPanel";
 import SubmitInterestModal from "./_components/SubmitInterestModal";
 import JobTrackingPanel from "./_components/JobTrackingPanel";
+import TransportOpportunitiesView from "./_components/TransportOpportunitiesView";
+import AssignedJobsView from "./_components/AssignedJobsView";
+import WalletView from "./_components/WalletView";
 import { AssignedJob, Opportunity } from "./_components/data";
+
+const headerTitles: Record<NavKey, string> = {
+  overview: "Overview",
+  opportunities: "Transport Opportunities",
+  assigned: "Assigned Jobs",
+  wallet: "Wallet",
+  fleet: "Fleet management",
+  notifications: "Notifications",
+  settings: "Settings",
+};
 
 export default function LogisticsDashboardPage() {
   const [active, setActive] = useState<NavKey>("overview");
@@ -26,36 +39,50 @@ export default function LogisticsDashboardPage() {
       <LogisticsSidebar active={active} onNavigate={setActive} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <LogisticsHeader />
+        <LogisticsHeader title={headerTitles[active]} />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="mb-6">
-            <h1 className="text-xl font-semibold text-gray-900">Good Morning, Alpha Logistics</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Here&apos;s an overview of today&apos;s transport operations, opportunities, and fleet activity.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <StatsRow />
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-              <div className="xl:col-span-2 space-y-5">
-                <PriorityOpportunities
-                  onViewDetails={setDetailOpportunity}
-                  onSubmitInterest={setInterestOpportunity}
-                />
-                <ActiveAssignments onView={setTrackingJob} />
-                <RecentActivity />
+          {active === "overview" && (
+            <>
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-gray-900">Good Morning, Alpha Logistics</h1>
+                <p className="text-sm text-gray-400 mt-1">
+                  Here&apos;s an overview of today&apos;s transport operations, opportunities, and fleet activity.
+                </p>
               </div>
 
               <div className="space-y-5">
-                <OperationalNotifications />
-                <FleetStatusCard />
-                <RecentEarnings />
+                <StatsRow />
+
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                  <div className="xl:col-span-2 space-y-5">
+                    <PriorityOpportunities
+                      onViewDetails={setDetailOpportunity}
+                      onSubmitInterest={setInterestOpportunity}
+                    />
+                    <ActiveAssignments onView={setTrackingJob} />
+                    <RecentActivity />
+                  </div>
+
+                  <div className="space-y-5">
+                    <OperationalNotifications />
+                    <FleetStatusCard />
+                    <RecentEarnings />
+                  </div>
+                </div>
               </div>
+            </>
+          )}
+
+          {active === "opportunities" && <TransportOpportunitiesView />}
+          {active === "assigned" && <AssignedJobsView />}
+          {active === "wallet" && <WalletView />}
+
+          {(active === "fleet" || active === "notifications" || active === "settings") && (
+            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400">
+              {headerTitles[active]} — coming soon.
             </div>
-          </div>
+          )}
         </main>
       </div>
 

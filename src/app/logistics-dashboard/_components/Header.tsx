@@ -1,14 +1,14 @@
 "use client";
 
-import { IconSearch, IconBell, IconChat, IconChevronDown, IconCheckBadge } from "./icons";
+import { IconSearch, IconBell, IconChat, IconChevronDown, IconCheckBadge, AvatarPlaceholder } from "./icons";
 
-export default function LogisticsHeader() {
+export default function LogisticsHeader({ title = "Overview" }: { title?: string }) {
   return (
     <header className="h-16 shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-6 gap-4">
       <div className="flex items-center gap-3 text-sm text-gray-400 shrink-0">
         <span>Dashboard</span>
         <span>/</span>
-        <span className="text-gray-900 font-medium">Overview</span>
+        <span className="text-gray-900 font-medium">{title}</span>
         <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-600 text-xs font-medium px-2.5 py-1 ml-2">
           <IconCheckBadge className="w-3.5 h-3.5" />
           Verified Logistics Partner
@@ -34,8 +34,8 @@ export default function LogisticsHeader() {
         </button>
         <div className="w-px h-6 bg-gray-200" />
         <span className="text-sm font-medium text-gray-800 hidden sm:block">Alpha Logistics</span>
-        <div className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-600">
-          AL
+        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+          <AvatarPlaceholder className="w-9 h-9" />
         </div>
         <IconChevronDown className="w-4 h-4 text-gray-400" />
       </div>

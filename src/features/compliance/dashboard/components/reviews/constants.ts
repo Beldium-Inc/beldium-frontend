@@ -8,7 +8,8 @@ export type CaseReviewTab =
   | "export-compliance"
   | "documents"
   | "internal-notes"
-  | "timeline";
+  | "timeline"
+  | "audit-history";
 
 export const CASE_REVIEW_TABS: { key: CaseReviewTab; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -19,5 +20,6 @@ export const CASE_REVIEW_TABS: { key: CaseReviewTab; label: string }[] = [
   { key: "documents", label: "Documents" },
   { key: "internal-notes", label: "Internal Notes" },
   { key: "timeline", label: "Timeline" },
+  { key: "audit-history", label: "Audit History" },
 ];
 

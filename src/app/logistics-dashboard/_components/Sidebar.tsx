@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   IconGrid,
   IconBoard,
@@ -20,13 +21,18 @@ export type NavKey =
   | "notifications"
   | "settings";
 
-const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const navItems: {
+  key: NavKey;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+}[] = [
   { key: "overview", label: "Overview", icon: IconGrid },
-  { key: "opportunities", label: "Transport Opportunities", icon: IconBoard },
-  { key: "assigned", label: "Assigned Jobs", icon: IconBox },
+  { key: "opportunities", label: "Transport Opportunities", icon: IconBoard, badge: 7 },
+  { key: "assigned", label: "Assigned Jobs", icon: IconBox, badge: 7 },
   { key: "wallet", label: "Wallet", icon: IconWallet },
   { key: "fleet", label: "Fleet management", icon: IconTruck },
-  { key: "notifications", label: "Notifications", icon: IconBell },
+  { key: "notifications", label: "Notifications", icon: IconBell, badge: 7 },
   { key: "settings", label: "Settings", icon: IconGear },
 ];
 
@@ -38,11 +44,9 @@ export default function LogisticsSidebar({
   onNavigate: (key: NavKey) => void;
 }) {
   return (
-    <aside className="hidden md:flex w-[220px] shrink-0 flex-col bg-white border-r border-gray-100 pt-6">
+    <aside className="hidden md:flex w-[248px] shrink-0 flex-col bg-white border-r border-gray-100 pt-6">
       <div className="flex items-center gap-2 px-6 pb-8">
-        <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-white font-bold text-sm">
-          B
-        </div>
+        <Image src="/assets/images/logo.png" alt="Beldium" width={28} height={28} className="w-7 h-7 shrink-0" />
         <span className="font-semibold text-[17px] text-gray-900">Beldium</span>
       </div>
 
@@ -61,7 +65,16 @@ export default function LogisticsSidebar({
               }`}
             >
               <Icon className="w-[18px] h-[18px] shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="flex-1 whitespace-nowrap">{item.label}</span>
+              {item.badge != null && (
+                <span
+                  className={`shrink-0 min-w-[20px] h-5 px-1 rounded-full text-[11px] font-medium flex items-center justify-center ${
+                    isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </button>
           );
         })}

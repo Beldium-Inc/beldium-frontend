@@ -61,7 +61,7 @@ export function Login() {
 
         if (completed) {
           if (role === "Compliance") {
-            router.push("/compliancedashboard?persona=compliance");
+            router.push("/compliancedashboard?persona=admin");
           } else {
             router.push("/dashboard");
           }

@@ -544,7 +544,57 @@ export async function getComplianceMinerDetail(minerId: string) {
   }
 
   const { data } = await authApi.get<ComplianceMinerDetailResponse>(
-    getProxyUrl(`/miner-detail/${minerId}/proxy/`),
+    getProxyUrl(`/compliance/miners/${minerId}/detail/`),
+    {
+      headers: getWorkflowHeaders(accessToken),
+    },
+  );
+
+  return data;
+}
+
+export async function verifyMinerLicense({
+  licenseId,
+  verification_status,
+  notes,
+}: {
+  licenseId: string;
+  verification_status: string;
+  notes?: string;
+}) {
+  const accessToken = getBrowserAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Your browser session is not authenticated. Log in again.");
+  }
+
+  const { data } = await authApi.patch(
+    getProxyUrl(`/compliance/licenses/${licenseId}/verify/`),
+    { verification_status, ...(notes !== undefined ? { notes } : {}) },
+    {
+      headers: getWorkflowHeaders(accessToken),
+    },
+  );
+
+  return data;
+}
+
+export async function verifyMinerDocument({
+  documentId,
+  status,
+}: {
+  documentId: string;
+  status: string;
+}) {
+  const accessToken = getBrowserAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Your browser session is not authenticated. Log in again.");
+  }
+
+  const { data } = await authApi.patch(
+    getProxyUrl(`/compliance/documents/${documentId}/verify/`),
+    { status },
     {
       headers: getWorkflowHeaders(accessToken),
     },
