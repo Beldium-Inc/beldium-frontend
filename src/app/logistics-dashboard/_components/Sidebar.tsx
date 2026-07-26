@@ -2,15 +2,16 @@
 
 import Image from "next/image";
 import {
-  IconGrid,
-  IconBoard,
-  IconBox,
-  IconWallet,
-  IconTruck,
-  IconBell,
-  IconGear,
-  IconLogout,
-} from "./icons";
+  AppstoreOutlined,
+  FolderOpenOutlined,
+  FileSearchOutlined,
+  WalletOutlined,
+  CarOutlined,
+  BellOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+import { classNames } from "@/src/features/compliance/dashboard/lib/style";
 
 export type NavKey =
   | "overview"
@@ -27,13 +28,13 @@ const navItems: {
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
 }[] = [
-  { key: "overview", label: "Overview", icon: IconGrid },
-  { key: "opportunities", label: "Transport Opportunities", icon: IconBoard, badge: 7 },
-  { key: "assigned", label: "Assigned Jobs", icon: IconBox, badge: 7 },
-  { key: "wallet", label: "Wallet", icon: IconWallet },
-  { key: "fleet", label: "Fleet management", icon: IconTruck },
-  { key: "notifications", label: "Notifications", icon: IconBell, badge: 7 },
-  { key: "settings", label: "Settings", icon: IconGear },
+  { key: "overview", label: "Overview", icon: AppstoreOutlined },
+  { key: "opportunities", label: "Transport Opportunities", icon: FolderOpenOutlined, badge: 7 },
+  { key: "assigned", label: "Assigned Jobs", icon: FileSearchOutlined, badge: 7 },
+  { key: "wallet", label: "Wallet", icon: WalletOutlined },
+  { key: "fleet", label: "Fleet management", icon: CarOutlined },
+  { key: "notifications", label: "Notifications", icon: BellOutlined, badge: 7 },
+  { key: "settings", label: "Settings", icon: SettingOutlined },
 ];
 
 export default function LogisticsSidebar({
@@ -44,33 +45,38 @@ export default function LogisticsSidebar({
   onNavigate: (key: NavKey) => void;
 }) {
   return (
-    <aside className="hidden md:flex w-[248px] shrink-0 flex-col bg-white border-r border-gray-100 pt-6">
-      <div className="flex items-center gap-2 px-6 pb-8">
-        <Image src="/assets/images/logo.png" alt="Beldium" width={28} height={28} className="w-7 h-7 shrink-0" />
-        <span className="font-semibold text-[17px] text-gray-900">Beldium</span>
+    <aside className="hidden xl:flex w-[280px] shrink-0 flex-col border-r border-[#e9edf5] bg-white">
+      <div className="flex h-[96px] items-center gap-3 px-6">
+        <Image src="/assets/images/logo.png" alt="Beldium" width={34} height={34} />
+        <span className="text-[18px] font-semibold text-[#172554]">Beldium</span>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1 px-3">
+      <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.key === active;
           return (
             <button
               key={item.key}
+              type="button"
               onClick={() => onNavigate(item.key)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-left transition-colors ${
+              className={classNames(
+                "flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-3 text-left text-[15px] font-medium transition-colors",
                 isActive
-                  ? "bg-secondary text-primary font-medium border-l-[3px] border-primary -ml-[3px] pl-[calc(0.75rem+3px)]"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
+                  ? "border-l-[#101e3d] bg-[#d9e8ff] text-[#101e3d]"
+                  : "border-l-transparent text-[#3b4253] hover:bg-[#f5f7fb] hover:text-[#101e3d]",
+              )}
             >
-              <Icon className="w-[18px] h-[18px] shrink-0" />
+              <Icon
+                className={classNames("text-[18px] shrink-0", isActive ? "text-[#123f8f]" : "text-[#202534]")}
+              />
               <span className="flex-1 whitespace-nowrap">{item.label}</span>
               {item.badge != null && (
                 <span
-                  className={`shrink-0 min-w-[20px] h-5 px-1 rounded-full text-[11px] font-medium flex items-center justify-center ${
-                    isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-500"
-                  }`}
+                  className={classNames(
+                    "shrink-0 min-w-[20px] h-5 px-1 rounded-full text-[11px] font-medium flex items-center justify-center",
+                    isActive ? "bg-[#101e3d] text-white" : "bg-[#f4f6f9] text-[#6b7280]",
+                  )}
                 >
                   {item.badge}
                 </span>
@@ -80,9 +86,12 @@ export default function LogisticsSidebar({
         })}
       </nav>
 
-      <div className="px-3 pb-6">
-        <button className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 w-full text-left">
-          <IconLogout className="w-[18px] h-[18px]" />
+      <div className="px-6 pb-10">
+        <button
+          type="button"
+          className="inline-flex items-center gap-3 text-[16px] font-medium text-[#ef2f32] transition-colors hover:text-[#d72225]"
+        >
+          <LogoutOutlined className="text-[18px]" />
           Logout
         </button>
       </div>

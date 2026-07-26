@@ -1,43 +1,52 @@
 "use client";
 
-import { IconSearch, IconBell, IconChat, IconChevronDown, IconCheckBadge, AvatarPlaceholder } from "./icons";
+import { SearchOutlined, BellOutlined, MessageOutlined, DownOutlined, CheckCircleOutlined, UserOutlined } from "@ant-design/icons";
 
 export default function LogisticsHeader({ title = "Overview" }: { title?: string }) {
   return (
-    <header className="h-16 shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-6 gap-4">
-      <div className="flex items-center gap-3 text-sm text-gray-400 shrink-0">
+    <header className="h-16 shrink-0 bg-white border-b border-[#e9edf5] flex items-center justify-between px-6 gap-4">
+      <div className="flex items-center gap-3 text-sm text-[#8b93a1] shrink-0">
         <span>Dashboard</span>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{title}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-600 text-xs font-medium px-2.5 py-1 ml-2">
-          <IconCheckBadge className="w-3.5 h-3.5" />
+        <span className="text-[#172554] font-medium">{title}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b] text-xs font-medium px-3 py-1 ml-2">
+          <CheckCircleOutlined className="text-[13px]" />
           Verified Logistics Partner
         </span>
       </div>
 
       <div className="flex-1 max-w-md hidden lg:block">
-        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400">
-          <IconSearch className="w-4 h-4 shrink-0" />
+        <div className="relative">
           <input
-            className="bg-transparent outline-none w-full placeholder:text-gray-400 text-gray-700"
+            className="h-10 w-full rounded-full border border-[#dbe0ea] bg-white pl-4 pr-11 text-sm text-[#293041] outline-none transition-shadow placeholder:text-[#8b93a1] focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]"
             placeholder="Search jobs, routes, vehicles, drivers..."
           />
+          <SearchOutlined className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[16px] text-[#687081]" />
         </div>
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
-        <button className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100">
-          <IconBell className="w-[18px] h-[18px]" />
+        <button
+          type="button"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[#2a3142] transition-colors hover:bg-white"
+        >
+          <BellOutlined className="text-[18px]" />
+          <span className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-[#ff4726]" />
         </button>
-        <button className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100">
-          <IconChat className="w-[18px] h-[18px]" />
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[#2a3142] transition-colors hover:bg-white"
+        >
+          <MessageOutlined className="text-[18px]" />
         </button>
-        <div className="w-px h-6 bg-gray-200" />
-        <span className="text-sm font-medium text-gray-800 hidden sm:block">Alpha Logistics</span>
-        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
-          <AvatarPlaceholder className="w-9 h-9" />
+        <div className="hidden h-8 w-px bg-[#e4e7ee] sm:block" />
+        <div className="flex items-center gap-3 rounded-full border border-[#edf1f7] bg-[#f5f7fb] px-3 py-1.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101e3d] text-white text-xs font-semibold shrink-0">
+            <UserOutlined />
+          </div>
+          <span className="text-sm font-medium text-[#1f2635] hidden sm:block">Alpha Logistics</span>
+          <DownOutlined className="text-[12px] text-[#8b93a1]" />
         </div>
-        <IconChevronDown className="w-4 h-4 text-gray-400" />
       </div>
     </header>
   );

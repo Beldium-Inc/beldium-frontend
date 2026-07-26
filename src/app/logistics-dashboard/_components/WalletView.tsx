@@ -1,95 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  walletStats,
-  pendingPayout,
-  transactions,
-  walletRecentActivity,
-} from "./data";
-import { IconWallet, IconClock, IconCheckBadge, IconCheck, IconTruck, IconWarning } from "./icons";
+  WalletOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CheckSquareOutlined,
+} from "@ant-design/icons";
+import { classNames, statusStyles } from "@/src/features/compliance/dashboard/lib/style";
+import { showToast } from "@/src/store/toast.store";
+import { useRfqTransactions } from "./useLogisticsData";
 import CashFlowChart from "./CashFlowChart";
+import type { TransactionRecord } from "./types";
 
-const statIcons = [IconWallet, IconClock, IconCheckBadge, IconCheck];
+const statIcons = [WalletOutlined, ClockCircleOutlined, CheckCircleOutlined, CheckSquareOutlined];
 
-function statusPill(status: string) {
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
+}
+
+function finalStatusPill(status: TransactionRecord["final_status"]) {
   switch (status) {
-    case "Paid":
-      return "bg-green-50 text-green-600";
-    case "Pending":
-      return "bg-amber-50 text-amber-600";
-    case "Processing":
-      return "bg-blue-50 text-blue-600";
+    case "completed":
+      return statusStyles.green;
+    case "in_progress":
+      return statusStyles.cyan;
+    case "cancelled":
+      return statusStyles.red;
+    case "initiated":
     default:
-      return "bg-gray-100 text-gray-600";
-  }
-}
-
-function activityIcon(kind: string) {
-  switch (kind) {
-    case "in":
-      return <IconWallet className="w-4 h-4" />;
-    case "escrow":
-      return <IconWarning className="w-4 h-4" />;
-    case "truck":
-      return <IconTruck className="w-4 h-4" />;
-    default:
-      return <IconCheck className="w-4 h-4" />;
-  }
-}
-
-function activityIconStyle(kind: string) {
-  switch (kind) {
-    case "in":
-      return "bg-green-50 text-green-600";
-    case "escrow":
-      return "bg-amber-50 text-amber-600";
-    case "truck":
-      return "bg-blue-50 text-blue-600";
-    default:
-      return "bg-purple-50 text-purple-600";
+      return statusStyles.amber;
   }
 }
 
 export default function WalletView() {
   const [query, setQuery] = useState("");
+  const { data: transactions, isLoading, isError } = useRfqTransactions();
+
+  const list = useMemo(() => transactions ?? [], [transactions]);
+
+  const stats = useMemo(() => {
+    const delivered = list.filter((t) => t.final_status === "completed");
+    const inProgress = list.filter((t) => t.final_status !== "completed" && t.final_status !== "cancelled");
+    const availableBalance = delivered.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
+    const pendingValue = inProgress.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
+    const totalEarnings = list
+      .filter((t) => t.final_status !== "cancelled")
+      .reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
+
+    return [
+      { label: "Delivered Value", value: formatNaira(availableBalance), sub: "Confirmed delivered jobs", accent: "text-[#1ea43b]" },
+      { label: "Pending Value", value: formatNaira(pendingValue), sub: "Awaiting delivery confirmation", accent: "text-[#e09408]" },
+      { label: "Total Earnings", value: formatNaira(totalEarnings), sub: "Lifetime, excluding cancelled", accent: "text-[#172554]" },
+      { label: "Completed Jobs", value: String(delivered.length), sub: "Successfully settled", accent: "text-[#172554]" },
+    ];
+  }, [list]);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return list;
+    const q = query.toLowerCase();
+    return list.filter((t) => t.id.toLowerCase().includes(q) || t.rfq.toLowerCase().includes(q));
+  }, [list, query]);
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Wallet</h1>
-        <p className="text-sm text-gray-400 mt-1">Track your earnings, payout, and transaction history</p>
+        <h1 className="text-xl font-semibold text-[#172554]">Wallet</h1>
+        <p className="text-sm text-[#8b93a1] mt-1">Earnings and transaction history derived from escrow records.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {walletStats.map((s, i) => {
+        {stats.map((s, i) => {
           const Icon = statIcons[i];
           return (
-            <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-5">
-              <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-                <span className="w-8 h-8 rounded-lg bg-secondary/50 flex items-center justify-center text-primary">
-                  <Icon className="w-4 h-4" />
+            <div
+              key={s.label}
+              className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]"
+            >
+              <div className="flex items-center gap-2 text-[#6f7786] text-sm mb-4">
+                <span className="w-8 h-8 rounded-lg bg-[#e9f0ff] flex items-center justify-center text-[#101e3d]">
+                  <Icon className="text-[15px]" />
                 </span>
                 {s.label}
               </div>
-              <div className={`text-2xl font-semibold ${s.accent}`}>{s.value}</div>
-              <div className="text-xs text-gray-400 mt-1">{s.sub}</div>
+              <div className={classNames("text-2xl font-semibold", s.accent)}>{s.value}</div>
+              <div className="text-xs text-[#8b93a1] mt-1">{s.sub}</div>
               {i === 0 && (
-                <button className="mt-4 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90">
-                  Withdraw funds →
-                </button>
-              )}
-              {i === 1 && (
-                <button className="mt-4 text-xs font-medium text-primary hover:underline">View Pending →</button>
-              )}
-              {i === 2 && (
-                <button className="mt-4 text-xs font-medium text-primary hover:underline">
-                  View Earnings History →
-                </button>
-              )}
-              {i === 3 && (
-                <button className="mt-4 text-xs font-medium text-primary hover:underline">
-                  View Completed Jobs →
+                <button
+                  type="button"
+                  onClick={() => showToast("Payouts aren't connected to the backend yet.", "info")}
+                  className="mt-4 px-3 py-1.5 rounded-lg bg-[#101e3d] text-white text-xs font-medium hover:bg-[#182a52]"
+                >
+                  Withdraw funds
                 </button>
               )}
             </div>
@@ -97,152 +99,77 @@ export default function WalletView() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h2 className="font-semibold text-gray-900">Cash Flow</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Income received</p>
-            </div>
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              Last 6 months
-            </button>
+      <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h2 className="font-semibold text-[#172554]">Cash Flow</h2>
+            <p className="text-xs text-[#8b93a1] mt-0.5">Delivered vs. in-progress value by month</p>
           </div>
-          <CashFlowChart />
         </div>
-
-        <div className="bg-white rounded-xl border border-amber-100 bg-amber-50/40 p-5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-1">
-            <IconClock className="w-3.5 h-3.5" />
-            Pending Payout
-          </span>
-          <div className="text-2xl font-semibold text-gray-900 mt-4">{pendingPayout.amount}</div>
-
-          <div className="mt-4 text-sm">
-            <div className="text-[11px] text-gray-400 uppercase tracking-wide">Transport Job</div>
-            <div className="text-primary font-medium mt-0.5">{pendingPayout.jobId}</div>
-          </div>
-
-          <div className="mt-3 text-sm">
-            <div className="text-[11px] text-gray-400 uppercase tracking-wide">Status</div>
-            <span className="inline-block mt-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-              {pendingPayout.status}
-            </span>
-          </div>
-
-          <div className="mt-3 text-sm">
-            <div className="text-[11px] text-gray-400 uppercase tracking-wide">Estimated Release</div>
-            <div className="text-gray-800 mt-0.5">{pendingPayout.estimatedRelease}</div>
-          </div>
-
-          <button className="w-full mt-5 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-            View Job Details →
-          </button>
-        </div>
+        <CashFlowChart transactions={list} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-            <div>
-              <h2 className="font-semibold text-gray-900">Transaction History</h2>
-              <p className="text-xs text-gray-400 mt-0.5">View all earnings, payout, and related transactions</p>
-            </div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search Job ID, buyer, location..."
-              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none w-56"
-            />
+      <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div>
+            <h2 className="font-semibold text-[#172554]">Transaction History</h2>
+            <p className="text-xs text-[#8b93a1] mt-0.5">All escrow transactions tied to your logistics assignments</p>
           </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search transaction or RFQ ID..."
+            className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-1.5 text-sm text-[#293041] placeholder:text-[#8b93a1] outline-none w-56"
+          />
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              Status · All status
-            </button>
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              Payment · All
-            </button>
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              From · Select start date
-            </button>
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              To · Select end date
-            </button>
+        {isLoading && <div className="py-10 text-center text-[#8b93a1] text-sm">Loading transactions...</div>}
+        {isError && !isLoading && (
+          <div className="py-10 text-center text-[#ef2f32] text-sm">Could not load transactions.</div>
+        )}
+        {!isLoading && !isError && filtered.length === 0 && (
+          <div className="py-10 text-center text-[#8b93a1] text-sm">
+            No transactions yet. Escrow records appear once a job you accept is funded.
           </div>
+        )}
 
+        {!isLoading && !isError && filtered.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide">
+                <tr className="text-left text-[11px] text-[#8b93a1] uppercase tracking-wide">
                   <th className="font-medium pb-2">Transaction ID</th>
-                  <th className="font-medium pb-2">Job ID</th>
-                  <th className="font-medium pb-2">Buyer / Miner</th>
+                  <th className="font-medium pb-2">RFQ</th>
                   <th className="font-medium pb-2">Amount</th>
-                  <th className="font-medium pb-2">Status</th>
-                  <th className="font-medium pb-2">Payment method</th>
-                  <th className="font-medium pb-2">Date</th>
+                  <th className="font-medium pb-2">Shipment</th>
+                  <th className="font-medium pb-2">Final Status</th>
+                  <th className="font-medium pb-2">Escrow</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {transactions.map((t) => (
-                  <tr key={t.txnId}>
-                    <td className="py-3 font-medium text-primary">{t.txnId}</td>
-                    <td className="py-3 text-gray-700">{t.jobId}</td>
-                    <td className="py-3 text-gray-700">{t.buyer}</td>
-                    <td className="py-3 text-gray-800">{t.amount}</td>
-                    <td className="py-3">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusPill(t.status)}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-gray-500">{t.paymentDate}</td>
-                    <td className="py-3 text-gray-500">{t.createdDate}</td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-[#edf1f7]">
+                {filtered.map((t) => {
+                  const pill = finalStatusPill(t.final_status);
+                  return (
+                    <tr key={t.id}>
+                      <td className="py-3 font-medium text-[#101e3d]">{t.id.slice(0, 8)}</td>
+                      <td className="py-3 text-[#293041]">{t.rfq.slice(0, 8)}</td>
+                      <td className="py-3 text-[#293041]">
+                        {t.total_value ? formatNaira(Number(t.total_value)) : "Not set"}
+                      </td>
+                      <td className="py-3 text-[#6f7786] capitalize">{t.shipment_status.replace("_", " ")}</td>
+                      <td className="py-3">
+                        <span className={classNames("text-xs font-medium px-2.5 py-1 rounded-full", pill.container)}>
+                          {t.final_status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="py-3 text-[#6f7786]">{t.escrow_status || "Not set"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-            <span>You have 28 transactions (Displaying 7 per page)</span>
-            <div className="flex items-center gap-1">
-              <button className="px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50">Previous</button>
-              <button className="px-2.5 py-1 rounded-md bg-primary text-white">1</button>
-              <button className="px-2.5 py-1 rounded-md border border-gray-200 hover:bg-gray-50">2</button>
-              <span>...</span>
-              <button className="px-2.5 py-1 rounded-md border border-gray-200 hover:bg-gray-50">9</button>
-              <button className="px-2.5 py-1 rounded-md border border-gray-200 hover:bg-gray-50">10</button>
-              <button className="px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50">Next</button>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Recent Activity</h2>
-            <button className="text-xs text-primary font-medium hover:underline">View all</button>
-          </div>
-          <div className="space-y-4">
-            {walletRecentActivity.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm">
-                <span
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${activityIconStyle(a.kind)}`}
-                >
-                  {activityIcon(a.kind)}
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-gray-800 font-medium">{a.title}</span>
-                    {a.amount && <span className="text-gray-800 font-medium">{a.amount}</span>}
-                  </div>
-                  <div className="text-xs text-gray-400">{a.jobId}</div>
-                  <div className="text-xs text-gray-400">{a.time}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

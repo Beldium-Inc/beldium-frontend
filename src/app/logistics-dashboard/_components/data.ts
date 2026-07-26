@@ -43,7 +43,7 @@ export const opportunities: Opportunity[] = [
     totalWeight: "1,200 MT",
     vehiclesRequired: "12 dump trucks, 30 MT each",
     deliveryDeadline: "18 Aug 2026",
-    escortRequired: "Yes — licensed security escort",
+    escortRequired: "Yes, licensed security escort",
     estimatedValue: "₦9,200,000",
     requirements: [
       { label: "Valid goods-in-transit insurance for full cargo value", met: true },
@@ -168,7 +168,7 @@ export const assignedJobs: AssignedJob[] = [
       escort: "Required",
       waybill: "Issued",
       statusNote: "Cargo loading in progress · driver on site",
-      scheduledLabel: "Loading — started 18 Jul, 07:00",
+      scheduledLabel: "Loading, started 18 Jul, 07:00",
       scheduledSub: "Vehicle on site · loading in progress",
       driver: {
         initials: "MA",
@@ -200,7 +200,7 @@ export const assignedJobs: AssignedJob[] = [
       escort: "Not Required",
       waybill: "Issued",
       statusNote: "In transit · on schedule",
-      scheduledLabel: "In transit — ETA tomorrow",
+      scheduledLabel: "In transit, ETA tomorrow",
       scheduledSub: "Vehicle en route · no delays reported",
       driver: {
         initials: "TO",
@@ -233,7 +233,7 @@ export const assignedJobs: AssignedJob[] = [
       escort: "Not Required",
       waybill: "Issued",
       statusNote: "In transit · on schedule",
-      scheduledLabel: "In transit — ETA 19 Jul",
+      scheduledLabel: "In transit, ETA 19 Jul",
       scheduledSub: "Vehicle en route · no delays reported",
       driver: {
         initials: "SB",
@@ -266,7 +266,7 @@ export const assignedJobs: AssignedJob[] = [
       escort: "Not Required",
       waybill: "Pending issue",
       statusNote: "Vehicle reserved · driver confirmed",
-      scheduledLabel: "Awaiting pickup — scheduled 20 Jul, 08:00",
+      scheduledLabel: "Awaiting pickup, scheduled 20 Jul, 08:00",
       scheduledSub: "Vehicle reserved · driver confirmed",
       driver: {
         initials: "EO",
@@ -286,7 +286,7 @@ export const assignedJobs: AssignedJob[] = [
     route: "Plateau → Calabar",
     vehicle: "Truck A-03",
     stage: "Delivered",
-    eta: "—",
+    eta: "Not applicable",
     detail: {
       cargoLabel: "Lithium ore · 620 MT",
       shipper: "Plateau Mining Co",
@@ -298,7 +298,7 @@ export const assignedJobs: AssignedJob[] = [
       escort: "Not Required",
       waybill: "Closed",
       statusNote: "Delivered and confirmed by shipper",
-      scheduledLabel: "Delivered — 13 Jul, 16:40",
+      scheduledLabel: "Delivered, 13 Jul, 16:40",
       scheduledSub: "Cargo confirmed received at Calabar Port",
       driver: {
         initials: "CU",
@@ -375,7 +375,7 @@ export const recentActivity = [
   {
     title: "Assignment accepted",
     time: "Today · 07:15",
-    description: "JOB-20451 confirmed — Kaduna → Lagos, pickup scheduled 17 Jul.",
+    description: "JOB-20451 confirmed, Kaduna to Lagos, pickup scheduled 17 Jul.",
   },
   {
     title: "Driver allocated to JOB-20451",
@@ -385,7 +385,7 @@ export const recentActivity = [
   {
     title: "Cargo loaded",
     time: "Yesterday · 14:05",
-    description: "JOB-20447 — 480 MT tin concentrate loaded at Jos depot.",
+    description: "JOB-20447, 480 MT tin concentrate loaded at Jos depot.",
   },
   {
     title: "Payment received",

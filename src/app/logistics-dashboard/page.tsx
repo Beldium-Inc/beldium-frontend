@@ -35,7 +35,7 @@ export default function LogisticsDashboardPage() {
   const [trackingJob, setTrackingJob] = useState<AssignedJob | null>(null);
 
   return (
-    <div className="flex h-screen bg-[#F5F6F8] overflow-hidden">
+    <div className="flex h-screen bg-[#f5f6fa] overflow-hidden">
       <LogisticsSidebar active={active} onNavigate={setActive} />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -45,8 +45,8 @@ export default function LogisticsDashboardPage() {
           {active === "overview" && (
             <>
               <div className="mb-6">
-                <h1 className="text-xl font-semibold text-gray-900">Good Morning, Alpha Logistics</h1>
-                <p className="text-sm text-gray-400 mt-1">
+                <h1 className="text-xl font-semibold text-[#172554]">Good Morning, Alpha Logistics</h1>
+                <p className="text-sm text-[#8b93a1] mt-1">
                   Here&apos;s an overview of today&apos;s transport operations, opportunities, and fleet activity.
                 </p>
               </div>
@@ -79,8 +79,8 @@ export default function LogisticsDashboardPage() {
           {active === "wallet" && <WalletView />}
 
           {(active === "fleet" || active === "notifications" || active === "settings") && (
-            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400">
-              {headerTitles[active]} — coming soon.
+            <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-10 text-center text-[#8b93a1]">
+              {headerTitles[active]}: not connected to a backend yet, coming soon.
             </div>
           )}
         </main>
