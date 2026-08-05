@@ -51,7 +51,7 @@ export default function LogisticsSidebar({
         <span className="text-[18px] font-semibold text-[#172554]">Beldium</span>
       </div>
 
-      <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
+      <nav className="mt-4 flex flex-1 flex-col gap-7 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.key === active;
@@ -61,10 +61,10 @@ export default function LogisticsSidebar({
               type="button"
               onClick={() => onNavigate(item.key)}
               className={classNames(
-                "flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-3 text-left text-[15px] font-medium transition-colors",
+                "flex items-center gap-3 rounded-l-lg border-r-[3px] px-3 py-4.5 text-left text-[15px] font-medium transition-colors",
                 isActive
-                  ? "border-l-[#101e3d] bg-[#d9e8ff] text-[#101e3d]"
-                  : "border-l-transparent text-[#3b4253] hover:bg-[#f5f7fb] hover:text-[#101e3d]",
+                  ? "border-r-[#101e3d] bg-[#d9e8ff] text-[#101e3d]"
+                  : "border-r-transparent text-[#3b4253] hover:bg-[#f5f7fb] hover:text-[#101e3d]",
               )}
             >
               <Icon

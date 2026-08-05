@@ -536,6 +536,38 @@ export async function submitComplianceReviewWorkflow({
   return data;
 }
 
+export async function createComplianceSupportRequest({
+  minerId,
+  review,
+  support_type,
+  priority,
+  custom_note,
+  document_types,
+}: {
+  minerId: string;
+  review: string;
+  support_type: string;
+  priority: string;
+  custom_note?: string;
+  document_types: string[];
+}) {
+  const accessToken = getBrowserAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Your browser session is not authenticated. Log in again.");
+  }
+
+  const { data } = await authApi.post(
+    getProxyUrl(`/compliance/miners/${minerId}/support-request/`),
+    { review, support_type, priority, custom_note, document_types },
+    {
+      headers: getWorkflowHeaders(accessToken),
+    },
+  );
+
+  return data;
+}
+
 export async function getComplianceMinerDetail(minerId: string) {
   const accessToken = getBrowserAccessToken();
 

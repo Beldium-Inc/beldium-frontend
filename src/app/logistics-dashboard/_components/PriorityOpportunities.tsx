@@ -77,7 +77,7 @@ export default function PriorityOpportunities({
                 </button>
                 <button
                   onClick={() => onSubmitInterest(opp)}
-                  className="text-sm px-4 py-1.5 rounded-lg bg-[#101e3d] text-white hover:bg-[#182a52]"
+                  className="text-sm px-4 py-1.5 rounded-lg bg-[#101e3d] !text-white hover:bg-[#182a52]"
                 >
                   Submit Interest
                 </button>

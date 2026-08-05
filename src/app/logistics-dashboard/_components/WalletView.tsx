@@ -40,19 +40,23 @@ export default function WalletView() {
   const list = useMemo(() => transactions ?? [], [transactions]);
 
   const stats = useMemo(() => {
-    const delivered = list.filter((t) => t.final_status === "completed");
-    const inProgress = list.filter((t) => t.final_status !== "completed" && t.final_status !== "cancelled");
-    const availableBalance = delivered.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
-    const pendingValue = inProgress.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
+    const delivered = list.filter((t) => t.shipment_status === "delivered");
+    const pending = list.filter((t) => t.shipment_status === "assigned" || t.shipment_status === "in_transit");
+    // "Available Balance" has no real meaning here - there's no payout or
+    // withdrawal model on the backend, so this card is relabeled to a real,
+    // derivable figure (sum of delivered job values) instead of implying a
+    // withdrawable bank-style balance.
+    const totalDeliveredValue = delivered.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
+    const pendingValue = pending.reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
     const totalEarnings = list
       .filter((t) => t.final_status !== "cancelled")
       .reduce((sum, t) => sum + Number(t.total_value ?? 0), 0);
 
     return [
-      { label: "Delivered Value", value: formatNaira(availableBalance), sub: "Confirmed delivered jobs", accent: "text-[#1ea43b]" },
-      { label: "Pending Value", value: formatNaira(pendingValue), sub: "Awaiting delivery confirmation", accent: "text-[#e09408]" },
+      { label: "Total Delivered Value", value: formatNaira(totalDeliveredValue), sub: "Sum of delivered job values", accent: "text-[#1ea43b]" },
+      { label: "Pending Payments", value: formatNaira(pendingValue), sub: "Awaiting delivery confirmation", accent: "text-[#e09408]" },
       { label: "Total Earnings", value: formatNaira(totalEarnings), sub: "Lifetime, excluding cancelled", accent: "text-[#172554]" },
-      { label: "Completed Jobs", value: String(delivered.length), sub: "Successfully settled", accent: "text-[#172554]" },
+      { label: "Completed Jobs Paid", value: String(delivered.length), sub: "Successfully settled", accent: "text-[#172554]" },
     ];
   }, [list]);
 
@@ -66,7 +70,7 @@ export default function WalletView() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold text-[#172554]">Wallet</h1>
-        <p className="text-sm text-[#8b93a1] mt-1">Earnings and transaction history derived from escrow records.</p>
+        <p className="text-sm text-[#8b93a1] mt-1">Track your earnings, payout, and transaction history.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -89,7 +93,7 @@ export default function WalletView() {
                 <button
                   type="button"
                   onClick={() => showToast("Payouts aren't connected to the backend yet.", "info")}
-                  className="mt-4 px-3 py-1.5 rounded-lg bg-[#101e3d] text-white text-xs font-medium hover:bg-[#182a52]"
+                  className="mt-4 px-3 py-1.5 rounded-lg bg-[#101e3d] !text-white text-xs font-medium hover:bg-[#182a52]"
                 >
                   Withdraw funds
                 </button>

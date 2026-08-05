@@ -35,7 +35,7 @@ export default function Page() {
         const completed = Boolean(res?.data?.has_completed_onboarding);
         const profile = res?.data?.profile || null;
         if (completed) {
-          router.replace("/compliancedashboard?persona=compliance");
+          router.replace("/compliancedashboard?persona=admin");
         } else {
           if (!profile) {
             setStep(1);

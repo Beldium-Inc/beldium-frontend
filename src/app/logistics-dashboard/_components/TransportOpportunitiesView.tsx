@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClockCircleOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import {
+  ClockCircleOutlined,
+  EnvironmentOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  InboxOutlined,
+  FieldTimeOutlined,
+  AimOutlined,
+  FileSearchOutlined,
+} from "@ant-design/icons";
 import { classNames, statusStyles } from "@/src/features/compliance/dashboard/lib/style";
 import { showToast } from "@/src/store/toast.store";
 import { getApiErrorMessage, updateRfqAssignmentStatus } from "./api";
@@ -12,6 +21,32 @@ import type { Rfq, RfqAssignment } from "./types";
 function formatDate(value: string | null) {
   if (!value) return "Not set";
   return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Hours remaining until an RFQ's delivery_deadline. Returns null when the
+// deadline is missing (nothing to compute) rather than fabricating a number.
+function hoursRemaining(deadline: string | null | undefined) {
+  if (!deadline) return null;
+  const diffMs = new Date(deadline).getTime() - Date.now();
+  return diffMs / (1000 * 60 * 60);
+}
+
+function deadlineLabel(deadline: string | null | undefined) {
+  const hours = hoursRemaining(deadline);
+  if (hours === null) return "No deadline set";
+  if (hours <= 0) return "Deadline passed";
+  if (hours < 48) return `${Math.round(hours)} Hour${Math.round(hours) === 1 ? "" : "s"} Remaining`;
+  return `${Math.round(hours / 24)} Days Remaining`;
+}
+
+// Priority pill derived from real urgency (time to deadline), not a
+// fabricated backend field.
+function priorityFromDeadline(deadline: string | null | undefined) {
+  const hours = hoursRemaining(deadline);
+  if (hours === null) return null;
+  if (hours <= 12) return { label: "High Priority", tone: statusStyles.red };
+  if (hours <= 48) return { label: "Medium Priority", tone: statusStyles.amber };
+  return null;
 }
 
 function OpportunityCard({
@@ -38,21 +73,28 @@ function OpportunityCard({
     },
   });
 
+  const priority = priorityFromDeadline(rfq?.delivery_deadline);
+
   return (
     <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-[#172554]">{rfq?.mineral_type ?? "Mineral transport"}</h3>
-            <span
-              className={classNames(
-                "text-[11px] font-medium px-2 py-0.5 rounded-full",
-                statusStyles.slate.container,
-              )}
-            >
-              {rfq?.rfq_code ?? assignment.rfq}
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-[#172554]">
+              {rfq?.mineral_type ? `${rfq.mineral_type} Transport` : "Mineral Transport"}
+            </h3>
+            {priority && (
+              <span
+                className={classNames(
+                  "text-[11px] font-medium px-2 py-0.5 rounded-full",
+                  priority.tone.container,
+                )}
+              >
+                {priority.label}
+              </span>
+            )}
           </div>
+          <p className="text-xs text-[#8b93a1] mt-0.5">{rfq?.rfq_code ?? assignment.rfq}</p>
           <p className="text-xs text-[#8b93a1] mt-0.5">
             {rfq?.pickup_location ?? "Origin not specified"} <EnvironmentOutlined className="mx-1" />
             {rfq?.destination ?? "Destination not specified"}
@@ -65,7 +107,7 @@ function OpportunityCard({
           )}
         >
           <ClockCircleOutlined className="text-[12px]" />
-          Awaiting your response
+          {deadlineLabel(rfq?.delivery_deadline)}
         </span>
       </div>
 
@@ -116,6 +158,7 @@ function OpportunityCard({
 
 export default function TransportOpportunitiesView() {
   const [query, setQuery] = useState("");
+  const [originState, setOriginState] = useState("");
   const { data: rfqs, isLoading: rfqsLoading, isError: rfqsError } = useLogisticsRfqs();
   const {
     data: assignments,
@@ -134,19 +177,83 @@ export default function TransportOpportunitiesView() {
     return map;
   }, [rfqs]);
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return pendingAssignments;
-    const q = query.toLowerCase();
-    return pendingAssignments.filter((a) => {
-      const rfq = rfqById.get(a.rfq);
-      return (
-        rfq?.rfq_code?.toLowerCase().includes(q) ||
-        rfq?.mineral_type?.toLowerCase().includes(q) ||
-        rfq?.destination?.toLowerCase().includes(q) ||
-        rfq?.pickup_location?.toLowerCase().includes(q)
-      );
+  // Origins are free-text pickup_location strings on the RFQ, so this is a
+  // real, backend-derived list rather than a fixed dropdown of states.
+  const originOptions = useMemo(() => {
+    const set = new Set<string>();
+    pendingAssignments.forEach((a) => {
+      const loc = rfqById.get(a.rfq)?.pickup_location;
+      if (loc) set.add(loc);
     });
-  }, [pendingAssignments, rfqById, query]);
+    return Array.from(set).sort();
+  }, [pendingAssignments, rfqById]);
+
+  const filtered = useMemo(() => {
+    let list = pendingAssignments;
+    if (originState) {
+      list = list.filter((a) => rfqById.get(a.rfq)?.pickup_location === originState);
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter((a) => {
+        const rfq = rfqById.get(a.rfq);
+        return (
+          rfq?.rfq_code?.toLowerCase().includes(q) ||
+          rfq?.mineral_type?.toLowerCase().includes(q) ||
+          rfq?.destination?.toLowerCase().includes(q) ||
+          rfq?.pickup_location?.toLowerCase().includes(q)
+        );
+      });
+    }
+    // Sort by closing soonest first (real delivery_deadline field).
+    return [...list].sort((a, b) => {
+      const da = rfqById.get(a.rfq)?.delivery_deadline;
+      const db = rfqById.get(b.rfq)?.delivery_deadline;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return new Date(da).getTime() - new Date(db).getTime();
+    });
+  }, [pendingAssignments, rfqById, query, originState]);
+
+  const closingSoonCount = useMemo(
+    () =>
+      pendingAssignments.filter((a) => {
+        const hours = hoursRemaining(rfqById.get(a.rfq)?.delivery_deadline);
+        return hours !== null && hours > 0 && hours <= 12;
+      }).length,
+    [pendingAssignments, rfqById],
+  );
+
+  // "Best Fleet Matches" and "Submitted Interests" have no backend concept
+  // (no fleet-compatibility scoring, no submit-interest endpoint). Rather
+  // than invent numbers, these cards are relabeled to real, honest metrics.
+  const stats = [
+    {
+      icon: InboxOutlined,
+      label: "Open Opportunities",
+      value: String(pendingAssignments.length),
+      caption: "Available transport jobs",
+    },
+    {
+      icon: FieldTimeOutlined,
+      label: "Closing Soon",
+      value: String(closingSoonCount),
+      caption: "Response deadline within 12 hours",
+    },
+    {
+      icon: AimOutlined,
+      label: "Fleet Matches",
+      value: "—",
+      caption: "Fleet matching not available yet",
+    },
+    {
+      icon: FileSearchOutlined,
+      label: "Submitted Interests",
+      value: "—",
+      caption: "Submit Interest isn't connected to the backend yet",
+    },
+  ];
 
   const isLoading = rfqsLoading || assignmentsLoading;
   const isError = rfqsError || assignmentsError;
@@ -156,17 +263,60 @@ export default function TransportOpportunitiesView() {
       <div>
         <h1 className="text-xl font-semibold text-[#172554]">Transport Opportunities</h1>
         <p className="text-sm text-[#8b93a1] mt-1">
-          RFQs routed to you for logistics that are awaiting your accept or decline response.
+          Browse transport opportunities that match your fleet, operating regions, and delivery capabilities.
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]"
+          >
+            <span className="w-8 h-8 rounded-lg bg-[#e9f0ff] flex items-center justify-center text-[#101e3d] mb-3">
+              <s.icon className="text-[15px]" />
+            </span>
+            <div className="text-sm text-[#6f7786]">{s.label}</div>
+            <div className="text-2xl font-semibold text-[#172554] mt-1">{s.value}</div>
+            <div className="text-xs text-[#8b93a1] mt-1">{s.caption}</div>
+          </div>
+        ))}
       </div>
 
       <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-4 flex flex-wrap items-center gap-3">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search RFQ code, mineral, origin, destination..."
+          placeholder="Search Job ID, mineral, buyer, location..."
           className="flex-1 min-w-[220px] bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] placeholder:text-[#8b93a1] outline-none"
         />
+        <select
+          value={originState}
+          onChange={(e) => setOriginState(e.target.value)}
+          className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] outline-none"
+        >
+          <option value="">Origin: All</option>
+          {originOptions.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+        <span
+          title="RFQ has no structured vehicle-type field (fleet_requirements is free text)"
+          className="text-xs px-3 py-2 rounded-lg border border-dashed border-[#e4e9f2] text-[#b7bec9] cursor-not-allowed select-none"
+        >
+          Vehicle Type (not available)
+        </span>
+        {originState && (
+          <button
+            type="button"
+            onClick={() => setOriginState("")}
+            className="text-xs text-[#101e3d] underline underline-offset-2"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {isLoading && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   SearchOutlined,
@@ -28,7 +28,10 @@ import {
   getComplianceMinerDetail,
   verifyMinerLicense,
   verifyMinerDocument,
+  submitComplianceReviewWorkflow,
+  createComplianceSupportRequest,
 } from "@/src/features/compliance/dashboard/api";
+import RequestComplianceDocumentModal from "@/src/features/compliance/dashboard/components/reviews/RequestComplianceDocumentModal";
 import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
 import {
   type CaseReviewTab,
@@ -194,12 +197,6 @@ export default function ComplianceReviewsView({
     onOpenReview?.(row.id);
   };
 
-  useEffect(() => {
-    if (!selectedRow && rows[0]) {
-      setSelectedRow(rows[0]);
-    }
-  }, [rows, selectedRow]);
-
   const minerDetailQ = useQuery({
     queryKey: ["reviewsMinerDetail", selectedRow?.minerUuid],
     queryFn: () => getComplianceMinerDetail(selectedRow!.minerUuid),
@@ -234,6 +231,83 @@ export default function ComplianceReviewsView({
       showToast(getApiErrorMessage(error, "Could not update document verification."), "error");
     },
   });
+
+  const [isRequestDocsOpen, setIsRequestDocsOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState<string | null>(null);
+
+  const invalidateReviewLists = () => {
+    queryClient.invalidateQueries({ queryKey: ["complianceReviews"] });
+    queryClient.invalidateQueries({ queryKey: ["complianceReviewQueue"] });
+    queryClient.invalidateQueries({ queryKey: ["reviewsMinerDetail", selectedRow?.minerUuid] });
+  };
+
+  const reviewWorkflowMutation = useMutation({
+    mutationFn: submitComplianceReviewWorkflow,
+    onSuccess: (_data, variables) => {
+      showToast(
+        variables.action === "approve"
+          ? "Compliance approved."
+          : variables.action === "reject"
+            ? "Application rejected."
+            : "Review updated.",
+        "success",
+      );
+      invalidateReviewLists();
+    },
+    onError: (error) => {
+      showToast(getApiErrorMessage(error, "Could not update this review."), "error");
+    },
+  });
+
+  const supportRequestMutation = useMutation({
+    mutationFn: createComplianceSupportRequest,
+    onSuccess: () => {
+      invalidateReviewLists();
+    },
+    onError: (error) => {
+      showToast(getApiErrorMessage(error, "Could not send the document request."), "error");
+    },
+  });
+
+  const handleExport = () => {
+    if (!selectedRow) return;
+    const lines = [
+      `Case ${selectedRow.minerId} - ${selectedRow.company}`,
+      `Risk Level: ${selectedRow.riskLevel.label}`,
+      `Compliance Score: ${selectedRow.complianceScore}%`,
+      `Reviewer: ${selectedRow.reviewer}`,
+      "",
+      "Licenses:",
+      ...licenses.map((l) => `- ${l.license_type || "License"} (${l.license_number || "N/A"}): ${l.verification_status || "Pending Review"}`),
+      "",
+      "Documents:",
+      ...documentRecords.map((d) => `- ${d.document_type || "Document"}: ${d.status || "Unverified"}`),
+      "",
+      "ESG Reviews:",
+      ...esgReviews.map((e) => `- ${e.category || "ESG"}: ${e.status || "Not initiated"}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${selectedRow.minerId}-compliance-case.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShare = async () => {
+    if (!selectedRow) return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast(`Link to the Reviews page copied. Case ${selectedRow.minerId} is selected in this session only.`, "success");
+    } catch {
+      showToast("Could not copy the link to your clipboard.", "error");
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="flex h-[calc(100vh-140px)] gap-0 overflow-hidden rounded-[24px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
@@ -342,11 +416,15 @@ export default function ComplianceReviewsView({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {[{ icon: <DownloadOutlined />, label: "Export" }, { icon: <ShareAltOutlined />, label: "Share" }, { icon: <PrinterOutlined />, label: "Print" }].map((btn) => (
-                <button key={btn.label} type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
-                  {btn.icon} {btn.label}
-                </button>
-              ))}
+              <button type="button" onClick={handleExport} className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                <DownloadOutlined /> Export
+              </button>
+              <button type="button" onClick={handleShare} className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                <ShareAltOutlined /> Share
+              </button>
+              <button type="button" onClick={handlePrint} className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                <PrinterOutlined /> Print
+              </button>
             </div>
           </div>
 
@@ -788,17 +866,32 @@ export default function ComplianceReviewsView({
               </div>
               <div>
                 <div className="text-[#8a92a1]">Decision Status</div>
-                <div className="text-[13px] font-semibold text-[#df8b19]">Under Review</div>
+                <div className="text-[13px] font-semibold text-[#df8b19]">{selectedRow.reviewStatus.label}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f6e3bf] bg-[#fff4df] px-4 text-[13px] font-medium text-[#a5680c]">
+              <button
+                type="button"
+                onClick={() => setIsRequestDocsOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f6e3bf] bg-[#fff4df] px-4 text-[13px] font-medium text-[#a5680c]"
+              >
                 <InfoCircleOutlined /> Request Information
               </button>
-              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f3c2c4] bg-white px-4 text-[13px] font-medium text-[#ef2f32]">
+              <button
+                type="button"
+                disabled={reviewWorkflowMutation.isPending}
+                onClick={() => setRejectReason("")}
+                className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#f3c2c4] bg-white px-4 text-[13px] font-medium text-[#ef2f32] disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <CloseOutlined /> Reject Application
               </button>
-              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold text-white" style={primaryActionStyle}>
+              <button
+                type="button"
+                disabled={reviewWorkflowMutation.isPending}
+                onClick={() => reviewWorkflowMutation.mutate({ reviewId: selectedRow.id, action: "approve" })}
+                className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                style={primaryActionStyle}
+              >
                 <CheckCircleOutlined /> Approve Compliance
               </button>
             </div>
@@ -809,6 +902,57 @@ export default function ComplianceReviewsView({
           Select a review from the list
         </div>
       )}
+
+      {isRequestDocsOpen && selectedRow ? (
+        <RequestComplianceDocumentModal
+          minerCode={selectedRow.minerId}
+          onClose={() => setIsRequestDocsOpen(false)}
+          onConfirm={() => setIsRequestDocsOpen(false)}
+          onSubmit={async (payload) => {
+            await supportRequestMutation.mutateAsync({
+              minerId: selectedRow.minerUuid,
+              review: selectedRow.id,
+              support_type: "REGULATORY_ADVISORY",
+              priority: payload.priority,
+              custom_note: payload.custom_note,
+              document_types: payload.document_types,
+            });
+          }}
+        />
+      ) : null}
+
+      {rejectReason !== null && selectedRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(8,13,28,0.28)] backdrop-blur-[4px] px-4">
+          <div className="w-full max-w-[480px] rounded-[20px] bg-white p-6 shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
+            <div className="text-[18px] font-semibold text-[#2a2f39]">Reject Application</div>
+            <div className="mt-1 text-[13px] text-[#8a92a1]">Provide a reason for rejecting case {selectedRow.minerId}.</div>
+            <textarea
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              placeholder="Reason for rejection..."
+              className="mt-4 h-28 w-full resize-none rounded-[14px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+            />
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button type="button" onClick={() => setRejectReason(null)} className="text-[14px] font-medium text-[#5d6675]">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={reviewWorkflowMutation.isPending || !rejectReason.trim()}
+                onClick={() => {
+                  reviewWorkflowMutation.mutate(
+                    { reviewId: selectedRow.id, action: "reject", reason: rejectReason.trim() },
+                    { onSuccess: () => setRejectReason(null) },
+                  );
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#ef2f32] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CloseOutlined /> Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

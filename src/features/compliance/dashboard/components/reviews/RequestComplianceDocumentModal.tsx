@@ -14,14 +14,29 @@ export const REQUIRED_DOCUMENT_OPTIONS = [
   { key: "board-resolution", label: "Board Resolution Documents" },
 ];
 
+const DOCUMENT_TYPE_MAP: Record<string, string> = {
+  ssml: "SSML",
+  financial: "FINANCIAL_PROOF",
+  eia: "EIA",
+  "site-map": "SITE_MAP",
+  "community-consent": "COMMUNITY_CONSENT",
+  "board-resolution": "BOARD_RESOLUTION",
+};
+
 export default function RequestComplianceDocumentModal({
   minerCode,
   onClose,
   onConfirm,
+  onSubmit,
 }: {
   minerCode: string;
   onClose: () => void;
   onConfirm: () => void;
+  onSubmit?: (payload: {
+    document_types: string[];
+    custom_note?: string;
+    priority: "NORMAL" | "HIGH" | "CRITICAL";
+  }) => Promise<void>;
 }) {
   const [selected, setSelected] = useState<Record<string, boolean>>({
     ssml: true,
@@ -115,13 +130,32 @@ export default function RequestComplianceDocumentModal({
           <button
             type="button"
             disabled={submitting}
-            onClick={() => {
+            onClick={async () => {
+              const documentTypes = Object.entries(selected)
+                .filter(([, checked]) => checked)
+                .map(([key]) => DOCUMENT_TYPE_MAP[key]);
+
+              if (documentTypes.length === 0) {
+                showToast("Select at least one document to request.", "error");
+                return;
+              }
+
               setSubmitting(true);
-              window.setTimeout(() => {
-                setSubmitting(false);
+              try {
+                if (onSubmit) {
+                  await onSubmit({
+                    document_types: documentTypes,
+                    custom_note: other.trim() || undefined,
+                    priority: highPriority ? "HIGH" : "NORMAL",
+                  });
+                }
                 showToast(`Document request sent for ${minerCode}.`, "success");
                 onConfirm();
-              }, 400);
+              } catch {
+                // Error toast is handled by the caller's mutation.
+              } finally {
+                setSubmitting(false);
+              }
             }}
             style={primaryActionStyle}
             className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-5 text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"

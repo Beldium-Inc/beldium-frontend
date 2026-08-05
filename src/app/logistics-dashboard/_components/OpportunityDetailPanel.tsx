@@ -133,7 +133,7 @@ export default function OpportunityDetailPanel({
             </button>
             <button
               onClick={() => onSubmitInterest(opportunity)}
-              className="ml-auto px-4 py-2 rounded-lg bg-[#101e3d] text-white text-sm font-medium hover:bg-[#182a52]"
+              className="ml-auto px-4 py-2 rounded-lg bg-[#101e3d] !text-white text-sm font-medium hover:bg-[#182a52]"
             >
               Submit Interest
             </button>

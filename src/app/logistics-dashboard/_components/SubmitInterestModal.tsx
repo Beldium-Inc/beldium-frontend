@@ -50,7 +50,7 @@ export default function SubmitInterestModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#101e3d]/30 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl px-5 py-6 max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between p-5 border-b border-[#edf1f7]">
           <div>
             <h2 className="font-semibold text-[#172554]">Submit Interest</h2>
@@ -174,7 +174,7 @@ export default function SubmitInterestModal({
               className={classNames(
                 "px-4 py-2 rounded-lg text-sm font-medium",
                 canSubmit
-                  ? "bg-[#101e3d] text-white hover:bg-[#182a52]"
+                  ? "bg-[#101e3d] !text-white hover:bg-[#182a52]"
                   : "bg-[#e5e8ef] text-[#9ca3af] cursor-not-allowed",
               )}
             >

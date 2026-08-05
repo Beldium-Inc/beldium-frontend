@@ -16,6 +16,7 @@ import JobTrackingPanel from "./_components/JobTrackingPanel";
 import TransportOpportunitiesView from "./_components/TransportOpportunitiesView";
 import AssignedJobsView from "./_components/AssignedJobsView";
 import WalletView from "./_components/WalletView";
+import FleetManagementView from "./_components/FleetManagementView";
 import { AssignedJob, Opportunity } from "./_components/data";
 
 const headerTitles: Record<NavKey, string> = {
@@ -77,8 +78,9 @@ export default function LogisticsDashboardPage() {
           {active === "opportunities" && <TransportOpportunitiesView />}
           {active === "assigned" && <AssignedJobsView />}
           {active === "wallet" && <WalletView />}
+          {active === "fleet" && <FleetManagementView />}
 
-          {(active === "fleet" || active === "notifications" || active === "settings") && (
+          {(active === "notifications" || active === "settings") && (
             <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-10 text-center text-[#8b93a1]">
               {headerTitles[active]}: not connected to a backend yet, coming soon.
             </div>

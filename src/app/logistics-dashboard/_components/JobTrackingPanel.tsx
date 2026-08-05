@@ -168,7 +168,7 @@ export default function JobTrackingPanel({
             <button className="px-4 py-2 rounded-lg border border-[#dbe0ea] text-sm text-[#293041] hover:bg-[#f9fafc]">
               Reschedule
             </button>
-            <button className="ml-auto px-4 py-2 rounded-lg bg-[#101e3d] text-white text-sm font-medium hover:bg-[#182a52]">
+            <button className="ml-auto px-4 py-2 rounded-lg bg-[#101e3d] !text-white text-sm font-medium hover:bg-[#182a52]">
               View Shipping Instructions
             </button>
           </div>
