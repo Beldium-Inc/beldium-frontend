@@ -56,6 +56,10 @@ export type AdminReviewRow = {
   complianceScore: number;
   reviewer: string;
   lastActionDate: string;
+  /** Raw ISO timestamp for `MinerComplianceReview.created_at` (compliance/serializers.py MinerComplianceReviewListSerializer). Used as "Submitted". */
+  createdAt: string;
+  /** Raw ISO timestamp for `MinerComplianceReview.claimed_at`, null until claimed. */
+  claimedAt: string | null;
 };
 
 export type ComplianceQueueRow = {

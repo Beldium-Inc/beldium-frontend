@@ -181,6 +181,8 @@ export function mapAdminReviewRows(
     ),
     reviewer: formatAdminReviewer(item),
     lastActionDate: formatAdminReviewDate(item),
+    createdAt: item.created_at,
+    claimedAt: item.claimed_at,
   }));
 }
 

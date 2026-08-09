@@ -13,11 +13,6 @@ import {
   COMPLIANCE_NOTIFICATIONS,
 } from "@/src/features/compliance/dashboard/mock";
 import {
-  DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
-  DEFAULT_COMPLIANCE_MY_TASKS,
-  DEFAULT_COMPLIANCE_REVIEW_QUEUE,
-  DEFAULT_COMPLIANCE_REVIEWS,
-  DEFAULT_COMPLIANCE_REVIEW_DASHBOARD_CARDS,
   claimComplianceReview,
   getComplianceDashboardSummary,
   getComplianceMinerDetail,
@@ -71,6 +66,25 @@ import EscalateToSeniorReviewModal from "@/src/features/compliance/dashboard/com
 import RequestComplianceDocumentModal from "@/src/features/compliance/dashboard/components/reviews/RequestComplianceDocumentModal";
 import ComplianceMinerDetailView from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 import ComplianceNotificationsView from "@/src/features/compliance/dashboard/components/notifications/ComplianceNotificationsView";
+
+// Real, empty-safe fallbacks used only while a query hasn't resolved yet -
+// never mock/sample data, so the UI never silently shows content that looks
+// real but isn't.
+const EMPTY_METRIC = { count: 0, percentage_change: { percentage: 0, trend: "neutral" as const } };
+const EMPTY_REVIEW_DASHBOARD_CARDS = {
+  total_miners_onboarded: EMPTY_METRIC,
+  under_review: EMPTY_METRIC,
+  compliance_ready: EMPTY_METRIC,
+  action_required: EMPTY_METRIC,
+};
+const EMPTY_SUMMARY_METRIC = { value: 0, change_percent: 0, change_direction: "neutral" as const };
+const EMPTY_DASHBOARD_SUMMARY = {
+  active_tasks: EMPTY_SUMMARY_METRIC,
+  avg_review_time: EMPTY_SUMMARY_METRIC,
+  quality_score: EMPTY_SUMMARY_METRIC,
+  queue_load: EMPTY_SUMMARY_METRIC,
+  latest_alert: null,
+};
 
 export default function ComplianceDashboardPage() {
   const queryClient = useQueryClient();
@@ -170,14 +184,12 @@ export default function ComplianceDashboardPage() {
   const adminCardsQ = useQuery({
     queryKey: ["complianceReviewDashboardCards"],
     queryFn: getComplianceReviewDashboardCards,
-    initialData: DEFAULT_COMPLIANCE_REVIEW_DASHBOARD_CARDS,
     enabled: persona === "admin" && !isComplianceSettingsSurface && hasAccessToken,
     retry: false,
   });
   const adminReviewsQ = useQuery({
     queryKey: ["complianceReviews", { page: 1 }],
     queryFn: () => getComplianceReviews({ page: 1, per_page: 10 }),
-    initialData: DEFAULT_COMPLIANCE_REVIEWS,
     enabled:
       ((persona === "admin" && !isComplianceSettingsSurface) ||
         (persona === "compliance" && complianceView === "reviews")) &&
@@ -187,7 +199,6 @@ export default function ComplianceDashboardPage() {
   const complianceSummaryQ = useQuery({
     queryKey: ["complianceDashboardSummary"],
     queryFn: getComplianceDashboardSummary,
-    initialData: DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY,
     enabled:
       persona === "compliance" &&
       !isComplianceStaticSurface &&
@@ -197,7 +208,6 @@ export default function ComplianceDashboardPage() {
   const complianceQueueQ = useQuery({
     queryKey: ["complianceReviewQueue", { page: 1 }],
     queryFn: () => getComplianceReviewQueue({ page: 1, per_page: 10 }),
-    initialData: DEFAULT_COMPLIANCE_REVIEW_QUEUE,
     enabled:
       persona === "compliance" &&
       !isComplianceStaticSurface &&
@@ -207,7 +217,6 @@ export default function ComplianceDashboardPage() {
   const complianceMyTasksQ = useQuery({
     queryKey: ["complianceMyTasks", { page: 1 }],
     queryFn: () => getComplianceMyTasks({ page: 1, per_page: 10 }),
-    initialData: DEFAULT_COMPLIANCE_MY_TASKS,
     enabled:
       persona === "compliance" &&
       !isComplianceStaticSurface &&
@@ -349,17 +358,17 @@ export default function ComplianceDashboardPage() {
     },
   });
   const adminMetrics = mapAdminCardMetrics(
-    adminCardsQ.data?.data ?? DEFAULT_COMPLIANCE_REVIEW_DASHBOARD_CARDS.data,
+    adminCardsQ.data?.data ?? EMPTY_REVIEW_DASHBOARD_CARDS,
   );
   const adminRows = filterBySearchTerm(
     mapAdminReviewRows(
-      adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+      adminReviewsQ.data?.data?.results ?? [],
     ),
     searchTerm,
     ["minerId", "company", "location"],
   );
   const complianceSummary =
-    complianceSummaryQ.data?.data ?? DEFAULT_COMPLIANCE_DASHBOARD_SUMMARY.data;
+    complianceSummaryQ.data?.data ?? EMPTY_DASHBOARD_SUMMARY;
   const complianceAlert = mapComplianceAlert(complianceSummary.latest_alert);
   const complianceAlertKey = complianceAlert.reviewId ?? "none";
   const isComplianceAlertDismissed = dismissedAlertKey === complianceAlertKey;
@@ -369,7 +378,7 @@ export default function ComplianceDashboardPage() {
   const complianceMetrics = mapComplianceMetrics(complianceSummary);
   const complianceQueueRows = filterBySearchTerm(
     mapComplianceQueueRows(
-      complianceQueueQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEW_QUEUE.data.results,
+      complianceQueueQ.data?.data?.results ?? [],
       now,
     ),
     searchTerm,
@@ -377,25 +386,23 @@ export default function ComplianceDashboardPage() {
   );
   const complianceQueuePreviewRows = complianceQueueRows.slice(0, 5);
   const complianceQueueCount =
-    complianceQueueQ.data?.data?.count ?? DEFAULT_COMPLIANCE_REVIEW_QUEUE.data.count;
+    complianceQueueQ.data?.data?.count ?? 0;
   const showViewFullQueue = complianceQueueCount > 5;
   const complianceActiveTaskCards = mapComplianceActiveTaskCards(
-    complianceMyTasksQ.data?.data?.results ?? DEFAULT_COMPLIANCE_MY_TASKS.data.results,
+    complianceMyTasksQ.data?.data?.results ?? [],
   );
   const complianceReviewRows = filterBySearchTerm(
     mapAdminReviewRows(
-      adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results,
+      adminReviewsQ.data?.data?.results ?? [],
     ),
     searchTerm,
     ["minerId", "company", "location"],
   );
   const reviewLookup = new Map<string, ComplianceReviewItem>();
   for (const item of [
-    ...(complianceQueueQ.data?.data?.results ??
-      DEFAULT_COMPLIANCE_REVIEW_QUEUE.data.results),
-    ...(complianceMyTasksQ.data?.data?.results ??
-      DEFAULT_COMPLIANCE_MY_TASKS.data.results),
-    ...(adminReviewsQ.data?.data?.results ?? DEFAULT_COMPLIANCE_REVIEWS.data.results),
+    ...(complianceQueueQ.data?.data?.results ?? []),
+    ...(complianceMyTasksQ.data?.data?.results ?? []),
+    ...(adminReviewsQ.data?.data?.results ?? []),
   ]) {
     if (!reviewLookup.has(item.id)) {
       reviewLookup.set(item.id, item);
@@ -618,10 +625,7 @@ export default function ComplianceDashboardPage() {
                     <PageHero persona={persona} complianceView={complianceView} />
                   ) : null}
                   {complianceView === "reviews" ? (
-                    <ComplianceReviewsView
-                      rows={complianceReviewRows}
-                      onOpenReview={openReviewById}
-                    />
+                    <ComplianceReviewsView rows={complianceReviewRows} />
                   ) : complianceView === "regulatory-alerts" ? (
                     <RegulatoryAlertsView />
                   ) : complianceView === "notifications" ? (
