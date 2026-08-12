@@ -10,11 +10,11 @@ export function StatusBadgePill({ badge }: { badge: StatusBadge }) {
   return (
     <span
       className={classNames(
-        "inline-flex items-center gap-2 rounded-[10px] px-3 py-2 text-[14px] font-medium",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
         style.container,
       )}
     >
-      <span className={classNames("h-2.5 w-2.5 rounded-full", style.dot)} />
+      <span className={classNames("h-1.5 w-1.5 rounded-full", style.dot)} />
       {badge.label}
     </span>
   );
@@ -38,7 +38,7 @@ export function TrendMeta({
   return (
     <div
       className={classNames(
-        "mt-4 inline-flex items-center gap-1 text-[13px] font-medium",
+        "mt-2.5 inline-flex items-center gap-1 text-[11px] font-medium",
         featured ? "text-[#89e79f]" : trend.className,
       )}
     >
@@ -53,7 +53,7 @@ export function ArrowActionButton({ featured = false }: { featured?: boolean }) 
     <button
       type="button"
       className={classNames(
-        "mt-auto flex h-14 w-14 items-center justify-center rounded-full text-[20px] transition-transform hover:-translate-y-0.5",
+        "mt-auto flex h-9 w-9 items-center justify-center rounded-full text-[14px] transition-transform hover:-translate-y-0.5",
         featured
           ? "bg-white/14 text-white"
           : "bg-[#eef1f6] text-[#687081] hover:bg-[#e7ebf2]",
@@ -79,7 +79,7 @@ export function LinearProgress({
         : "bg-[#ef2f32]";
 
   return (
-    <div className="mt-5 h-3.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
+    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
       <div
         className={classNames("h-full rounded-full", toneClass)}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
@@ -123,16 +123,16 @@ export function DashboardMetricCard({
   return (
     <div
       className={classNames(
-        "rounded-[28px] border p-5 shadow-[0_24px_44px_-34px_rgba(16,30,61,0.4)]",
+        "rounded-[16px] border p-4 shadow-[0_16px_32px_-28px_rgba(16,30,61,0.4)]",
         featured
           ? "border-[#4c4f56] bg-[#45474b] text-white"
           : "border-[#e7ebf2] bg-white text-[#202534]",
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <span
           className={classNames(
-            "flex h-12 w-12 items-center justify-center rounded-full text-[20px]",
+            "flex h-9 w-9 items-center justify-center rounded-full text-[15px]",
             featured ? "bg-white/10 text-[#74a3ff]" : iconToneStyles[iconTone],
           )}
         >
@@ -140,7 +140,7 @@ export function DashboardMetricCard({
         </span>
         <span
           className={classNames(
-            "text-[15px] font-medium",
+            "text-[13px] font-medium",
             featured ? "text-white/90" : "text-[#3a3e48]",
           )}
         >
@@ -148,11 +148,11 @@ export function DashboardMetricCard({
         </span>
       </div>
 
-      <div className="mt-10 flex items-end justify-between gap-4">
+      <div className="mt-5 flex items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div
             className={classNames(
-              "text-[52px] font-semibold leading-none tracking-[-0.05em]",
+              "text-[28px] font-semibold leading-none tracking-[-0.03em]",
               featured ? "text-white" : "text-[#272b33]",
             )}
           >
@@ -167,7 +167,7 @@ export function DashboardMetricCard({
           {note ? (
             <div
               className={classNames(
-                "mt-4 text-[13px]",
+                "mt-3 text-[11px]",
                 featured ? "text-white/60" : "text-[#9aa1af]",
               )}
             >

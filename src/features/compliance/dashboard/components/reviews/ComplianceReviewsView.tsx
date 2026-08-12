@@ -18,12 +18,16 @@ import {
   UnorderedListOutlined,
   AppstoreOutlined,
   LeftOutlined,
-  ArrowUpOutlined,
   MoreOutlined,
+  HourglassOutlined,
+  ArrowRightOutlined,
+  RightOutlined,
+  RiseOutlined,
   WarningOutlined,
   ClockCircleOutlined,
   TeamOutlined,
   ExclamationCircleOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import type { AdminReviewRow } from "@/src/features/compliance/dashboard/types";
 import { classNames, primaryActionStyle, statusStyles } from "@/src/features/compliance/dashboard/lib/style";
@@ -42,9 +46,10 @@ import {
   CASE_REVIEW_TABS,
 } from "@/src/features/compliance/dashboard/components/reviews/constants";
 import {
+  type CaseChecklistItem,
   CASE_OPERATIONAL_ITEMS,
   CASE_EXPORT_ITEMS,
-  CaseChecklistCard,
+  caseChecklistStatusMeta,
 } from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 
 type MinerLicenseRecord = {
@@ -169,6 +174,340 @@ function licenseValidityStatus(days: number | null) {
   return { label: "Valid", tone: "green" as const };
 }
 
+const ESG_STATUS_OPTIONS: { value: string; label: string; tone: keyof typeof statusStyles }[] = [
+  { value: "approved", label: "Approved", tone: "green" },
+  { value: "in_progress", label: "In Progress", tone: "amber" },
+  { value: "not_initiated", label: "Not Initiated", tone: "slate" },
+];
+
+function esgStatusMeta(status?: string | null) {
+  const normalized = (status ?? "not_initiated").toLowerCase();
+  return ESG_STATUS_OPTIONS.find((option) => option.value === normalized) ?? ESG_STATUS_OPTIONS[2];
+}
+
+function esgCategoryLabel(category?: string | null) {
+  const normalized = (category ?? "").toLowerCase();
+  if (normalized === "environmental") return "Environmental";
+  if (normalized === "safety") return "Safety";
+  if (normalized === "community") return "Community";
+  return category || "ESG Review";
+}
+
+const CHECKLIST_STATUS_OPTIONS: { value: CaseChecklistItem["status"]; label: string }[] = [
+  { value: "verified", label: "Verified" },
+  { value: "pending", label: "Pending" },
+  { value: "flagged", label: "Flagged" },
+];
+
+function ChecklistItemDrawer({
+  item,
+  categoryLabel,
+  onClose,
+}: {
+  item: CaseChecklistItem;
+  categoryLabel: string;
+  onClose: () => void;
+}) {
+  const [drawerTab, setDrawerTab] = useState<"overview" | "comments">("overview");
+  const [assessment, setAssessment] = useState<CaseChecklistItem["status"]>(item.status);
+  const [notes, setNotes] = useState("");
+  const meta = caseChecklistStatusMeta(item.status);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(8,13,28,0.28)] backdrop-blur-[4px]">
+      <div className="flex h-full w-full max-w-[440px] flex-col bg-white shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
+        <div className="flex items-start justify-between gap-3 border-b border-[#edf1f7] px-6 py-5">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[16px] text-[#5e6777]">
+              <FileTextOutlined />
+            </span>
+            <div>
+              <div className="text-[15px] font-semibold text-[#2a2f39]">{item.title}</div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full border border-[#d7e3fb] bg-[#eef2fb] px-2 py-0.5 text-[10px] font-medium text-[#2661d8]">
+                  {categoryLabel}
+                </span>
+                <span className={classNames("rounded-full px-2 py-0.5 text-[10px] font-semibold", meta.className)}>
+                  {meta.label}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-[#7b8392] hover:bg-[#f4f6fb]">
+            <CloseOutlined />
+          </button>
+        </div>
+
+        <div className="flex gap-0 border-b border-[#edf1f7] px-6">
+          {([
+            { key: "overview" as const, label: "Overview" },
+            { key: "comments" as const, label: "Comments" },
+          ]).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setDrawerTab(tab.key)}
+              className={classNames(
+                "whitespace-nowrap border-b-2 px-5 py-4 text-[15px] transition-colors",
+                drawerTab === tab.key
+                  ? "border-[#1f2430] font-semibold text-[#1f2430]"
+                  : "border-transparent font-normal text-[#8a92a1] hover:text-[#2a2f39]",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-[#fbfcfe] px-6 py-6">
+          {drawerTab === "overview" ? (
+            <div className="space-y-5">
+              <div className="rounded-[16px] border border-[#eef1f6] bg-white p-5">
+                <div className="text-[17px] font-semibold text-[#1f2430]">Requirement</div>
+                <div className="mt-3 text-[15px] leading-6 text-[#5d6675]">{item.detail}</div>
+              </div>
+
+              <div className="rounded-[16px] border border-[#eef1f6] bg-white p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[17px] font-semibold text-[#1f2430]">Reviewer Assessment</span>
+                  <span className={classNames("rounded-full px-3 py-1 text-[13px] font-medium", meta.className)}>
+                    {meta.label}
+                  </span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {CHECKLIST_STATUS_OPTIONS.map((option) => (
+                    <label key={option.value} className="flex items-center gap-3 text-[15px] text-[#3f4654]">
+                      <input
+                        type="radio"
+                        name={`checklist-assessment-${item.title}`}
+                        checked={assessment === option.value}
+                        onChange={() => setAssessment(option.value)}
+                        className="h-4 w-4 accent-[#14244a]"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[16px] border border-[#eef1f6] bg-white p-5">
+                <div className="text-[17px] font-semibold text-[#1f2430]">Reviewer Notes</div>
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Add any notes about this item"
+                  className="mt-4 h-28 w-full resize-none rounded-[12px] border border-[#e8ecf4] bg-[#fbfcfe] px-4 py-3 text-[15px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-[16px] border border-[#eef1f6] bg-white p-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[17px] font-semibold text-[#1f2430]">Internal Discussion</span>
+                <button
+                  type="button"
+                  onClick={() => showToast("Comments aren't connected to the backend yet.", "info")}
+                  className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]"
+                >
+                  <PlusOutlined className="text-[12px]" /> Add comment
+                </button>
+              </div>
+              <div className="mt-5 rounded-[12px] border border-dashed border-[#dce3ef] bg-[#fbfcfe] px-4 py-8 text-center text-[14px] text-[#8a92a1]">
+                No comments yet on this item.
+              </div>
+              <div className="mt-5 rounded-[12px] border border-[#eef1f6] bg-white p-4">
+                <div className="text-[15px] font-semibold text-[#1f2430]">Reviewer Notes</div>
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Add any notes about this item"
+                  className="mt-3 h-24 w-full resize-none rounded-[12px] border border-[#e8ecf4] bg-[#fbfcfe] px-4 py-3 text-[15px] text-[#2a2f39] outline-none placeholder:text-[#a0a7b5]"
+                />
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => showToast("Comments aren't connected to the backend yet.", "info")}
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold text-white"
+                    style={primaryActionStyle}
+                  >
+                    Add comment
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[#edf1f7] bg-white px-6 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 items-center rounded-[12px] border border-[#e5e9f1] bg-white px-6 text-[15px] font-medium text-[#3f4654] hover:bg-[#f7f9fc]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              showToast("Item assessments aren't connected to the backend yet.", "info");
+              onClose();
+            }}
+            className="inline-flex h-11 items-center rounded-[12px] bg-[#14244a] px-6 text-[15px] font-semibold text-white"
+            style={primaryActionStyle}
+          >
+            Save assessment
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChecklistReviewTab({
+  title,
+  scoreLabel,
+  requirementColumnLabel,
+  categoryLabel,
+  items,
+}: {
+  title: string;
+  scoreLabel: string;
+  requirementColumnLabel: string;
+  categoryLabel: string;
+  items: CaseChecklistItem[];
+}) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "outstanding" | "verified" | "critical">("all");
+  const [openItem, setOpenItem] = useState<CaseChecklistItem | null>(null);
+
+  const verifiedCount = items.filter((i) => i.status === "verified").length;
+  const outstandingCount = items.filter((i) => i.status === "pending").length;
+  const criticalCount = items.filter((i) => i.status === "flagged").length;
+  const score = items.length ? Math.round((verifiedCount / items.length) * 100) : 0;
+
+  const filteredItems = items
+    .filter((item) => (search.trim() ? item.title.toLowerCase().includes(search.trim().toLowerCase()) : true))
+    .filter((item) => {
+      if (filter === "all") return true;
+      if (filter === "outstanding") return item.status === "pending";
+      if (filter === "verified") return item.status === "verified";
+      return item.status === "flagged";
+    });
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+        <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">{title}</div>
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <SummaryTile
+            label={title.includes("Export") ? "Compliance Status" : "Operational Status"}
+            value={items.length === 0 ? "No items" : criticalCount > 0 ? "Needs Attention" : outstandingCount > 0 ? "In Progress" : "Good"}
+            valueClassName={criticalCount > 0 ? "text-[#ef2f32]" : outstandingCount > 0 ? "text-[#df8b19]" : "text-[#1ea43b]"}
+          />
+          <SummaryTile
+            label={title.includes("Export") ? "Export Checks" : "Checks Complete"}
+            value={`${verifiedCount} / ${items.length || "-"}`}
+          />
+          <SummaryTile label="Outstanding" value={String(outstandingCount)} />
+          <SummaryTile label="Critical" value={String(criticalCount)} valueClassName="text-[#ef2f32]" />
+          <SummaryTile label={scoreLabel} value={`${score}%`} valueClassName="text-[#1ea43b]" />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { key: "all" as const, label: "All", count: items.length },
+            { key: "outstanding" as const, label: "Outstanding", count: outstandingCount },
+            { key: "verified" as const, label: "Verified", count: verifiedCount },
+            { key: "critical" as const, label: "Critical", count: criticalCount },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setFilter(tab.key)}
+              className={classNames(
+                "rounded-[10px] border px-4 py-2 text-[14px] font-medium transition-colors",
+                filter === tab.key
+                  ? "border-[#cfe0f5] bg-[#eaf3fb] text-[#1f6f8b]"
+                  : "border-[#e8ecf4] bg-white text-[#5d6675] hover:bg-[#f7f9fc]",
+              )}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+        <div className="relative">
+          <SearchOutlined className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] text-[#a0a6b3]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={`Search ${title.includes("Export") ? "export compliance" : "operational"} items`}
+            className="h-11 w-[300px] rounded-[10px] border border-[#e8ecf4] bg-white pl-4 pr-10 text-[14px] text-[#2d3441] outline-none placeholder:text-[#a0a6b3]"
+          />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-[18px] border border-[#eef1f6] bg-white">
+        <table className="w-full min-w-[720px]">
+          <thead>
+            <tr className="border-b border-[#eef1f6] bg-[#fbfcfe] text-left text-[15px] font-medium text-[#3f4654]">
+              <th className="px-6 py-4 font-medium">#</th>
+              <th className="px-6 py-4 font-medium">{requirementColumnLabel}</th>
+              <th className="px-6 py-4 font-medium">Status</th>
+              <th className="px-6 py-4 font-medium text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredItems.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-10 text-center text-[14px] text-[#8a92a1]">
+                  No items match your filters.
+                </td>
+              </tr>
+            ) : (
+              filteredItems.map((item, index) => {
+                const itemMeta = caseChecklistStatusMeta(item.status);
+                return (
+                  <tr
+                    key={item.title}
+                    className="cursor-pointer border-b border-[#f2f4f8] last:border-b-0 hover:bg-[#fafbfe]"
+                    onClick={() => setOpenItem(item)}
+                  >
+                    <td className="px-6 py-4 text-[15px] text-[#8a92a1]">{index + 1}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-[15px] text-[#1f2430]">{item.title}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={classNames("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium", itemMeta.className)}>
+                        {itemMeta.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenItem(item)}
+                        className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-[18px] text-[#c7ccd6] hover:bg-[#f4f6fb] hover:text-[#7b8392]"
+                      >
+                        <MoreOutlined />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {openItem ? (
+        <ChecklistItemDrawer item={openItem} categoryLabel={categoryLabel} onClose={() => setOpenItem(null)} />
+      ) : null}
+    </div>
+  );
+}
+
 function getInitials(value: string, fallback = "NA") {
   const trimmed = (value || "").trim();
   if (!trimmed || trimmed.toLowerCase() === "unassigned") return fallback;
@@ -188,6 +527,7 @@ function ScoreRing({
   trackColor = "#eef1f6",
   color = "#14244a",
   caption,
+  showValue = true,
 }: {
   value: number;
   size?: number;
@@ -195,6 +535,7 @@ function ScoreRing({
   trackColor?: string;
   color?: string;
   caption?: string;
+  showValue?: boolean;
 }) {
   const clamped = Math.max(0, Math.min(100, Math.round(value)));
   const radius = (size - strokeWidth) / 2;
@@ -217,10 +558,29 @@ function ScoreRing({
           strokeLinecap="round"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[16px] font-bold text-[#2a2f39]">{clamped}%</span>
-        {caption ? <span className="text-[9px] text-[#8a92a1]">{caption}</span> : null}
-      </div>
+      {showValue ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-[16px] font-bold text-[#2a2f39]">{clamped}%</span>
+          {caption ? <span className="text-[9px] text-[#8a92a1]">{caption}</span> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SummaryTile({
+  label,
+  value,
+  valueClassName = "text-[#1f2430]",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-[12px] border border-[#eef1f6] bg-white px-4 py-3.5">
+      <div className="text-[13px] text-[#8a92a1]">{label}</div>
+      <div className={classNames("mt-1.5 text-[17px] font-semibold", valueClassName)}>{value}</div>
     </div>
   );
 }
@@ -317,6 +677,7 @@ export default function ComplianceReviewsView({
   const [docSearch, setDocSearch] = useState("");
   const [docViewMode, setDocViewMode] = useState<"list" | "grid">("list");
   const [licenseStatusFilter, setLicenseStatusFilter] = useState<"all" | "verified" | "issues_found" | "rejected">("all");
+  const [esgStatusFilter, setEsgStatusFilter] = useState<"all" | "approved" | "in_progress" | "not_initiated">("all");
   const queryClient = useQueryClient();
 
   const riskOptions = Array.from(new Set(rows.map((r) => r.riskLevel.label))).sort();
@@ -522,60 +883,75 @@ export default function ComplianceReviewsView({
     <div className="flex flex-col gap-5">
       {screen === "list" ? (
         <div className="flex flex-col gap-5">
-          <h1 className="text-[22px] font-bold text-[#2a2f39]">Reviews</h1>
+          <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-[#1f2430]">Reviews</h1>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-4">
-              <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef2fb] text-[16px] text-[#14244a]">
-                  <ClockCircleOutlined />
-                </span>
-                <ArrowUpOutlined className="text-[12px] text-[#c7ccd6]" />
-              </div>
-              <div className="mt-3 text-[12px] font-medium text-[#8a92a1]">Pending reviews</div>
-              <div className="mt-1 text-[24px] font-bold text-[#2a2f39]">{pendingReviewsCount}</div>
-              <div className="mt-1 text-[11px] text-[#a0a7b5]">Awaiting review</div>
-            </div>
-
-            <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-4">
-              <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#fff0f1] text-[16px] text-[#ef2f32]">
-                  <WarningOutlined />
-                </span>
-                <ArrowUpOutlined className="text-[12px] text-[#c7ccd6]" />
-              </div>
-              <div className="mt-3 text-[12px] font-medium text-[#8a92a1]">High Risk</div>
-              <div className="mt-1 text-[24px] font-bold text-[#2a2f39]">{highRiskCount}</div>
-              <div className="mt-1 text-[11px] text-[#a0a7b5]">Require immediate attention</div>
-            </div>
-
-            <div
-              className="rounded-[16px] border border-[#e8ecf4] bg-white p-4"
-              title="Illustrative — no due-date field exists on reviews yet"
-            >
-              <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eafaf0] text-[16px] text-[#1ea43b]">
-                  <CalendarOutlined />
-                </span>
-              </div>
-              <div className="mt-3 text-[12px] font-medium text-[#8a92a1]">Due Today</div>
-              <div className="mt-1 text-[24px] font-bold text-[#2a2f39]">2</div>
-              <div className="mt-1 text-[11px] text-[#a0a7b5]">Review due today</div>
-            </div>
-
-            <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-4">
-              <div className="flex items-center gap-3">
-                <ScoreRing value={averageCompletion} size={56} strokeWidth={6} />
-                <div>
-                  <div className="text-[12px] font-medium text-[#8a92a1]">Average Completion</div>
-                  <div className="mt-1 text-[20px] font-bold text-[#2a2f39]">{averageCompletion}%</div>
+          <div className="rounded-[24px] bg-white/60 p-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[18px] border border-[#eef1f6] bg-white p-5 shadow-[0_10px_30px_-24px_rgba(16,30,61,0.35)]">
+                <div className="flex items-center gap-2.5">
+                  <HourglassOutlined className="text-[18px] text-[#3f4654]" />
+                  <span className="text-[15px] font-medium text-[#3f4654]">Pending reviews</span>
                 </div>
+                <div className="mt-6 text-[38px] font-bold leading-none tracking-[-0.03em] text-[#1f2430]">
+                  {pendingReviewsCount}
+                </div>
+                <div className="mt-4 text-[13px] text-[#9aa1af]">Awaiting review</div>
               </div>
-              <div
-                className="mt-2 text-[11px] font-medium text-[#1ea43b]"
-                title="Illustrative — no historical trend data exists yet"
-              >
-                &#8599; +15% last month
+
+              <div className="rounded-[18px] border border-[#eef1f6] bg-white p-5 shadow-[0_10px_30px_-24px_rgba(16,30,61,0.35)]">
+                <div className="flex items-center gap-2.5">
+                  <ExclamationCircleOutlined className="text-[18px] text-[#ef2f32]" />
+                  <span className="text-[15px] font-medium text-[#3f4654]">High Risk</span>
+                </div>
+                <div className="mt-6 flex items-end justify-between gap-3">
+                  <div className="text-[38px] font-bold leading-none tracking-[-0.03em] text-[#1f2430]">
+                    {highRiskCount}
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f3f7] text-[13px] text-[#687081]">
+                    <ArrowRightOutlined className="-rotate-45" />
+                  </span>
+                </div>
+                <div className="mt-4 text-[13px] text-[#9aa1af]">Require immediate attention</div>
+              </div>
+
+              <div className="rounded-[18px] border border-[#eef1f6] bg-white p-5 shadow-[0_10px_30px_-24px_rgba(16,30,61,0.35)]">
+                <div className="flex items-center gap-2.5">
+                  <CalendarOutlined className="text-[18px] text-[#3f4654]" />
+                  <span className="text-[15px] font-medium text-[#3f4654]">Due Today</span>
+                </div>
+                <div className="mt-6 flex items-end justify-between gap-3">
+                  <div className="text-[38px] font-bold leading-none tracking-[-0.03em] text-[#1f2430]">2</div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f3f7] text-[13px] text-[#687081]">
+                    <ArrowRightOutlined className="-rotate-45" />
+                  </span>
+                </div>
+                <div className="mt-4 text-[13px] text-[#9aa1af]">Review due today</div>
+              </div>
+
+              <div className="rounded-[18px] border border-[#eef1f6] bg-white p-5 shadow-[0_10px_30px_-24px_rgba(16,30,61,0.35)]">
+                <div className="flex items-center gap-2.5">
+                  <ClockCircleOutlined className="text-[18px] text-[#3f4654]" />
+                  <span className="text-[15px] font-medium text-[#3f4654]">Average Completion</span>
+                </div>
+                <div className="mt-6 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[38px] font-bold leading-none tracking-[-0.03em] text-[#1f2430]">
+                      {averageCompletion}%
+                    </div>
+                    <div className="mt-4 flex items-center gap-1 whitespace-nowrap text-[13px] font-medium text-[#1ea43b]">
+                      <RiseOutlined className="text-[12px]" />
+                      Across all reviews
+                    </div>
+                  </div>
+                  <ScoreRing
+                    value={averageCompletion}
+                    size={62}
+                    strokeWidth={7}
+                    color="#18b829"
+                    trackColor="#e8ecf2"
+                    showValue={false}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -649,7 +1025,7 @@ export default function ComplianceReviewsView({
                             <div className="mt-0.5 text-[11px] text-[#8a92a1]">Case {row.minerId}</div>
                           </td>
                           <td
-                            className="px-4 py-3 text-[#5d6675]"
+                            className="px-4 py-3 font-medium text-[#2661d8]"
                             title="Illustrative — no industry/sector field exists on reviews yet"
                           >
                             Mining
@@ -660,14 +1036,14 @@ export default function ComplianceReviewsView({
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[#e8ecf2]">
+                            <div className="w-[110px]">
+                              <div className="text-[11px] font-medium text-[#5d6675]">{row.complianceScore}%</div>
+                              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
                                 <div
                                   className="h-full rounded-full"
                                   style={{ width: `${row.complianceScore}%`, backgroundColor: progressColor }}
                                 />
                               </div>
-                              <span className="text-[11px] font-medium text-[#5d6675]">{row.complianceScore}%</span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -722,51 +1098,76 @@ export default function ComplianceReviewsView({
           </button>
 
           <div className="rounded-[20px] border border-[#e8ecf4] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf1f7] px-6 py-5">
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#14244a] text-[15px] font-semibold text-white">
+            <div className="flex flex-wrap items-center justify-between gap-4 px-7 py-6">
+              <div className="flex items-center gap-4">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1d2b4f] to-[#3f6fd8] text-[17px] font-semibold text-white">
                   {getInitials(selectedRow.company, selectedRow.company.slice(0, 2).toUpperCase())}
                 </span>
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[19px] font-bold text-[#2a2f39]">{selectedRow.company}</span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="text-[26px] font-semibold tracking-[-0.02em] text-[#1f2430]">
+                      {selectedRow.company}
+                    </span>
                     <span
-                      className="rounded-full border border-[#d7e3fb] bg-[#eef2fb] px-2.5 py-0.5 text-[11px] font-medium text-[#2661d8]"
+                      className="rounded-full bg-[#e8f0fe] px-3 py-1 text-[13px] font-medium text-[#2661d8]"
                       title="Illustrative — no industry/sector field exists on the backend yet"
                     >
                       Mining
                     </span>
-                    <span className={classNames("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", statusStyles[selectedRow.riskLevel.tone].container)}>
-                      {selectedRow.riskLevel.label} Risk
+                    <span
+                      className={classNames(
+                        "rounded-full px-3 py-1 text-[13px] font-medium",
+                        selectedRow.riskLevel.tone === "red"
+                          ? "bg-[#ffeaec] text-[#ef2f32]"
+                          : selectedRow.riskLevel.tone === "amber"
+                            ? "bg-[#fff4df] text-[#df8b19]"
+                            : selectedRow.riskLevel.tone === "green"
+                              ? "bg-[#e9faef] text-[#1ea43b]"
+                              : "bg-[#f1f3f7] text-[#6b7280]",
+                      )}
+                    >
+                      {selectedRow.riskLevel.label}
                     </span>
                   </div>
-                  <div className="mt-1 text-[12px] text-[#8a92a1]">
-                    Case ID: {selectedRow.minerId} &middot; Submitted: {formatDate(selectedRow.createdAt)} &middot; Assigned: {selectedRow.reviewer}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px] text-[#8a92a1]">
+                    <span>
+                      Case ID: <span className="text-[#5d6675]">{selectedRow.minerId}</span>
+                    </span>
+                    <span className="text-[#c7ccd6]">&bull;</span>
+                    <span>
+                      Submitted: <span className="text-[#5d6675]">{formatDate(selectedRow.createdAt)}</span>
+                    </span>
+                    <span className="text-[#c7ccd6]">&bull;</span>
+                    <span>
+                      Assigned: <span className="text-[#5d6675]">{selectedRow.reviewer}</span>
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={handleExport} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
-                  <DownloadOutlined /> Export
+              <div className="flex items-center gap-2.5">
+                <button type="button" onClick={handleExport} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                  Export <DownloadOutlined />
                 </button>
-                <button type="button" onClick={() => handleShare()} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
-                  <ShareAltOutlined /> Share
+                <button type="button" onClick={() => handleShare()} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                  Share <ShareAltOutlined />
                 </button>
-                <button type="button" onClick={handlePrint} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e5e9f1] bg-white px-3 text-[12px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
-                  <PrinterOutlined /> Print
+                <button type="button" onClick={handlePrint} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                  Print <PrinterOutlined />
                 </button>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-0 overflow-x-auto border-b border-[#edf1f7] px-6">
+            <div className="flex gap-0 overflow-x-auto border-t border-[#edf1f7] px-7">
               {CASE_REVIEW_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={classNames("whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors",
-                    activeTab === tab.key ? "border-[#14244a] text-[#14244a]" : "border-transparent text-[#8a92a1] hover:text-[#2a2f39]"
+                  className={classNames("whitespace-nowrap border-b-2 px-5 py-4 text-[15px] transition-colors",
+                    activeTab === tab.key
+                      ? "border-[#1f2430] font-semibold text-[#1f2430]"
+                      : "border-transparent font-normal text-[#8a92a1] hover:text-[#2a2f39]"
                   )}
                 >
                   {tab.label}
@@ -777,11 +1178,11 @@ export default function ComplianceReviewsView({
             {/* Body */}
             <div className="p-5">
               {activeTab === "overview" ? (
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-                  <div className="space-y-4">
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <div className="text-[14px] font-semibold text-[#2a2f39]">Case Summary</div>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2 text-[13px]">
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+                  <div className="grid gap-5 2xl:grid-cols-2">
+                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Case Summary</div>
+                      <div className="mt-6 grid gap-6 sm:grid-cols-2">
                         {[
                           { label: "Company Name", value: selectedRow.company },
                           { label: "State", value: miner?.state_of_operation || "Not set" },
@@ -795,95 +1196,113 @@ export default function ComplianceReviewsView({
                             key={item.label}
                             title={item.placeholder ? "Illustrative — no matching field exists on the backend yet" : undefined}
                           >
-                            <div className="text-[#8a92a1]">{item.label}</div>
-                            <div className="mt-0.5 font-medium text-[#2a2f39]">{item.value}</div>
+                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">{item.label}</div>
+                            <div className="mt-1.5 text-[15px] text-[#1f2430]">{item.value}</div>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <div className="text-[14px] font-semibold text-[#2a2f39]">Compliance Overview</div>
-                      <div className="mt-4 flex flex-wrap items-center gap-6">
-                        <ScoreRing value={selectedRow.complianceScore} caption="Score" />
-                        <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Compliance Overview</div>
+                      <div className="mt-6 flex flex-wrap items-center gap-8">
+                        <ScoreRing
+                          value={selectedRow.complianceScore}
+                          size={170}
+                          strokeWidth={18}
+                          color="#18b829"
+                          trackColor="#e4e7ec"
+                          caption="Compliance score"
+                        />
+                        <div className="flex-1 space-y-5">
                           <div>
-                            <div className="text-[11px] text-[#8a92a1]">Risk Level</div>
-                            <div className="mt-1 text-[15px] font-semibold text-[#2a2f39]">{selectedRow.riskLevel.label}</div>
+                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Risk Level</div>
+                            <span
+                              className={classNames(
+                                "mt-1.5 inline-flex rounded-full px-3 py-1 text-[13px] font-medium",
+                                selectedRow.riskLevel.tone === "red"
+                                  ? "bg-[#ffeaec] text-[#ef2f32]"
+                                  : selectedRow.riskLevel.tone === "amber"
+                                    ? "bg-[#fff4df] text-[#df8b19]"
+                                    : selectedRow.riskLevel.tone === "green"
+                                      ? "bg-[#e9faef] text-[#1ea43b]"
+                                      : "bg-[#f1f3f7] text-[#6b7280]",
+                              )}
+                            >
+                              {selectedRow.riskLevel.label}
+                            </span>
                           </div>
                           <div>
-                            <div className="text-[11px] text-[#8a92a1]">Open Issues</div>
-                            <div className="mt-1 text-[15px] font-semibold text-[#2a2f39]">{openIssuesCount}</div>
+                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Open Issues</div>
+                            <div className="mt-1.5 text-[15px] text-[#1f2430]">{openIssuesCount}</div>
                           </div>
                           <div>
-                            <div className="text-[11px] text-[#8a92a1]">Documents Verified</div>
-                            <div className="mt-1 text-[15px] font-semibold text-[#2a2f39]">
+                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Documents Verified</div>
+                            <div className="mt-1.5 text-[15px] text-[#1f2430]">
                               {verifiedDocumentsCount} / {documentRecords.length || "-"}
                             </div>
                           </div>
                           <div title="Illustrative — no verification-rules field exists on the backend yet">
-                            <div className="text-[11px] text-[#8a92a1]">Verification Rules</div>
-                            <div className="mt-1 text-[15px] font-semibold text-[#2a2f39]">25,000 MT / yr</div>
+                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Verification Rules</div>
+                            <div className="mt-1.5 text-[15px] text-[#1f2430]">25,000 MT / yr</div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <div className="text-[14px] font-semibold text-[#2a2f39]">Review Details</div>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2 text-[13px]">
+                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Review Details</div>
+                      <div className="mt-6 grid gap-6 sm:grid-cols-2">
                         <div>
-                          <div className="text-[#8a92a1]">Started On</div>
-                          <div className="mt-0.5 font-medium text-[#2a2f39]">{formatDate(selectedRow.createdAt)}</div>
+                          <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Started On</div>
+                          <div className="mt-1.5 text-[15px] text-[#1f2430]">{formatDate(selectedRow.createdAt)}</div>
                         </div>
                         <div>
-                          <div className="text-[#8a92a1]">Last Updated</div>
-                          <div className="mt-0.5 font-medium text-[#2a2f39]">{selectedRow.lastActionDate}</div>
+                          <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Last Updated</div>
+                          <div className="mt-1.5 text-[15px] text-[#1f2430]">{selectedRow.lastActionDate}</div>
                         </div>
                       </div>
-                      <div className="mt-4">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-[#5d6675]">Estimated Completion</span>
-                          <span className="font-medium text-[#2a2f39]">{estimatedCompletion}%</span>
-                        </div>
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf2]">
-                          <div className="h-full rounded-full bg-[#14244a]" style={{ width: `${estimatedCompletion}%` }} />
+                      <div className="mt-8">
+                        <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Estimated Completion</div>
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#e8ecf2]">
+                            <div className="h-full rounded-full bg-[#18b829]" style={{ width: `${estimatedCompletion}%` }} />
+                          </div>
+                          <span className="text-[15px] font-medium text-[#1f2430]">{estimatedCompletion}%</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="text-[14px] font-semibold text-[#2a2f39]">Latest Activity</div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("timeline")}
-                          className="text-[12px] font-medium text-[#2661d8] hover:underline"
-                        >
-                          View full timeline
-                        </button>
-                      </div>
-                      <div className="mt-3 space-y-3">
+                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Latest Activity</div>
+                      <div className="mt-5 space-y-4">
                         {activityLogs.length > 0 ? (
                           activityLogs.slice(0, 3).map((entry) => (
-                            <div key={entry.id} className="flex gap-3">
-                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f3f6fb] text-[12px] text-[#52607a]">
-                                <HistoryOutlined />
-                              </span>
-                              <div>
-                                <div className="text-[13px] font-medium text-[#2a2f39]">
+                            <div key={entry.id} className="flex items-start justify-between gap-4">
+                              <div className="flex min-w-0 items-start gap-2.5">
+                                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#2661d8]" />
+                                <span className="text-[14px] leading-5 text-[#3f4654]">
                                   {entry.performed_by || "System"} {(entry.action || "").toLowerCase()}
-                                </div>
-                                <div className="mt-0.5 text-[11px] text-[#a0a7b5]">{formatDateTime(entry.created_at)}</div>
+                                </span>
                               </div>
+                              <span className="shrink-0 whitespace-nowrap text-[12px] text-[#a0a7b5]">
+                                {formatDateTime(entry.created_at)}
+                              </span>
                             </div>
                           ))
                         ) : (
-                          <div className="text-[13px] text-[#8a92a1]">
+                          <div className="text-[14px] text-[#8a92a1]">
                             {minerDetailQ.isLoading ? "Loading activity..." : "No activity has been logged for this case yet."}
                           </div>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("timeline")}
+                        className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#2661d8] hover:underline"
+                      >
+                        View full timeline <RightOutlined className="text-[10px]" />
+                      </button>
                     </div>
                   </div>
 
@@ -999,41 +1418,40 @@ export default function ComplianceReviewsView({
                 </div>
               ) : activeTab === "licensing" ? (
                 <div className="space-y-5">
-                  <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                    <div className="text-[14px] font-semibold text-[#2a2f39]">Licensing Review Summary</div>
-                    <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
-                      <div>
-                        <div className="text-[11px] text-[#8a92a1]">Overall Status</div>
-                        <div className="mt-1 text-[14px] font-semibold text-[#df8b19]">
-                          {licenses.length === 0
+                  <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                    <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Licensing Review Summary</div>
+                    <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
+                      <SummaryTile
+                        label="Overall Status"
+                        value={
+                          licenses.length === 0
                             ? "No licenses"
                             : verifiedLicensesCount === licenses.length
                               ? "Complete"
-                              : "In Progress"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#8a92a1]">License Verified</div>
-                        <div className="mt-1 text-[14px] font-semibold text-[#2a2f39]">
-                          {verifiedLicensesCount} / {licenses.length || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#8a92a1]">Requires Review</div>
-                        <div className="mt-1 text-[14px] font-semibold text-[#2a2f39]">
-                          {licenses.filter((l) => ["pending", "issues_found"].includes((l.verification_status ?? "").toLowerCase())).length}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#8a92a1]">Rejected</div>
-                        <div className="mt-1 text-[14px] font-semibold text-[#ef2f32]">
-                          {licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "rejected").length}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#8a92a1]">Overall Licensing Score</div>
-                        <div className="mt-1 text-[14px] font-semibold text-[#1ea43b]">{licensingProgress}%</div>
-                      </div>
+                              : "In Progress"
+                        }
+                        valueClassName="text-[#df8b19]"
+                      />
+                      <SummaryTile
+                        label="License Verified"
+                        value={`${verifiedLicensesCount} / ${licenses.length || "-"}`}
+                      />
+                      <SummaryTile
+                        label="Requires Review"
+                        value={String(
+                          licenses.filter((l) => ["pending", "issues_found"].includes((l.verification_status ?? "").toLowerCase())).length,
+                        )}
+                      />
+                      <SummaryTile
+                        label="Rejected"
+                        value={String(licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "rejected").length)}
+                        valueClassName="text-[#ef2f32]"
+                      />
+                      <SummaryTile
+                        label="Overall Licensing Score"
+                        value={`${licensingProgress}%`}
+                        valueClassName="text-[#1ea43b]"
+                      />
                     </div>
                   </div>
 
@@ -1231,26 +1649,151 @@ export default function ComplianceReviewsView({
                   )}
                 </div>
               ) : activeTab === "environmental-esg" ? (
-                <div className="space-y-6">
+                <div className="space-y-5">
+                  <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+                    <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Environmental &amp; ESG Summary</div>
+                    <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
+                      <SummaryTile
+                        label="Overall Status"
+                        value={
+                          esgReviews.length === 0
+                            ? "No reviews"
+                            : esgReviews.every((r) => (r.status ?? "").toLowerCase() === "approved")
+                              ? "Complete"
+                              : "In Progress"
+                        }
+                        valueClassName="text-[#df8b19]"
+                      />
+                      <SummaryTile
+                        label="Compliant check"
+                        value={`${esgReviews.filter((r) => (r.status ?? "").toLowerCase() === "approved").length} / ${esgReviews.length || "-"}`}
+                      />
+                      <SummaryTile
+                        label="Requires Review"
+                        value={String(esgReviews.filter((r) => (r.status ?? "").toLowerCase() === "in_progress").length)}
+                      />
+                      <SummaryTile
+                        label="Not Initiated"
+                        value={String(esgReviews.filter((r) => (r.status ?? "not_initiated").toLowerCase() === "not_initiated").length)}
+                        valueClassName="text-[#5d6675]"
+                      />
+                      <SummaryTile label="Overall Score" value={`${esgProgress}%`} valueClassName="text-[#1ea43b]" />
+                    </div>
+                  </div>
+
                   {esgReviews.length > 0 ? (
-                    esgReviews.map((review) => (
-                      <div key={review.id} className="rounded-[20px] border border-[#e8ecf4] bg-[#fafbfd] p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-[16px] font-medium text-[#2a2f39]">{review.category || "ESG Review"}</div>
-                          <span className={classNames("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", licensingToneClass(review.status))}>
-                            {review.status || "Not initiated"}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-[12px] text-[#a0a7b5]">
-                          {review.reviewed_by ? `Reviewed by ${review.reviewed_by} · ${formatDateTime(review.updated_at)}` : "Not yet reviewed"}
-                        </div>
-                        <textarea
-                          readOnly
-                          value={review.notes || "No notes on file"}
-                          className="mt-4 h-24 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#5d6675] outline-none"
-                        />
-                      </div>
-                    ))
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { key: "all" as const, label: "All", count: esgReviews.length },
+                        ...ESG_STATUS_OPTIONS.map((option) => ({
+                          key: option.value as "all" | "approved" | "in_progress" | "not_initiated",
+                          label: option.label,
+                          count: esgReviews.filter((r) => (r.status ?? "not_initiated").toLowerCase() === option.value).length,
+                        })),
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setEsgStatusFilter(tab.key)}
+                          className={classNames(
+                            "rounded-[8px] border px-3 py-1.5 text-[12px] font-medium",
+                            esgStatusFilter === tab.key
+                              ? "border-[#c7d4ee] bg-[#eef2fb] text-[#14244a]"
+                              : "border-[#e8ecf4] bg-white text-[#5d6675] hover:bg-[#f7f9fc]",
+                          )}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {esgReviews.length > 0 ? (
+                    esgReviews
+                      .filter((review) =>
+                        esgStatusFilter === "all" ? true : (review.status ?? "not_initiated").toLowerCase() === esgStatusFilter,
+                      )
+                      .map((review) => {
+                        const meta = esgStatusMeta(review.status);
+                        const borderColor =
+                          meta.value === "approved" ? "#1ea43b" : meta.value === "in_progress" ? "#df8b19" : "#dbe2ee";
+
+                        return (
+                          <div
+                            key={review.id}
+                            className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white"
+                            style={{ borderLeft: `4px solid ${borderColor}` }}
+                          >
+                            <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="flex items-start gap-3">
+                                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[16px] text-[#5e6777]">
+                                  <FileTextOutlined />
+                                </span>
+                                <div>
+                                  <div className="text-[15px] font-semibold text-[#2a2f39]">{esgCategoryLabel(review.category)}</div>
+                                  <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">Status</div>
+                                  <span className={classNames("mt-0.5 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold", statusStyles[meta.tone].container)}>
+                                    {meta.label}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wide text-[#a0a7b5]">Validation Checks</div>
+                                <div className="mt-1.5 space-y-1">
+                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
+                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> File is readable
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
+                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Government format detected
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
+                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Signature verified
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="min-w-[210px]">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] uppercase tracking-wide text-[#a0a7b5]">Reviewer Assessment</span>
+                                  <span className={classNames("rounded-full px-2 py-0.5 text-[10px] font-semibold", statusStyles[meta.tone].container)}>
+                                    {meta.label}
+                                  </span>
+                                </div>
+                                <div className="mt-2 space-y-1.5">
+                                  {ESG_STATUS_OPTIONS.map((option) => (
+                                    <label key={option.value} className="flex items-center gap-2 text-[12px] text-[#5d6675]">
+                                      <input
+                                        type="radio"
+                                        name={`esg-assessment-${review.id}`}
+                                        checked={meta.value === option.value}
+                                        disabled
+                                        readOnly
+                                        className="h-3.5 w-3.5 accent-[#14244a]"
+                                      />
+                                      {option.label}
+                                    </label>
+                                  ))}
+                                </div>
+                                <div className="mt-2 text-[11px] text-[#a0a7b5]">
+                                  ESG status updates aren&apos;t connected to the backend yet.
+                                </div>
+                                <div className="mt-3 text-[11px] text-[#a0a7b5]">
+                                  {review.reviewed_by ? (
+                                    <>
+                                      <span className="font-medium text-[#5d6675]">Reviewed by</span> {review.reviewed_by}
+                                      <br />
+                                      {formatDateTime(review.updated_at)}
+                                    </>
+                                  ) : (
+                                    "Not yet reviewed"
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
                   ) : (
                     <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
                       {minerDetailQ.isLoading ? "Loading ESG reviews..." : "No ESG reviews were returned by the miner detail endpoint for this case yet."}
@@ -1258,17 +1801,21 @@ export default function ComplianceReviewsView({
                   )}
                 </div>
               ) : activeTab === "operational" ? (
-                <div className="space-y-4">
-                  {CASE_OPERATIONAL_ITEMS.map((item) => (
-                    <CaseChecklistCard key={item.title} item={item} />
-                  ))}
-                </div>
+                <ChecklistReviewTab
+                  title="Operational Review"
+                  scoreLabel="Operational Score"
+                  requirementColumnLabel="Operational Requirement"
+                  categoryLabel="Operational"
+                  items={CASE_OPERATIONAL_ITEMS}
+                />
               ) : activeTab === "export-compliance" ? (
-                <div className="space-y-4">
-                  {CASE_EXPORT_ITEMS.map((item) => (
-                    <CaseChecklistCard key={item.title} item={item} />
-                  ))}
-                </div>
+                <ChecklistReviewTab
+                  title="Export Compliance"
+                  scoreLabel="Export Compliance Score"
+                  requirementColumnLabel="Export Compliance Requirement"
+                  categoryLabel="Export"
+                  items={CASE_EXPORT_ITEMS}
+                />
               ) : activeTab === "documents" ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

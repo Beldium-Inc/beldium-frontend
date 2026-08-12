@@ -33,7 +33,7 @@ export default function PageHero({
       <div className="space-y-4">
         {/* <WorkspaceSwitch persona={persona} /> */}
         <div>
-          <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#2a2f39]">
             {isComplianceReviewsView
               ? "Reviews"
               : isComplianceNotificationsView
@@ -50,7 +50,7 @@ export default function PageHero({
                           ? "Open Task Pool"
                           : "Dashboard"}
           </h1>
-          <p className="mt-2 max-w-[720px] text-[15px] text-[#7a8291]">
+          <p className="mt-1.5 max-w-[720px] text-[13px] text-[#7a8291]">
             {isComplianceReviewsView
               ? "Review every compliance task from the full list without losing the workspace context."
               : isComplianceNotificationsView
@@ -76,7 +76,7 @@ export default function PageHero({
             ? `/compliancedashboard?persona=${persona}`
             : "#"
         }
-        className="relative inline-flex h-[60px] items-center justify-center gap-3 rounded-[18px] bg-[#14244a] px-8 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-transform hover:-translate-y-0.5"
+        className="relative inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-5 text-[13px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-transform hover:-translate-y-0.5"
         style={primaryActionStyle}
       >
         {showBackAction ? (
