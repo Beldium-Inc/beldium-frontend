@@ -4,7 +4,6 @@
 import { useState } from "react";
 import { Button } from "antd";
 import { useRouter } from "next/navigation";
-import { SocialButton } from "../ui/SocialButton";
 import { TextField } from "../ui/TextField";
 import { ArrowLeftIcon, ArrowRightIcon } from "../ui/ArrowIcon";
 
@@ -27,16 +26,6 @@ export function CreateAccountStep() {
         <h2 className="text-xl font-semibold text-gray-900">Create your account</h2>
       </div>
 
-      <div className="flex flex-col gap-3 mb-6">
-        <SocialButton provider="google" />
-        <SocialButton provider="facebook" />
-      </div>
-
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-400">or</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
 
       <TextField
         label="Full name or Company name"

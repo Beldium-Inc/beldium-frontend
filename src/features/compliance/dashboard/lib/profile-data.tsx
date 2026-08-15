@@ -1,37 +1,29 @@
 import { SafetyOutlined, LoginOutlined, LockOutlined } from "@ant-design/icons";
 
-export const complianceProfileCard = {
-  name: "David Obi",
-  role: "Compliance Officer",
-  email: "david.obi@nmca.gov.ng",
-  phone: "+234 803 000 7890",
-  department: "Compliance & Regulatory",
-  joinedLabel: "Joined January 15, 2026",
-  avatarSrc: "/assets/images/get-started.jpg",
-};
-
-export const complianceSecuritySettings = [
-  {
-    title: "Two-Factor Authentication",
-    description: "Add an extra layer of security to your account",
-    icon: <SafetyOutlined />,
-    tone: "blue" as const,
-    statusLabel: "Enabled",
-  },
-  {
-    title: "Last Login",
-    description: "Today at 9:32 AM",
-    icon: <LoginOutlined />,
-    tone: "neutral" as const,
-  },
-  {
-    title: "Password",
-    description: "Last changed 3 weeks ago",
-    icon: <LockOutlined />,
-    tone: "neutral" as const,
-    actionLabel: "Change",
-  },
-];
+export function buildComplianceSecuritySettings(twoFactorEnabled: boolean) {
+  return [
+    {
+      title: "Two-Factor Authentication",
+      description: "Add an extra layer of security to your account",
+      icon: <SafetyOutlined />,
+      tone: "blue" as const,
+      statusLabel: twoFactorEnabled ? "Enabled" : "Disabled",
+    },
+    {
+      title: "Last Login",
+      description: "Not tracked yet",
+      icon: <LoginOutlined />,
+      tone: "neutral" as const,
+    },
+    {
+      title: "Password",
+      description: "Keep your password up to date",
+      icon: <LockOutlined />,
+      tone: "neutral" as const,
+      actionLabel: "Change",
+    },
+  ];
+}
 
 export const compliancePermissions = [
   { label: "View miner submissions", granted: true },

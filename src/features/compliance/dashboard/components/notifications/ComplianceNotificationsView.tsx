@@ -54,7 +54,7 @@ export default function ComplianceNotificationsView({
   });
 
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-6 inline-flex flex-wrap items-center gap-2 rounded-[16px] border border-[#e7ebf2] bg-[#fafbfd] p-1.5">
         {notificationFilterTabs.map((tab) => {
           const isActive = activeFilter === tab.key;
@@ -76,7 +76,7 @@ export default function ComplianceNotificationsView({
                 className={classNames(
                   "inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[12px] font-semibold",
                   isActive
-                    ? "bg-[#101e3d] text-white"
+                    ? "bg-[#101e3d] !text-white"
                     : "bg-[#e8ecf4] text-[#5f6675]",
                 )}
               >
@@ -210,7 +210,7 @@ export default function ComplianceNotificationsView({
                 className={classNames(
                   "inline-flex h-9 min-w-[36px] items-center justify-center rounded-[10px] px-2 text-[13px] font-medium transition-colors",
                   page === "1"
-                    ? "bg-[#101e3d] text-white"
+                    ? "bg-[#101e3d] !text-white"
                     : page === "…"
                       ? "cursor-default text-[#a0a6b3]"
                       : "text-[#4b5260] hover:bg-[#f4f6fa]",

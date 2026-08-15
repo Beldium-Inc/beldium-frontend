@@ -154,7 +154,7 @@ export default function ComplianceCreateRuleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,28,36,0.74)] px-4 py-8">
-      <div className="relative max-h-[90vh] w-full max-w-[860px] overflow-y-auto rounded-[32px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
+      <div className="relative max-h-[90vh] w-full max-w-[860px] overflow-y-auto rounded-[20px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
         <div className="flex items-start justify-between border-b border-[#edf1f6] px-7 py-6">
           <div>
             <h2 className="text-[18px] font-semibold text-[#252b37] sm:text-[20px]">
@@ -313,7 +313,7 @@ export default function ComplianceCreateRuleModal({
                         type="button"
                         onClick={() => removeCondition(condition.id)}
                         disabled={conditions.length === 1}
-                        className="inline-flex h-16 w-14 items-center justify-center rounded-[18px] border border-[#d9e0ec] bg-white text-[18px] text-[#8f97a6] transition-colors hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] border border-[#d9e0ec] bg-white text-[16px] text-[#8f97a6] transition-colors hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label="Remove condition"
                       >
                         <DeleteOutlined />
@@ -325,7 +325,7 @@ export default function ComplianceCreateRuleModal({
                 <button
                   type="button"
                   onClick={addCondition}
-                  className="mt-5 flex h-16 w-full items-center justify-center gap-3 rounded-[18px] border border-dashed border-[#707784] bg-white text-[16px] font-medium text-[#7d8594] transition-colors hover:bg-[#fbfcfe]"
+                  className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#707784] bg-white text-[13px] font-medium text-[#7d8594] transition-colors hover:bg-[#fbfcfe]"
                 >
                   Add another condition
                   <PlusOutlined />
@@ -442,7 +442,7 @@ export default function ComplianceCreateRuleModal({
                     current === 3 ? 2 : 1,
                   )
                 }
-                className="inline-flex h-16 items-center justify-center rounded-[18px] border border-[#dfe5ef] bg-[#f7f9fc] px-10 text-[16px] font-medium text-[#24324c] transition-colors hover:bg-[#eff3f8]"
+                className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#dfe5ef] bg-[#f7f9fc] px-4 text-[13px] font-medium text-[#24324c] transition-colors hover:bg-[#eff3f8]"
               >
                 Back
               </button>
@@ -451,7 +451,7 @@ export default function ComplianceCreateRuleModal({
             <button
               type="button"
               onClick={handleContinue}
-              className="inline-flex h-16 items-center justify-center rounded-[18px] bg-[#13264e] px-10 text-[16px] font-semibold text-white shadow-[0_22px_44px_-28px_rgba(19,38,78,0.85)] transition-colors hover:bg-[#182f5f]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
               style={{ color: "#ffffff" }}
             >
               {currentStep === 3 ? "Create Rule" : "Continue"}

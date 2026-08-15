@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Drawer } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogoutOutlined } from "@ant-design/icons";
+import { CloseOutlined, LogoutOutlined } from "@ant-design/icons";
 import type { DashboardPersona, ComplianceView, NavItem } from "@/src/features/compliance/dashboard/types";
 import { classNames } from "@/src/features/compliance/dashboard/lib/style";
 import { getAdminNavItems, getComplianceNavItems } from "@/src/features/compliance/dashboard/components/layout/nav";
@@ -47,32 +48,27 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   );
 }
 
-export default function DashboardSidebar({
-  persona,
-  complianceView = "dashboard",
+function SidebarLogo() {
+  return (
+    <div className="flex h-[96px] items-center gap-2 px-6 font-bungee">
+      <Image src="/assets/images/logo.png" alt="Beldium" width={30} height={30} />
+      <span className="text-2xl text-primary">Beldium</span>
+    </div>
+  );
+}
+
+function SidebarNav({
+  navItems,
+  onNavigate,
 }: {
-  persona: DashboardPersona;
-  complianceView?: ComplianceView;
+  navItems: NavItem[];
+  onNavigate?: () => void;
 }) {
-  const navItems =
-    persona === "admin"
-      ? getAdminNavItems(complianceView)
-      : getComplianceNavItems(complianceView);
   const queryClient = useQueryClient();
 
   return (
-    <aside className="hidden w-[280px] flex-col border-r border-[#e9edf5] bg-white xl:flex">
-      <div className="flex h-[96px] items-center gap-3 px-6">
-        <Image
-          src="/assets/images/logo.png"
-          alt="Beldium"
-          width={34}
-          height={34}
-        />
-        <span className="text-[18px] font-semibold text-[#172554]">Beldium</span>
-      </div>
-
-      <nav className="mt-12 flex flex-1 flex-col gap-6 pr-3">
+    <>
+      <nav className="mt-6 flex flex-1 flex-col gap-4 pr-3 xl:mt-12 xl:gap-6" onClick={onNavigate}>
         {navItems.map((item) => (
           <SidebarNavItem key={item.label} item={item} />
         ))}
@@ -92,7 +88,56 @@ export default function DashboardSidebar({
           Logout
         </button>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function DashboardSidebar({
+  persona,
+  complianceView = "dashboard",
+  mobileOpen = false,
+  onMobileClose,
+}: {
+  persona: DashboardPersona;
+  complianceView?: ComplianceView;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}) {
+  const navItems =
+    persona === "admin"
+      ? getAdminNavItems(complianceView)
+      : getComplianceNavItems(complianceView);
+
+  return (
+    <>
+      <aside className="hidden w-[280px] flex-col border-r border-[#e9edf5] bg-white xl:flex">
+        <SidebarLogo />
+        <SidebarNav navItems={navItems} />
+      </aside>
+
+      <Drawer
+        placement="left"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        width={280}
+        closeIcon={null}
+        styles={{ body: { padding: 0, display: "flex", flexDirection: "column" } }}
+        className="xl:hidden"
+      >
+        <div className="flex items-center justify-between border-b border-[#f0f3f8] px-2">
+          <SidebarLogo />
+          <button
+            type="button"
+            onClick={onMobileClose}
+            aria-label="Close menu"
+            className="mr-4 flex h-9 w-9 items-center justify-center rounded-full text-[16px] text-[#4f5664] hover:bg-[#f7f9fc]"
+          >
+            <CloseOutlined />
+          </button>
+        </div>
+        <SidebarNav navItems={navItems} onNavigate={onMobileClose} />
+      </Drawer>
+    </>
   );
 }
 

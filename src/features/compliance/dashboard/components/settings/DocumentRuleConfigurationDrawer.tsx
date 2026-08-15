@@ -34,7 +34,7 @@ export function DocumentRuleChecklistItem({
         className={classNames(
           "inline-flex h-7 w-7 items-center justify-center rounded-[7px] border text-[14px] transition-colors",
           checked
-            ? "border-[#14244a] bg-[#14244a] text-white"
+            ? "border-[#14244a] bg-[#14244a] !text-white"
             : "border-[#bcc8da] bg-white text-transparent",
         )}
       >
@@ -335,14 +335,14 @@ export function DocumentRuleConfigurationDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-9 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#d7deea] bg-[#f1f4f8] px-4 text-[13px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSubmit}
-              className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-9 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
               style={primaryActionStyle}
             >
               Save Changes

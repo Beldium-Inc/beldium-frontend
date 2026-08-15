@@ -7,7 +7,6 @@ import { useState } from "react";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
 import { login, getUser } from "@/src/features/onboarding/api";
 import { showToast } from "@/src/store/toast.store";
-import { SocialButton } from "@/src/features/onboarding/ui/SocialButton";
 
 type LoginFormValues = {
   email: string;
@@ -93,17 +92,6 @@ export function Login() {
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-1">Welcome back</h2>
         <p className="text-sm text-gray-500">Log in to continue to your Beldium account.</p>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <SocialButton provider="google" />
-        <SocialButton provider="facebook" />
-      </div>
-
-      <div className="flex items-center gap-3 text-xs text-gray-400">
-        <div className="h-px flex-1 bg-gray-200" />
-        Or continue with email
-        <div className="h-px flex-1 bg-gray-200" />
       </div>
 
       <div>

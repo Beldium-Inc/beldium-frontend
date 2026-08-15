@@ -77,8 +77,8 @@ function ScopeStatusPill({ status }: { status: AuthorityStatus }) {
     <span
       className={
         isApproved
-          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#1ea43b]"
-          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-4 py-1 text-[14px] font-medium text-[#d29019]"
+          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]"
+          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-3 py-1 text-[11px] font-semibold text-[#d29019]"
       }
     >
       {isApproved ? "Approved" : "Pending Verification"}
@@ -103,7 +103,7 @@ function ActionDotsButton({ label }: { label: string }) {
 
 function ApprovedPill({ label }: { label: string }) {
   return (
-    <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#1ea43b]">
+    <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]">
       {label}
     </span>
   );
@@ -111,7 +111,7 @@ function ApprovedPill({ label }: { label: string }) {
 
 function AuthorityTypePill({ label }: { label: string }) {
   return (
-    <span className="inline-flex rounded-[14px] border border-[#e1e6ef] bg-white px-4 py-2 text-[14px] font-medium text-[#4d5565]">
+    <span className="inline-flex rounded-full border border-[#e1e6ef] bg-white px-3 py-1 text-[12px] font-medium text-[#4d5565]">
       {label}
     </span>
   );
@@ -131,7 +131,7 @@ export default function ComplianceRegulatoryScopeView() {
           </div>
 
           <div>
-            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+            <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
               {regulatoryScope.title}
             </h1>
             <p className="mt-2 text-[15px] text-[#7a8291]">
@@ -140,7 +140,7 @@ export default function ComplianceRegulatoryScopeView() {
           </div>
         </div>
 
-        <section className="rounded-[32px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-7">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
           <div className="flex flex-col gap-4 border-b border-[#edf1f6] pb-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
@@ -154,7 +154,7 @@ export default function ComplianceRegulatoryScopeView() {
             <button
               type="button"
               onClick={() => setIsAddJurisdictionOpen(true)}
-              className="inline-flex h-14 items-center justify-center gap-3 rounded-[18px] bg-[#13264e] px-6 text-[16px] font-semibold text-white shadow-[0_22px_44px_-28px_rgba(19,38,78,0.85)] transition-colors hover:bg-[#182f5f]"
+              className="inline-flex h-11 items-center justify-center gap-3 rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
             >
               <PlusOutlined />
               Add jurisdiction
@@ -212,7 +212,7 @@ export default function ComplianceRegulatoryScopeView() {
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-7">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
           <div className="flex items-center gap-4">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
               <AppstoreOutlined />
@@ -241,7 +241,7 @@ export default function ComplianceRegulatoryScopeView() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[32px] border border-[#dfe5ef] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
           <div className="flex items-center gap-4 border-b border-[#edf1f6] px-5 py-5 sm:px-7">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
               <SafetyCertificateOutlined />

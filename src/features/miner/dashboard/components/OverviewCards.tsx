@@ -23,15 +23,92 @@ type Props = {
 
 function statusTag(value: string) {
   const v = (value || "").toLowerCase();
-  
+
   const icon = <CheckCircleFilled className="mr-1" />;
 
   if (v === "completed") return <Tag color="green" icon={icon} className="rounded-full px-2 border-none bg-green-50 text-green-600 font-medium">VERIFIED</Tag>;
   if (v === "approved") return <Tag color="green" icon={icon} className="rounded-full px-2 border-none bg-green-50 text-green-600 font-medium">PASSED</Tag>;
   if (v === "active") return <Tag color="green" icon={icon} className="rounded-full px-2 border-none bg-green-50 text-green-600 font-medium">ACTIVE</Tag>;
   if (v === "pending") return <Tag color="orange" className="rounded-full px-2 border-none">Pending</Tag>;
-  
+
   return <Tag className="rounded-full px-2">{value}</Tag>;
+}
+
+// Human-readable labels for the raw onboarding-step slugs the backend sends
+// as "kyc_status" (it's actually which onboarding step the miner is on).
+const ONBOARDING_STEP_LABELS: Record<string, string> = {
+  miner_identity: "Miner Identity",
+  mining_operation_profile: "Mining Operation Profile",
+  licensing_regulatory_status: "Licensing & Regulatory Status",
+  environmental_esg: "Environmental & ESG",
+  production_supply_signals: "Production & Supply Signals",
+  compliance_support_opt_in: "Compliance Support Opt-In",
+  declaration_authority: "Declaration & Authority",
+  completed: "Completed",
+};
+
+function AccountHealthRow({
+  label,
+  helpText,
+  children,
+}: {
+  label: string;
+  helpText?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <span className="text-gray-500 text-sm">{label}</span>
+        {helpText ? <p className="mt-0.5 text-xs text-gray-400">{helpText}</p> : null}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function kycStatusDisplay(step: string) {
+  const isComplete = step.toLowerCase() === "completed";
+  const stepLabel = ONBOARDING_STEP_LABELS[step] ?? null;
+
+  if (!step) {
+    return { tag: <Tag className="rounded-full px-2 border-none bg-gray-100 text-gray-500">Not started</Tag>, helpText: "Onboarding hasn't started yet." };
+  }
+  if (isComplete) {
+    return { tag: statusTag("completed"), helpText: "Onboarding is complete." };
+  }
+  return {
+    tag: <Tag color="orange" className="rounded-full px-2 border-none">In Progress</Tag>,
+    helpText: stepLabel ? `Next step: ${stepLabel}` : undefined,
+  };
+}
+
+function complianceAuditDisplay(status: string) {
+  const v = (status || "").toLowerCase();
+  if (v === "approved") {
+    return { tag: statusTag("approved"), helpText: "Your compliance audit has been verified." };
+  }
+  if (v === "rejected") {
+    return {
+      tag: <Tag color="red" className="rounded-full px-2 border-none bg-red-50 text-red-600 font-medium">Rejected</Tag>,
+      helpText: "Your compliance audit was rejected — check your documentation.",
+    };
+  }
+  return {
+    tag: <Tag color="orange" className="rounded-full px-2 border-none">Unverified</Tag>,
+    helpText: "Your compliance audit hasn't been reviewed yet.",
+  };
+}
+
+function marketplaceAccessDisplay(access: string) {
+  const v = (access || "").toLowerCase();
+  if (v === "active") {
+    return { tag: statusTag("active"), helpText: "You can list and trade on the marketplace." };
+  }
+  return {
+    tag: <Tag color="red" className="rounded-full px-2 border-none bg-red-50 text-red-600 font-medium">Restricted</Tag>,
+    helpText: "Complete your compliance audit to unlock marketplace access.",
+  };
 }
 
 export default function OverviewCards({
@@ -100,19 +177,16 @@ export default function OverviewCards({
             <span className="font-medium text-gray-700">Account Health</span>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 text-sm">KYC Status</span>
-              {statusTag(kyc)}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 text-sm">Compliance Audit</span>
-              {statusTag(compliance)}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 text-sm">Marketplace Access</span>
-              {statusTag(access)}
-            </div>
+          <div className="space-y-4">
+            <AccountHealthRow label="Onboarding" helpText={kycStatusDisplay(kyc).helpText}>
+              {kycStatusDisplay(kyc).tag}
+            </AccountHealthRow>
+            <AccountHealthRow label="Compliance Audit" helpText={complianceAuditDisplay(compliance).helpText}>
+              {complianceAuditDisplay(compliance).tag}
+            </AccountHealthRow>
+            <AccountHealthRow label="Marketplace Access" helpText={marketplaceAccessDisplay(access).helpText}>
+              {marketplaceAccessDisplay(access).tag}
+            </AccountHealthRow>
           </div>
         </div>
 

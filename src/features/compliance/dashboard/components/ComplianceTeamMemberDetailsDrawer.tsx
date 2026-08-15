@@ -37,8 +37,8 @@ function MemberStatusPill({ status }: { status: TeamMemberProfile["status"] }) {
     <span
       className={
         status === "active"
-          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#1ea43b]"
-          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-4 py-1 text-[14px] font-medium text-[#d29019]"
+          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]"
+          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-3 py-1 text-[11px] font-semibold text-[#d29019]"
       }
     >
       {status === "active" ? "Active" : "Invite pending"}
@@ -57,8 +57,8 @@ function MemberSecurityPill({
     <span
       className={
         tone === "green"
-          ? "inline-flex items-center gap-2 rounded-[14px] border border-[#dde8dd] bg-[#f7faf7] px-4 py-2 text-[14px] font-medium text-[#5e6674]"
-          : "inline-flex items-center gap-2 rounded-[14px] border border-[#f3d6d7] bg-[#fff3f3] px-4 py-2 text-[14px] font-medium text-[#9b6d73]"
+          ? "inline-flex items-center gap-2 rounded-full border border-[#dde8dd] bg-[#f7faf7] px-3 py-1 text-[12px] font-medium text-[#5e6674]"
+          : "inline-flex items-center gap-2 rounded-full border border-[#f3d6d7] bg-[#fff3f3] px-3 py-1 text-[12px] font-medium text-[#9b6d73]"
       }
     >
       <span className="h-3.5 w-3.5 rounded-full border border-[#c4ccd8]" />
@@ -244,7 +244,7 @@ export default function ComplianceTeamMemberDetailsDrawer({
                   "success",
                 )
               }
-              className="inline-flex h-16 w-full items-center justify-center rounded-[18px] border border-[#dfe5ef] bg-[#f9fbfd] px-6 text-[16px] font-medium text-[#24324c] transition-colors hover:bg-[#f2f6fb]"
+              className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-[#dfe5ef] bg-[#f9fbfd] px-4 text-[13px] font-medium text-[#24324c] transition-colors hover:bg-[#f2f6fb]"
             >
               Force Password Reset
             </button>
@@ -257,7 +257,7 @@ export default function ComplianceTeamMemberDetailsDrawer({
                   "info",
                 )
               }
-              className="inline-flex h-16 w-full items-center justify-center rounded-[18px] border border-[#ffd2d2] bg-[#fff9f9] px-6 text-[16px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff2f2]"
+              className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-[#ffd2d2] bg-[#fff9f9] px-4 text-[13px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff2f2]"
             >
               Suspend Account
             </button>

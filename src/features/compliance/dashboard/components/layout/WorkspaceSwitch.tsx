@@ -20,7 +20,7 @@ export default function WorkspaceSwitch({ persona }: { persona: DashboardPersona
             className={classNames(
               "rounded-full px-4 py-2 text-[14px] font-semibold transition-colors",
               active
-                ? "bg-[#101e3d] text-white"
+                ? "bg-[#101e3d] !text-white"
                 : "text-[#5b6472] hover:text-[#101e3d]",
             )}
             style={active ? primaryActionStyle : undefined}

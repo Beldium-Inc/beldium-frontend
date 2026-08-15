@@ -184,7 +184,7 @@ export default function ComplianceMinerDetailView({
         <span className="font-semibold text-[#2a2f39]">Miner Detail</span>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] border border-[#e8ecf4] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <div className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf1f7] px-6 py-5">
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -417,7 +417,7 @@ export default function ComplianceMinerDetailView({
               <button
                 type="button"
                 onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
-                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold text-white"
+                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
                 style={primaryActionStyle}
               >
                 Post Note
@@ -481,7 +481,7 @@ export default function ComplianceMinerDetailView({
               type="button"
               disabled={activeAction != null}
               onClick={() => onAction("approve")}
-              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold text-white disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold !text-white disabled:opacity-60"
               style={primaryActionStyle}
             >
               {activeAction === "approve" ? "Working..." : "Approve Compliance"}

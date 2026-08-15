@@ -55,7 +55,7 @@ export function ArrowActionButton({ featured = false }: { featured?: boolean }) 
       className={classNames(
         "mt-auto flex h-9 w-9 items-center justify-center rounded-full text-[14px] transition-transform hover:-translate-y-0.5",
         featured
-          ? "bg-white/14 text-white"
+          ? "bg-white/14 !text-white"
           : "bg-[#eef1f6] text-[#687081] hover:bg-[#e7ebf2]",
       )}
     >
@@ -125,7 +125,7 @@ export function DashboardMetricCard({
       className={classNames(
         "rounded-[16px] border p-4 shadow-[0_16px_32px_-28px_rgba(16,30,61,0.4)]",
         featured
-          ? "border-[#4c4f56] bg-[#45474b] text-white"
+          ? "border-[#4c4f56] bg-[#45474b] !text-white"
           : "border-[#e7ebf2] bg-white text-[#202534]",
       )}
     >
@@ -153,7 +153,7 @@ export function DashboardMetricCard({
           <div
             className={classNames(
               "text-[28px] font-semibold leading-none tracking-[-0.03em]",
-              featured ? "text-white" : "text-[#272b33]",
+              featured ? "!text-white" : "text-[#272b33]",
             )}
           >
             {value}

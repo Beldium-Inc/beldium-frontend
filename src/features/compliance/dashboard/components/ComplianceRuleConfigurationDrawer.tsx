@@ -481,7 +481,7 @@ export default function ComplianceRuleConfigurationDrawer({
                         type="button"
                         onClick={() => removeCondition(condition.id)}
                         disabled={draft.conditions.length === 1}
-                        className="inline-flex h-14 w-11 items-center justify-center rounded-[14px] border border-[#e2e7f0] bg-white text-[18px] text-[#7a8291] transition-colors hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] border border-[#e2e7f0] bg-white text-[16px] text-[#7a8291] transition-colors hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <DeleteOutlined />
                       </button>
@@ -492,7 +492,7 @@ export default function ComplianceRuleConfigurationDrawer({
                 <button
                   type="button"
                   onClick={addCondition}
-                  className="mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-[18px] border border-dashed border-[#8e98a8] bg-white text-[16px] font-medium text-[#8a92a1] transition-colors hover:bg-[#fafbfd]"
+                  className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8e98a8] bg-white text-[13px] font-medium text-[#8a92a1] transition-colors hover:bg-[#fafbfd]"
                 >
                   Add another condition
                   <PlusOutlined />
@@ -586,7 +586,7 @@ export default function ComplianceRuleConfigurationDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-14 items-center justify-center rounded-[18px] px-5 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
+            className="inline-flex h-14 items-center justify-center rounded-[10px] px-4 text-[13px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
           >
             Cancel
           </button>
@@ -595,14 +595,14 @@ export default function ComplianceRuleConfigurationDrawer({
             <button
               type="button"
               onClick={() => handleSubmit("draft")}
-              className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-9 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#d7deea] bg-[#f1f4f8] px-4 text-[13px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
             >
               Save Draft
             </button>
             <button
               type="button"
               onClick={() => handleSubmit("publish")}
-              className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-9 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
               style={{ color: "#ffffff" }}
             >
               Publish Rule

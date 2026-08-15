@@ -142,7 +142,7 @@ export function ComplianceSettingsTable({
   onEditRule: (ruleId: string) => void;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#e4e9f1] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
           <AppstoreOutlined />
@@ -261,7 +261,7 @@ export function ComplianceDocumentRequirementsTable({
   onEditDocument: () => void;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#e4e9f1] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="flex items-center gap-3 text-[18px] font-semibold text-[#2a2f39]">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
           <FileSearchOutlined />
@@ -336,10 +336,10 @@ export function ComplianceDataControlCardView({
   card: ComplianceDataControlCard;
 }) {
   return (
-    <div className="rounded-[28px] border border-[#e7ebf2] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+    <div className="rounded-[16px] border border-[#e7ebf2] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="text-[18px] font-medium text-[#3a4150]">{card.title}</div>
       <div className="mt-5 h-px bg-[#edf1f7]" />
-      <div className="mt-6 text-[42px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
+      <div className="mt-6 text-[28px] font-bold tracking-[-0.03em] text-[#1c2230]">
         {card.value}
       </div>
     </div>
@@ -352,7 +352,7 @@ export function ComplianceThresholdCardView({
   card: ComplianceThresholdCard;
 }) {
   return (
-    <div className="rounded-[28px] border border-[#e7ebf2] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+    <div className="rounded-[16px] border border-[#e7ebf2] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#f4f7fb] text-[20px] text-[#677080]">

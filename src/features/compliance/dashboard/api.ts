@@ -426,6 +426,31 @@ export const DEFAULT_COMPLIANCE_MY_TASKS: ComplianceReviewsResponse = {
   },
 };
 
+export type ComplianceTeamMember = {
+  id: string;
+  full_name: string;
+  email: string;
+  role_detail?: { id: string; name: string } | null;
+  department?: string | null;
+  status: string;
+};
+
+export type ComplianceTeamMembersResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: ComplianceTeamMember[];
+    count?: number;
+  } | ComplianceTeamMember[];
+};
+
+export async function getComplianceTeamMembers() {
+  const { data } = await authApi.get<ComplianceTeamMembersResponse>(
+    "/compliance/team-members/",
+  );
+  return data;
+}
+
 export async function getComplianceDashboardSummary() {
   const { data } = await authApi.get<ComplianceDashboardSummaryResponse>(
     "/compliance/dashboard/summary/",
@@ -655,5 +680,39 @@ export async function claimComplianceReview({
       headers: getWorkflowHeaders(accessToken),
     },
   );
+  return data;
+}
+
+export type UpdateComplianceProfilePayload = Partial<{
+  full_name: string;
+  organization_name: string;
+  primary_office_address: string;
+}>;
+
+export async function updateComplianceProfile(
+  profileId: string,
+  payload: UpdateComplianceProfilePayload,
+) {
+  const { data } = await authApi.patch(`/compliance/profiles/${profileId}/`, payload);
+  return data;
+}
+
+export type UpdateUserPayload = Partial<{
+  phone_number: string;
+  company_name: string;
+}>;
+
+export async function updateUser(userId: string, payload: UpdateUserPayload) {
+  const { data } = await authApi.patch(`/user/${userId}/`, payload);
+  return data;
+}
+
+export type ChangePasswordPayload = {
+  old_password: string;
+  new_password: string;
+};
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const { data } = await authApi.post("/user/change_password/", payload);
   return data;
 }

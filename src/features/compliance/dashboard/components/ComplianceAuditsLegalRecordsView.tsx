@@ -148,7 +148,7 @@ function ActivityMetricCard({ card }: { card: ActivityCard }) {
         </span>
       </div>
 
-      <div className="mt-6 text-[40px] font-semibold leading-none tracking-[-0.06em] text-[#3f444d]">
+      <div className="mt-6 text-[28px] font-bold leading-none tracking-[-0.03em] text-[#1c2230]">
         {card.value}
       </div>
     </article>
@@ -158,14 +158,14 @@ function ActivityMetricCard({ card }: { card: ActivityCard }) {
 function ActivityStatusPill({ status }: { status: SystemActivityLogRow["status"] }) {
   if (status === "success") {
     return (
-      <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#16a34a]">
+      <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#16a34a]">
         Success
       </span>
     );
   }
 
   return (
-    <span className="inline-flex rounded-full border border-[#f2ddaf] bg-[#fff4de] px-4 py-1 text-[14px] font-medium text-[#d39a1f]">
+    <span className="inline-flex rounded-full border border-[#f2ddaf] bg-[#fff4de] px-3 py-1 text-[11px] font-semibold text-[#d39a1f]">
       Warning
     </span>
   );
@@ -182,7 +182,7 @@ export default function ComplianceAuditsLegalRecordsView() {
         </div>
 
         <div>
-          <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
             Audits &amp; Legal Records
           </h1>
           <p className="mt-2 max-w-[760px] text-[15px] text-[#6e7584]">
@@ -192,7 +192,7 @@ export default function ComplianceAuditsLegalRecordsView() {
         </div>
       </div>
 
-      <section className="rounded-[30px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <section className="rounded-[16px] border border-[#dfe5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[#2f3440]">
           Tracked Activities
         </h2>
@@ -204,7 +204,7 @@ export default function ComplianceAuditsLegalRecordsView() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <section className="rounded-[16px] border border-[#dfe5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2563eb]">
             <FileSearchOutlined />
@@ -280,7 +280,7 @@ export default function ComplianceAuditsLegalRecordsView() {
                             "info",
                           )
                         }
-                        className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[#cfd7e4] bg-[#f4f7fb] px-5 text-[15px] font-medium text-[#4b525f] transition-colors hover:bg-white"
+                        className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#cfd7e4] bg-[#f4f7fb] px-4 text-[13px] font-medium text-[#4b525f] transition-colors hover:bg-white"
                       >
                         View
                       </button>

@@ -88,7 +88,7 @@ function RuleCategoryCard({ category }: { category: ComplianceRuleCategory }) {
 
 function RuleStatusPill({ rule }: { rule: ComplianceRuleRow }) {
   return (
-    <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#1ea43b]">
+    <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]">
       {rule.status.label}
     </span>
   );
@@ -102,7 +102,7 @@ function ActiveRulesTable({
   onEditRule: (ruleId: string) => void;
 }) {
   return (
-    <section className="rounded-[30px] border border-[#dde5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#dde5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="flex items-center gap-3 px-1 pb-4 text-[18px] font-semibold text-[#2a2f39]">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[18px] text-[#2661d8]">
           <AppstoreOutlined />
@@ -384,7 +384,7 @@ export default function ComplianceVerificationRulesThresholdsView() {
 
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div>
-              <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+              <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
                 Verification Rules &amp; Thresholds
               </h1>
               <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
@@ -399,7 +399,7 @@ export default function ComplianceVerificationRulesThresholdsView() {
                 onClick={() =>
                   showToast("Mock rule history view. API wiring is pending.", "info")
                 }
-                className="inline-flex h-14 items-center gap-3 rounded-[18px] border border-[#e1e5ee] bg-[#f7f9fc] px-6 text-[16px] font-medium text-[#2f3541] transition-colors hover:bg-white"
+                className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-medium text-[#2f3541] transition-colors hover:bg-[#f7f9fc]"
               >
                 <ClockCircleOutlined />
                 View Rule History
@@ -407,7 +407,7 @@ export default function ComplianceVerificationRulesThresholdsView() {
               <button
                 type="button"
                 onClick={() => setIsCreateRuleModalOpen(true)}
-                className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#14244a] px-6 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+                className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
                 style={{ color: "#ffffff" }}
               >
                 <PlusOutlined />

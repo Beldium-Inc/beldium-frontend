@@ -76,7 +76,7 @@ export default function PageHero({
             ? `/compliancedashboard?persona=${persona}`
             : "#"
         }
-        className="relative inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-5 text-[13px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-transform hover:-translate-y-0.5"
+        className="relative inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-5 text-[13px] font-semibold !text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-transform hover:-translate-y-0.5"
         style={primaryActionStyle}
       >
         {showBackAction ? (

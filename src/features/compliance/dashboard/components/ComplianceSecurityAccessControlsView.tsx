@@ -210,7 +210,7 @@ export default function ComplianceSecurityAccessControlsView() {
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+            <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
               Security &amp; Access Controls
             </h1>
             <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
@@ -227,7 +227,7 @@ export default function ComplianceSecurityAccessControlsView() {
                 "success",
               )
             }
-            className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#13264e] px-6 text-[16px] font-semibold text-white shadow-[0_22px_44px_-28px_rgba(19,38,78,0.85)] transition-colors hover:bg-[#182f5f]"
+            className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
             style={{ color: "#ffffff" }}
           >
             <SaveOutlined />
@@ -236,7 +236,7 @@ export default function ComplianceSecurityAccessControlsView() {
         </div>
       </div>
 
-      <section className="rounded-[30px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <section className="rounded-[16px] border border-[#dfe5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[18px] text-[#2661d8]">
             <SafetyCertificateOutlined />
@@ -283,8 +283,8 @@ export default function ComplianceSecurityAccessControlsView() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
-        <h2 className="text-[30px] font-semibold tracking-[-0.05em] text-[#2a2f39]">
+      <section className="rounded-[16px] border border-[#dfe5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+        <h2 className="text-[16px] font-semibold text-[#2a2f39]">
           Access &amp; Login Restrictions
         </h2>
 
@@ -341,7 +341,7 @@ export default function ComplianceSecurityAccessControlsView() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[30px] border border-[#dfe5ef] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <section className="overflow-hidden rounded-[16px] border border-[#dfe5ef] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
         <div className="flex flex-col gap-4 border-b border-[#edf1f6] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-4">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[18px] text-[#2661d8]">
@@ -357,7 +357,7 @@ export default function ComplianceSecurityAccessControlsView() {
             onClick={() =>
               showToast("Mock sign out for other sessions. API wiring is pending.", "info")
             }
-            className="inline-flex h-12 items-center justify-center rounded-[14px] border border-[#f3d6d7] bg-[#fff3f3] px-5 text-[15px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff8f8]"
+            className="inline-flex h-12 items-center justify-center rounded-[10px] border border-[#f3d6d7] bg-[#fff3f3] px-4 text-[13px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff8f8]"
           >
             Log out all other sessions
           </button>
@@ -412,7 +412,7 @@ export default function ComplianceSecurityAccessControlsView() {
                               "info",
                             )
                           }
-                          className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[#f3d6d7] bg-[#fff3f3] px-4 text-[15px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff8f8]"
+                          className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#f3d6d7] bg-[#fff3f3] px-4 text-[13px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff8f8]"
                         >
                           Terminate
                         </button>
@@ -426,7 +426,7 @@ export default function ComplianceSecurityAccessControlsView() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[30px] border border-[#dfe5ef] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <section className="overflow-hidden rounded-[16px] border border-[#dfe5ef] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
         <div className="flex items-center gap-4 border-b border-[#edf1f6] px-5 py-5 sm:px-6">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[18px] text-[#2661d8]">
             <ClockCircleOutlined />
@@ -483,7 +483,7 @@ export default function ComplianceSecurityAccessControlsView() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+      <section className="rounded-[16px] border border-[#dfe5ef] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <div className="flex flex-col gap-5 border-b border-[#edf1f6] pb-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex items-start gap-4">
             <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[18px] text-[#2661d8]">

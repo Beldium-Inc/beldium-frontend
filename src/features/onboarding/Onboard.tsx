@@ -10,7 +10,6 @@ import { signup } from "./api";
 import { showToast } from "@/src/store/toast.store";
 import { useOnboardingStore } from "./onboarding.store";
 import LoadingOverlay from "@/src/components/ui/LoadingOverlay";
-import { SocialButton } from "./ui/SocialButton";
 
 const phoneRules: Rule[] = [
   { required: true, message: errorMsg("Primary phone number is required") },
@@ -99,17 +98,6 @@ export function Onboard({
           <ArrowLeftIcon />
         </button>
         <h2 className="text-xl pt-2 font-semibold text-gray-900">Create your account</h2>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <SocialButton provider="google" />
-        <SocialButton provider="facebook" />
-      </div>
-
-      <div className="flex items-center gap-3 text-xs text-gray-400">
-        <div className="h-px flex-1 bg-gray-200" />
-        Or continue with email
-        <div className="h-px flex-1 bg-gray-200" />
       </div>
 
       <div>

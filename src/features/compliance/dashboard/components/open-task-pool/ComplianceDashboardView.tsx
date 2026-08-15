@@ -39,7 +39,7 @@ export function ComplianceAlertSection({
   const canDismiss = Boolean(alert.reviewId);
 
   return (
-    <section className="rounded-[28px] border border-[#e6ebf4] bg-white p-4 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-5">
+    <section className="rounded-[16px] border border-[#e6ebf4] bg-white p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="h-14 w-1 rounded-full bg-gradient-to-b from-[#ff6a3d] to-[#ff3d19]" />
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#eef8ff] text-[20px] text-[#4b8fe8]">
@@ -104,7 +104,7 @@ export function ComplianceMetricsSection({ metrics }: { metrics: DashboardMetric
   ];
 
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white/75 p-4 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white/75 p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2">
         {metrics.map((metric, index) => {
           const iconData = metricIcons[index];
@@ -146,7 +146,7 @@ export function ComplianceQueueSection({
   showViewFullQueue: boolean;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
@@ -214,7 +214,7 @@ export function ComplianceQueueSection({
                       type="button"
                       onClick={() => onOpenReview(row.id)}
                       disabled={activeReviewId === row.id}
-                      className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#101e3d] px-4 text-[14px] font-semibold text-white shadow-[0_14px_24px_-18px_rgba(16,30,61,0.8)] transition-colors hover:bg-[#16284f] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#101e3d] px-4 text-[14px] font-semibold !text-white shadow-[0_14px_24px_-18px_rgba(16,30,61,0.8)] transition-colors hover:bg-[#16284f] disabled:cursor-not-allowed disabled:opacity-70"
                       aria-pressed={activeReviewId === row.id}
                       style={primaryActionStyle}
                     >
@@ -252,7 +252,7 @@ export function ComplianceReviewsSection({
   onOpenReview?: (reviewId: string) => void;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-6">
         <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
           Review List
@@ -395,7 +395,7 @@ export function ComplianceActiveCasesSection({
             <button
               type="button"
               onClick={() => onOpenTask(card.id)}
-              className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[14px] bg-[#101e3d] px-5 text-[16px] font-semibold text-white shadow-[0_18px_30px_-22px_rgba(16,30,61,0.85)] transition-colors hover:bg-[#16284f]"
+              className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[14px] bg-[#101e3d] px-5 text-[16px] font-semibold !text-white shadow-[0_18px_30px_-22px_rgba(16,30,61,0.85)] transition-colors hover:bg-[#16284f]"
               style={primaryActionStyle}
             >
               {card.cta}

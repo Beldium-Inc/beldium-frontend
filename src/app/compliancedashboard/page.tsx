@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   type AdminPipelineRow,
   ADMIN_PIPELINE_ROWS,
@@ -25,16 +25,19 @@ import {
   type ComplianceReviewItem,
 } from "@/src/features/compliance/dashboard/api";
 import { showToast } from "@/src/store/toast.store";
+import { getUser } from "@/src/features/onboarding/api";
 import { RegulatoryAlertsView } from "@/src/features/compliance/dashboard/components/RegulatoryAlertsView";
-import type {
-  ComplianceView,
-  DashboardPersona,
-  ComplianceReviewSelection,
-  ReviewActionType,
-  ComplianceMinerDetailState,
+import {
+  REGULATED_SECTORS,
+  parseRegulatedSector,
+  type ComplianceView,
+  type DashboardPersona,
+  type ComplianceReviewSelection,
+  type ReviewActionType,
+  type ComplianceMinerDetailState,
+  type RegulatedSector,
 } from "@/src/features/compliance/dashboard/types";
 import {
-  filterBySearchTerm,
   mapComplianceAlert,
   mapComplianceMetrics,
   mapAdminCardMetrics,
@@ -88,9 +91,12 @@ const EMPTY_DASHBOARD_SUMMARY = {
 
 export default function ComplianceDashboardPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const personaParam = searchParams.get("persona");
   const complianceViewParam = searchParams.get("view");
+  const sector = parseRegulatedSector(searchParams.get("sector"));
+  const sectorMeta = REGULATED_SECTORS.find((option) => option.value === sector);
   const persona: DashboardPersona =
     personaParam === "compliance" ? "compliance" : "admin";
   const complianceView: ComplianceView =
@@ -146,7 +152,7 @@ export default function ComplianceDashboardPage() {
   const isComplianceStaticSurface =
     isComplianceProfileSurface || isComplianceSettingsSurface;
   const [now, setNow] = useState(() => Date.now());
-  const [searchTerm, setSearchTerm] = useState("");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedReview, setSelectedReview] =
     useState<ComplianceReviewSelection | null>(null);
   const [openedMinerDetail, setOpenedMinerDetail] =
@@ -181,6 +187,12 @@ export default function ComplianceDashboardPage() {
     return () => window.clearInterval(timer);
   }, [persona]);
 
+  const currentUserQ = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: getUser,
+    enabled: hasAccessToken,
+    retry: false,
+  });
   const adminCardsQ = useQuery({
     queryKey: ["complianceReviewDashboardCards"],
     queryFn: getComplianceReviewDashboardCards,
@@ -360,13 +372,7 @@ export default function ComplianceDashboardPage() {
   const adminMetrics = mapAdminCardMetrics(
     adminCardsQ.data?.data ?? EMPTY_REVIEW_DASHBOARD_CARDS,
   );
-  const adminRows = filterBySearchTerm(
-    mapAdminReviewRows(
-      adminReviewsQ.data?.data?.results ?? [],
-    ),
-    searchTerm,
-    ["minerId", "company", "location"],
-  );
+  const adminRows = mapAdminReviewRows(adminReviewsQ.data?.data?.results ?? []);
   const complianceSummary =
     complianceSummaryQ.data?.data ?? EMPTY_DASHBOARD_SUMMARY;
   const complianceAlert = mapComplianceAlert(complianceSummary.latest_alert);
@@ -376,13 +382,9 @@ export default function ComplianceDashboardPage() {
     setDismissedAlertKey(complianceAlertKey);
   };
   const complianceMetrics = mapComplianceMetrics(complianceSummary);
-  const complianceQueueRows = filterBySearchTerm(
-    mapComplianceQueueRows(
-      complianceQueueQ.data?.data?.results ?? [],
-      now,
-    ),
-    searchTerm,
-    ["minerId", "company", "location"],
+  const complianceQueueRows = mapComplianceQueueRows(
+    complianceQueueQ.data?.data?.results ?? [],
+    now,
   );
   const complianceQueuePreviewRows = complianceQueueRows.slice(0, 5);
   const complianceQueueCount =
@@ -391,13 +393,7 @@ export default function ComplianceDashboardPage() {
   const complianceActiveTaskCards = mapComplianceActiveTaskCards(
     complianceMyTasksQ.data?.data?.results ?? [],
   );
-  const complianceReviewRows = filterBySearchTerm(
-    mapAdminReviewRows(
-      adminReviewsQ.data?.data?.results ?? [],
-    ),
-    searchTerm,
-    ["minerId", "company", "location"],
-  );
+  const complianceReviewRows = mapAdminReviewRows(adminReviewsQ.data?.data?.results ?? []);
   const reviewLookup = new Map<string, ComplianceReviewItem>();
   for (const item of [
     ...(complianceQueueQ.data?.data?.results ?? []),
@@ -424,6 +420,20 @@ export default function ComplianceDashboardPage() {
     setOpenedMinerDetail(null);
     setClaimConflictTask(null);
     setClaimConflictLoggedAt(null);
+  };
+
+  const handleSectorChange = (nextSector: RegulatedSector) => {
+    resetCompliancePanels();
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextSector === "miners") {
+      params.delete("sector");
+    } else {
+      params.set("sector", nextSector);
+    }
+
+    const query = params.toString();
+    router.push(query ? `/compliancedashboard?${query}` : "/compliancedashboard");
   };
 
   const openReviewPanel = (selection: ComplianceReviewSelection | null) => {
@@ -504,10 +514,51 @@ export default function ComplianceDashboardPage() {
   const showMinerDetailView =
     Boolean(openedMinerDetail) && !isComplianceStaticSurface;
 
+  const currentUserData = currentUserQ.data?.data as
+    | {
+        id?: string;
+        email?: string;
+        phone_number?: string | null;
+        profile_picture?: string | null;
+        account_verified?: boolean;
+        onboarding_completed_at?: string | null;
+        profile?: {
+          id?: string;
+          full_name?: string;
+          role?: string;
+          organization_name?: string;
+          require_two_factor_authentication?: boolean;
+        } | null;
+      }
+    | undefined;
+  const topBarUser = {
+    name: currentUserData?.profile?.full_name || currentUserData?.email || "",
+    role: currentUserData?.profile?.role || "Compliance Officer",
+    email: currentUserData?.email || "",
+    avatarSrc: currentUserData?.profile_picture || null,
+  };
+  const profileUser = {
+    ...topBarUser,
+    userId: currentUserData?.id || null,
+    profileId: currentUserData?.profile?.id || null,
+    phone: currentUserData?.phone_number || "",
+    department: currentUserData?.profile?.organization_name || "",
+    isVerified: Boolean(currentUserData?.account_verified),
+    twoFactorEnabled: Boolean(currentUserData?.profile?.require_two_factor_authentication),
+    joinedLabel: currentUserData?.onboarding_completed_at
+      ? `Joined ${new Date(currentUserData.onboarding_completed_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+      : "",
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-[#f5f7fb] text-[#202534]">
       <div className="flex h-screen">
-        <DashboardSidebar persona={persona} complianceView={complianceView} />
+        <DashboardSidebar
+          persona={persona}
+          complianceView={complianceView}
+          mobileOpen={mobileNavOpen}
+          onMobileClose={() => setMobileNavOpen(false)}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <DashboardTopBar
@@ -515,13 +566,31 @@ export default function ComplianceDashboardPage() {
             persona={persona}
             complianceView={complianceView}
             onMenuNavigate={resetCompliancePanels}
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
+            onOpenMobileNav={() => setMobileNavOpen(true)}
+            user={topBarUser}
           />
 
           <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 xl:px-8">
             <div className="mx-auto max-w-[1600px] space-y-6">
-              {showMinerDetailView && openedMinerDetail ? (
+              {sectorMeta && !sectorMeta.available ? (
+                <div className="rounded-[20px] border border-[#e8ecf4] bg-white px-8 py-16 text-center">
+                  <h2 className="text-[22px] font-semibold text-[#1f2430]">
+                    {sectorMeta.label} compliance is not available yet
+                  </h2>
+                  <p className="mx-auto mt-3 max-w-[560px] text-[15px] leading-6 text-[#7a8291]">
+                    Compliance reviews are currently only modelled for miners. Once
+                    {" "}{sectorMeta.label.toLowerCase()} onboarding and review records exist on the
+                    backend, this workspace will populate here.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSectorChange("miners")}
+                    className="mt-6 inline-flex h-11 items-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
+                  >
+                    Back to Miners
+                  </button>
+                </div>
+              ) : showMinerDetailView && openedMinerDetail ? (
                 <ComplianceMinerDetailView
                   selection={openedMinerDetail.selection}
                   reviewDetail={openedMinerDetail.reviewDetail}
@@ -587,11 +656,7 @@ export default function ComplianceDashboardPage() {
                   ) : null}
                   {complianceView === "miner-pipeline" ? (
                     <AdminMinerPipelineView
-                      rows={filterBySearchTerm(ADMIN_PIPELINE_ROWS, searchTerm, [
-                        "minerId",
-                        "company",
-                        "location",
-                      ])}
+                      rows={ADMIN_PIPELINE_ROWS}
                       onSelectMiner={setSelectedAdminMiner}
                     />
                   ) : complianceView === "partner-directory" ? (
@@ -618,7 +683,7 @@ export default function ComplianceDashboardPage() {
               ) : complianceView === "compliance-profile" ? (
                 <ComplianceInstitutionProfileView />
               ) : complianceView === "profile" ? (
-                <ComplianceProfileView />
+                <ComplianceProfileView user={profileUser} />
               ) : (
                 <>
                   {complianceView !== "regulatory-alerts" && complianceView !== "reviews" ? (

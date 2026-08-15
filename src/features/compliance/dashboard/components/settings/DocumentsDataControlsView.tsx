@@ -49,7 +49,7 @@ function ComplianceDocumentControlsSurface({
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+            <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
               {title}
             </h1>
             <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
@@ -60,7 +60,7 @@ function ComplianceDocumentControlsSurface({
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              className="inline-flex h-14 items-center gap-3 rounded-[18px] border border-[#e1e5ee] bg-[#f7f9fc] px-6 text-[16px] font-medium text-[#2f3541] transition-colors hover:bg-white"
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-medium text-[#2f3541] transition-colors hover:bg-[#f7f9fc]"
             >
               <ClockCircleOutlined />
               View Document Audit Logs
@@ -68,7 +68,7 @@ function ComplianceDocumentControlsSurface({
             <button
               type="button"
               onClick={() => setIsAddDocumentRequirementOpen(true)}
-              className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#14244a] px-6 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
               style={primaryActionStyle}
             >
               <PlusOutlined />

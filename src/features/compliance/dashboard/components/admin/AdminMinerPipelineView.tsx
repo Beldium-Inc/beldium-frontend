@@ -23,7 +23,7 @@ export default function AdminMinerPipelineView({
   onSelectMiner?: (row: AdminPipelineRow) => void;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="overflow-hidden rounded-[24px] border border-[#e5e9f1]">
         <div className="overflow-x-auto">
           <table className="min-w-[1120px] w-full border-separate border-spacing-0 text-left">
@@ -170,7 +170,7 @@ export function MinerEsgReviewRow({
               className={classNames(
                 "cursor-pointer rounded-full border px-3 py-2 transition-colors",
                 item.status === option.key
-                  ? "border-[#14244a] bg-[#14244a] text-white"
+                  ? "border-[#14244a] bg-[#14244a] !text-white"
                   : "border-[#dce3ef] bg-white",
               )}
             >

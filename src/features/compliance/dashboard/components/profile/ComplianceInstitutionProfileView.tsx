@@ -15,7 +15,7 @@ import { complianceInstitutionProfile } from "@/src/features/compliance/dashboar
 
 function ComplianceDomainChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#b9ceff] bg-[#eef4ff] px-4 py-2 text-[15px] font-medium text-[#2661d8]">
+    <span className="inline-flex items-center rounded-full border border-[#b9ceff] bg-[#eef4ff] px-3 py-1 text-[12px] font-medium text-[#2661d8]">
       {label}
     </span>
   );
@@ -29,7 +29,7 @@ function ComplianceInstitutionBadge({
   label: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-[12px] border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#caebd1] bg-[#ecfaf0] px-3 py-1.5 text-[12px] font-semibold text-[#1ea43b]">
       {icon}
       {label}
     </span>
@@ -44,11 +44,11 @@ function ComplianceSectionHeading({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
+    <div className="flex items-center gap-2 text-[15px] font-semibold text-[#2a2f39]">
+      <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef4ff] text-[16px] text-[#2661d8]">
         {icon}
       </span>
-      <h2 className="text-[18px] font-semibold text-[#2a2f39]">{title}</h2>
+      {title}
     </div>
   );
 }
@@ -65,12 +65,12 @@ function ComplianceOverviewCard({
   footnoteClassName: string;
 }) {
   return (
-    <div className="rounded-[18px] border border-[#edf1f7] bg-[#fbfcfe] px-5 py-4">
-      <div className="text-[12px] font-medium uppercase tracking-[0.05em] text-[#b0b6c2]">
+    <div className="rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] px-4 py-4">
+      <div className="text-[11px] font-medium uppercase tracking-[0.05em] text-[#8a92a1]">
         {title}
       </div>
-      <div className="mt-3 text-[24px] font-semibold text-[#2a2f39]">{value}</div>
-      <div className={classNames("mt-1 text-[14px]", footnoteClassName)}>
+      <div className="mt-2 text-[22px] font-bold tracking-[-0.02em] text-[#1c2230]">{value}</div>
+      <div className={classNames("mt-0.5 text-[12px]", footnoteClassName)}>
         {footnote}
       </div>
     </div>
@@ -79,7 +79,7 @@ function ComplianceOverviewCard({
 
 function ComplianceTeamStatus({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+    <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ecfaf0] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]">
       {label}
     </span>
   );
@@ -94,27 +94,27 @@ function ComplianceVerificationValue({
 }) {
   if (tone === "green") {
     return (
-      <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ebfaef] px-4 py-2 text-[15px] font-medium text-[#1ea43b]">
+      <span className="inline-flex items-center justify-center rounded-full border border-[#caebd1] bg-[#ecfaf0] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]">
         {value}
       </span>
     );
   }
 
-  return <span className="text-[16px] font-medium text-[#2a2f39]">{value}</span>;
+  return <span className="text-[13px] font-medium text-[#2a2f39]">{value}</span>;
 }
 
 export default function ComplianceInstitutionProfileView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+        <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
           {complianceInstitutionProfile.title}
         </h1>
-        <p className="mt-2 max-w-[780px] text-[15px] text-[#7a8291]">
+        <p className="mt-1 max-w-[560px] text-[14px] text-[#7a8291]">
           {complianceInstitutionProfile.subtitle}
         </p>
 
-        <div className="mt-5 inline-flex flex-wrap items-center gap-3 rounded-[14px] border border-[#dce3ef] bg-white px-4 py-3 text-[15px] text-[#7a8291]">
+        <div className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-3 py-2 text-[13px] text-[#7a8291]">
           <span className="font-medium text-[#5b6472]">
             Role: {complianceInstitutionProfile.roleLabel}
           </span>
@@ -123,23 +123,23 @@ export default function ComplianceInstitutionProfileView() {
         </div>
       </div>
 
-      <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+      <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#ff3e72] text-[54px] font-semibold italic leading-none text-white">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ff3e72] text-[38px] font-semibold italic leading-none !text-white">
               in
             </div>
             <div>
-              <div className="text-[24px] font-semibold text-[#2a2f39]">
+              <div className="text-[18px] font-semibold text-[#2a2f39]">
                 {complianceInstitutionProfile.institutionName}
               </div>
-              <div className="mt-2 text-[18px] text-[#6f7786]">
+              <div className="mt-1 text-[13px] text-[#8a92a1]">
                 {complianceInstitutionProfile.jurisdiction}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col items-start gap-3 xl:items-end">
+          <div className="flex flex-col items-start gap-2 xl:items-end">
             <ComplianceInstitutionBadge
               icon={<CheckCircleOutlined />}
               label="Verified Institution"
@@ -152,17 +152,17 @@ export default function ComplianceInstitutionProfileView() {
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-[#f4dfb4] bg-[#fffaf1] px-6 py-5 shadow-[0_20px_40px_-36px_rgba(208,152,35,0.55)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <span className="mt-1 text-[20px] text-[#df8b19]">
+      <section className="rounded-[16px] border border-[#f4dfb4] bg-[#fffaf1] px-5 py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 text-[16px] text-[#df8b19]">
               <WarningFilled />
             </span>
             <div>
-              <div className="text-[16px] font-medium text-[#d58219]">
+              <div className="text-[13px] font-semibold text-[#d58219]">
                 {complianceInstitutionProfile.renewalNotice.title}
               </div>
-              <div className="mt-1 text-[15px] text-[#e3a24b]">
+              <div className="mt-0.5 text-[12px] text-[#e3a24b]">
                 {complianceInstitutionProfile.renewalNotice.description}
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function ComplianceInstitutionProfileView() {
 
           <button
             type="button"
-            className="inline-flex items-center gap-2 text-[15px] font-medium text-[#d58219]"
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#d58219]"
           >
             {complianceInstitutionProfile.renewalNotice.actionLabel}
             <ArrowRightOutlined />
@@ -180,21 +180,21 @@ export default function ComplianceInstitutionProfileView() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.03fr)_minmax(0,1fr)]">
         <div className="space-y-6">
-          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
             <ComplianceSectionHeading
               icon={<SafetyCertificateOutlined />}
               title="Regulatory Authority"
             />
 
-            <div className="mt-8">
-              <div className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
+            <div className="mt-5">
+              <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
                 Minerals Covered
               </div>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {complianceInstitutionProfile.mineralsCovered.map((item) => (
                   <span
                     key={item}
-                    className="inline-flex items-center rounded-full border border-[#e1e5ee] bg-[#f8fafc] px-4 py-2 text-[15px] text-[#5b6472]"
+                    className="inline-flex items-center rounded-full border border-[#e1e5ee] bg-[#f8fafc] px-3 py-1 text-[12px] text-[#5b6472]"
                   >
                     {item}
                   </span>
@@ -202,11 +202,11 @@ export default function ComplianceInstitutionProfileView() {
               </div>
             </div>
 
-            <div className="mt-8">
-              <div className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
+            <div className="mt-5">
+              <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#8a92a1]">
                 Compliance Domains
               </div>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {complianceInstitutionProfile.complianceDomains.map((item) => (
                   <ComplianceDomainChip key={item} label={item} />
                 ))}
@@ -214,14 +214,14 @@ export default function ComplianceInstitutionProfileView() {
             </div>
           </section>
 
-          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
             <ComplianceSectionHeading
               icon={<UsergroupAddOutlined />}
               title="Team Overview"
             />
 
-            <div className="mt-8 overflow-hidden rounded-[22px] border border-[#e8ecf4]">
-              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_160px] bg-[#fbfcfe] px-5 py-5 text-[15px] font-medium text-[#2f3541]">
+            <div className="mt-5 overflow-hidden rounded-[14px] border border-[#e8ecf4]">
+              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_140px] bg-[#fbfcfe] px-4 py-3 text-[12px] font-semibold text-[#2f3541]">
                 <span>Name</span>
                 <span>Role</span>
                 <span>Status</span>
@@ -230,7 +230,7 @@ export default function ComplianceInstitutionProfileView() {
               {complianceInstitutionProfile.teamMembers.map((member) => (
                 <div
                   key={member.name}
-                  className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_160px] items-center border-t border-[#edf1f7] px-5 py-5 text-[15px] text-[#4b5260]"
+                  className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_140px] items-center border-t border-[#edf1f7] px-4 py-3 text-[13px] text-[#4b5260]"
                 >
                   <span>{member.name}</span>
                   <span>{member.role}</span>
@@ -240,10 +240,10 @@ export default function ComplianceInstitutionProfileView() {
                 </div>
               ))}
 
-              <div className="flex justify-center border-t border-[#edf1f7] px-4 py-5">
+              <div className="flex justify-center border-t border-[#edf1f7] px-4 py-3">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-[12px] border border-[#e1e5ee] bg-[#f7f8fb] px-5 py-3 text-[14px] font-medium text-[#5f6675] transition-colors hover:bg-white"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e1e5ee] bg-[#f7f8fb] px-4 py-2 text-[12px] font-medium text-[#5f6675] transition-colors hover:bg-white"
                 >
                   View full team
                   <ArrowRightOutlined />
@@ -254,13 +254,13 @@ export default function ComplianceInstitutionProfileView() {
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
             <ComplianceSectionHeading
               icon={<SolutionOutlined />}
               title="Compliance Overview"
             />
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {complianceInstitutionProfile.overviewCards.map((item) => (
                 <ComplianceOverviewCard
                   key={item.title}
@@ -273,19 +273,19 @@ export default function ComplianceInstitutionProfileView() {
             </div>
           </section>
 
-          <section className="rounded-[30px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+          <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
             <ComplianceSectionHeading
               icon={<SafetyOutlined />}
               title="Verification & Integrity"
             />
 
-            <div className="mt-8 space-y-6">
+            <div className="mt-5 space-y-4">
               {complianceInstitutionProfile.verificationItems.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between gap-4 border-b border-[#f0f3f8] pb-5 last:border-b-0 last:pb-0"
+                  className="flex items-center justify-between gap-4 border-b border-[#f0f3f8] pb-4 last:border-b-0 last:pb-0"
                 >
-                  <span className="text-[16px] text-[#a0a7b5]">{item.label}</span>
+                  <span className="text-[13px] text-[#8a92a1]">{item.label}</span>
                   <ComplianceVerificationValue
                     value={item.value}
                     tone={item.tone}

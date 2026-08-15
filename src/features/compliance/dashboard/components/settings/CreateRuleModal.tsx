@@ -223,7 +223,7 @@ export function CreateRuleModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-[1080px] overflow-hidden rounded-[28px] bg-white shadow-[0_40px_120px_-42px_rgba(16,30,61,0.45)]">
+      <div className="relative w-full max-w-[1080px] overflow-hidden rounded-[20px] bg-white shadow-[0_40px_120px_-42px_rgba(16,30,61,0.45)]">
         <div className="border-b border-[#eef2f7] px-8 py-7">
           <div className="flex items-start justify-between gap-6">
             <div>
@@ -534,7 +534,7 @@ export function CreateRuleModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-14 items-center justify-center rounded-[18px] px-5 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
+            className="inline-flex h-14 items-center justify-center rounded-[10px] px-4 text-[13px] font-medium text-[#14244a] transition-colors hover:bg-[#f7f9fc]"
           >
             Cancel
           </button>
@@ -544,7 +544,7 @@ export function CreateRuleModal({
               <button
                 type="button"
                 onClick={() => setStep((current) => current - 1)}
-                className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#d7deea] bg-[#f1f4f8] px-10 text-[16px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
+                className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#d7deea] bg-[#f1f4f8] px-4 text-[13px] font-medium text-[#14244a] transition-colors hover:bg-[#e9eef5]"
               >
                 Back
               </button>
@@ -553,7 +553,7 @@ export function CreateRuleModal({
             <button
               type="button"
               onClick={handleContinue}
-              className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[#14244a] px-10 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
               style={primaryActionStyle}
             >
               {step === CREATE_RULE_STEP_COPY.length - 1 ? "Create Rule" : "Continue"}

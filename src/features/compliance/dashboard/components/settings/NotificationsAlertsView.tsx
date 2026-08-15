@@ -23,7 +23,7 @@ export default function NotificationsAlertsView() {
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+            <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
               Notifications &amp; Alerts
             </h1>
             <p className="mt-2 max-w-[760px] text-[15px] text-[#7a8291]">
@@ -35,7 +35,7 @@ export default function NotificationsAlertsView() {
           <button
             type="button"
             onClick={handleSaveChanges}
-            className="inline-flex h-14 items-center gap-3 rounded-[18px] bg-[#14244a] px-6 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+            className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
             style={primaryActionStyle}
           >
             <SaveOutlined />

@@ -61,7 +61,7 @@ export default function AdminPartnerDirectoryView({ rows }: { rows: PartnerDirec
           <span className="font-semibold text-[#2a2f39]">{openedPartner.partnerEntity}</span>
         </div>
 
-        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[24px] font-semibold text-[#2a2f39]">{openedPartner.partnerEntity}</div>
@@ -94,7 +94,7 @@ export default function AdminPartnerDirectoryView({ rows }: { rows: PartnerDirec
   }
 
   return (
-    <section className="rounded-[32px] border border-[#e8ecf4] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-6">
+    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="inline-flex flex-wrap items-center gap-2 rounded-[16px] border border-[#e7ebf2] bg-[#fafbfd] p-1.5">
           {PARTNER_CATEGORY_FILTERS.map((tab) => {

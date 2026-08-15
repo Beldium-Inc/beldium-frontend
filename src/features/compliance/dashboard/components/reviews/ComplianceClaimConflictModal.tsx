@@ -15,7 +15,7 @@ export default function ComplianceClaimConflictModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(8,13,28,0.28)] backdrop-blur-[4px] px-4">
-      <div className="w-full max-w-[720px] rounded-[28px] bg-white p-6 shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
+      <div className="w-full max-w-[720px] rounded-[20px] bg-white p-6 shadow-[0_40px_90px_-40px_rgba(16,30,61,0.55)]">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#ffe9ea] text-[40px] text-[#ef2f32]">
           <WarningFilled />
         </div>
@@ -36,7 +36,7 @@ export default function ComplianceClaimConflictModal({
         <button
           type="button"
           onClick={onBack}
-          className="mt-8 inline-flex h-16 w-full items-center justify-center gap-3 rounded-[16px] bg-[#14244a] px-6 text-[18px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57]"
+          className="mt-8 inline-flex h-11 w-full items-center justify-center gap-3 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57]"
           style={primaryActionStyle}
         >
           <ArrowLeftOutlined />

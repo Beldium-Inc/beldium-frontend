@@ -158,7 +158,7 @@ export default function RequestComplianceDocumentModal({
               }
             }}
             style={primaryActionStyle}
-            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-5 text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Working..." : "Send Request"}
             <ArrowRightOutlined />

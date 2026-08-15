@@ -155,8 +155,8 @@ function StatusPill({ status }: { status: TeamMemberProfile["status"] }) {
     <span
       className={
         status === "active"
-          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-4 py-1 text-[14px] font-medium text-[#1ea43b]"
-          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-4 py-1 text-[14px] font-medium text-[#d29019]"
+          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]"
+          : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-3 py-1 text-[11px] font-semibold text-[#d29019]"
       }
     >
       {status === "active" ? "Active" : "Invite pending"}
@@ -175,8 +175,8 @@ function SecurityPill({
     <span
       className={
         tone === "green"
-          ? "inline-flex items-center gap-2 rounded-[14px] border border-[#dde8dd] bg-[#f7faf7] px-4 py-2 text-[14px] font-medium text-[#5e6674]"
-          : "inline-flex items-center gap-2 rounded-[14px] border border-[#f3d6d7] bg-[#fff3f3] px-4 py-2 text-[14px] font-medium text-[#9b6d73]"
+          ? "inline-flex items-center gap-2 rounded-full border border-[#dde8dd] bg-[#f7faf7] px-3 py-1 text-[12px] font-medium text-[#5e6674]"
+          : "inline-flex items-center gap-2 rounded-full border border-[#f3d6d7] bg-[#fff3f3] px-3 py-1 text-[12px] font-medium text-[#9b6d73]"
       }
     >
       <span className="h-3.5 w-3.5 rounded-full border border-[#c4ccd8]" />
@@ -187,7 +187,7 @@ function SecurityPill({
 
 function PermissionCell({ allowed }: { allowed: boolean }) {
   return allowed ? (
-    <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#13264e] text-[14px] text-white">
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#13264e] text-[14px] !text-white">
       <CheckOutlined />
     </span>
   ) : (
@@ -253,7 +253,7 @@ export default function ComplianceTeamsRolesView() {
             </div>
 
             <div>
-              <h1 className="text-[42px] font-semibold tracking-[-0.06em] text-[#2a2f39]">
+              <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">
                 {teamRolesData.title}
               </h1>
               <p className="mt-2 text-[15px] text-[#7a8291]">
@@ -265,7 +265,7 @@ export default function ComplianceTeamsRolesView() {
           <button
             type="button"
             onClick={() => setIsInviteModalOpen(true)}
-            className="inline-flex h-14 items-center justify-center gap-3 rounded-[18px] bg-[#13264e] px-6 text-[16px] font-semibold text-white shadow-[0_22px_44px_-28px_rgba(19,38,78,0.85)] transition-colors hover:bg-[#182f5f]"
+            className="inline-flex h-11 items-center justify-center gap-3 rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
             style={{ color: "#ffffff" }}
           >
             <UserAddOutlined />
@@ -273,7 +273,7 @@ export default function ComplianceTeamsRolesView() {
           </button>
         </div>
 
-        <section className="overflow-hidden rounded-[32px] border border-[#dfe5ef] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
           <div className="flex items-center gap-4 border-b border-[#edf1f6] px-5 py-5 sm:px-7">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
               <TeamOutlined />
@@ -350,7 +350,7 @@ export default function ComplianceTeamsRolesView() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[32px] border border-[#dfe5ef] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
         <div className="flex items-center gap-4 border-b border-[#edf1f6] px-5 py-5 sm:px-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
             <InfoCircleOutlined />
@@ -411,7 +411,7 @@ export default function ComplianceTeamsRolesView() {
         </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-7">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
             <SafetyCertificateOutlined />
@@ -516,7 +516,7 @@ export default function ComplianceTeamsRolesView() {
                   "info",
                 )
               }
-              className="inline-flex h-14 items-center justify-center rounded-[18px] border border-[#ffb7b7] bg-white px-6 text-[16px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff5f5]"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#ffb7b7] bg-white px-4 text-[13px] font-medium text-[#ef4444] transition-colors hover:bg-[#fff5f5]"
             >
               Logout all active sessions
             </button>
@@ -524,7 +524,7 @@ export default function ComplianceTeamsRolesView() {
         </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#dfe5ef] bg-white p-5 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)] sm:p-7">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-[20px] text-[#2661d8]">
             <SafetyCertificateOutlined />

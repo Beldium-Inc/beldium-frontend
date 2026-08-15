@@ -63,7 +63,7 @@ export default function AdminRegulatoryReadinessView({
         <button
           type="button"
           onClick={() => showToast("Export isn't connected to the backend yet.", "error")}
-          className="inline-flex h-12 items-center gap-2 rounded-[14px] bg-[#14244a] px-5 text-[15px] font-semibold text-white"
+          className="inline-flex h-12 items-center gap-2 rounded-[14px] bg-[#14244a] px-5 text-[15px] font-semibold !text-white"
           style={primaryActionStyle}
         >
           Export regulatory report
@@ -74,7 +74,7 @@ export default function AdminRegulatoryReadinessView({
         {metrics.map((metric) => (
           <section
             key={metric.id}
-            className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 text-center shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]"
+            className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 text-center shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]"
           >
             <div className="text-[15px] font-medium text-[#2a2f39]">{metric.title}</div>
             <div className="mt-1 text-[26px] font-semibold text-[#2a2f39]">{metric.percentage}%</div>
@@ -97,7 +97,7 @@ export default function AdminRegulatoryReadinessView({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
           <div className="text-[18px] font-semibold text-[#2a2f39]">Risk Distribution by State</div>
           <div className="mt-5 space-y-3">
             {states.map((state) => (
@@ -118,7 +118,7 @@ export default function AdminRegulatoryReadinessView({
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-[#e8ecf4] bg-white p-6 shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
+        <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-6 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
           <div className="text-[18px] font-semibold text-[#2a2f39]">Miner Compliance Pipeline</div>
           <div className="mt-2 text-[13px] text-[#8a92a1]">Status Distribution</div>
           <div className="mt-5 space-y-4">

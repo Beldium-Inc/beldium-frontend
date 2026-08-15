@@ -3,6 +3,31 @@ import type { StatusBadge, TrendDirection } from "@/src/features/compliance/dash
 import type { ComplianceReviewDetail } from "@/src/features/compliance/dashboard/api";
 
 export type DashboardPersona = "admin" | "compliance";
+
+/**
+ * Regulated sectors a compliance officer can switch between.
+ * Only "miners" has compliance models on the backend today; the others are
+ * declared here so the switcher reflects the intended product surface, and
+ * each carries `available` so the UI can show an honest empty state instead
+ * of rendering miner data under another sector's label.
+ */
+export type RegulatedSector = "miners" | "logistics" | "marketplace";
+
+export const REGULATED_SECTORS: {
+  value: RegulatedSector;
+  label: string;
+  available: boolean;
+}[] = [
+  { value: "miners", label: "Miners", available: true },
+  { value: "logistics", label: "Logistics & Warehousing", available: false },
+  { value: "marketplace", label: "Marketplace", available: false },
+];
+
+export function parseRegulatedSector(value: string | null): RegulatedSector {
+  return REGULATED_SECTORS.some((sector) => sector.value === value)
+    ? (value as RegulatedSector)
+    : "miners";
+}
 export type ComplianceView =
   | "dashboard"
   | "reviews"

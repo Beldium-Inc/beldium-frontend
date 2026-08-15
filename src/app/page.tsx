@@ -3,6 +3,7 @@ import { RoleSelection } from "@/src/features/onboarding/steps/RoleSelection";
 import { useOnboardingStore } from "@/src/features/onboarding/onboarding.store";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getUser } from "@/src/features/onboarding/api";
 
 export default function Home() {
   const router = useRouter();
@@ -22,7 +23,20 @@ export default function Home() {
           sessionStorage.clear();
           return;
         }
-        router.replace("/onboarding");
+
+        try {
+          const userRes = await getUser();
+          const completed = userRes?.data?.has_completed_onboarding;
+          const role = userRes?.data?.role;
+
+          if (completed) {
+            router.replace(role === "Compliance" ? "/compliancedashboard?persona=admin" : "/dashboard");
+          } else {
+            router.replace(role === "Compliance" ? "/complianceonboarding" : "/onboarding");
+          }
+        } catch {
+          router.replace("/onboarding");
+        }
         return;
       }
       const hasRegistered =

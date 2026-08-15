@@ -327,7 +327,7 @@ function ChecklistItemDrawer({
                   <button
                     type="button"
                     onClick={() => showToast("Comments aren't connected to the backend yet.", "info")}
-                    className="inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold text-white"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-4 text-[14px] font-semibold !text-white"
                     style={primaryActionStyle}
                   >
                     Add comment
@@ -352,7 +352,7 @@ function ChecklistItemDrawer({
               showToast("Item assessments aren't connected to the backend yet.", "info");
               onClose();
             }}
-            className="inline-flex h-11 items-center rounded-[12px] bg-[#14244a] px-6 text-[15px] font-semibold text-white"
+            className="inline-flex h-11 items-center rounded-[12px] bg-[#14244a] px-6 text-[15px] font-semibold !text-white"
             style={primaryActionStyle}
           >
             Save assessment
@@ -963,7 +963,7 @@ export default function ComplianceReviewsView({
                   <TeamOutlined />
                 </span>
                 <span className="text-[15px] font-semibold text-[#2a2f39]">Assigned Reviews</span>
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#14244a] px-1.5 text-[11px] font-semibold text-white">
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#14244a] px-1.5 text-[11px] font-semibold !text-white">
                   {filteredRows.length}
                 </span>
               </div>
@@ -1100,7 +1100,7 @@ export default function ComplianceReviewsView({
           <div className="rounded-[20px] border border-[#e8ecf4] bg-white">
             <div className="flex flex-wrap items-center justify-between gap-4 px-7 py-6">
               <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1d2b4f] to-[#3f6fd8] text-[17px] font-semibold text-white">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1d2b4f] to-[#3f6fd8] text-[17px] font-semibold !text-white">
                   {getInitials(selectedRow.company, selectedRow.company.slice(0, 2).toUpperCase())}
                 </span>
                 <div>
@@ -1835,7 +1835,7 @@ export default function ComplianceReviewsView({
                         onClick={() => setDocViewMode("list")}
                         className={classNames(
                           "inline-flex h-8 items-center gap-1.5 rounded-[8px] px-3 text-[12px] font-medium transition-colors",
-                          docViewMode === "list" ? "bg-[#14244a] text-white" : "text-[#5d6675]",
+                          docViewMode === "list" ? "bg-[#14244a] !text-white" : "text-[#5d6675]",
                         )}
                       >
                         <UnorderedListOutlined /> List
@@ -1845,7 +1845,7 @@ export default function ComplianceReviewsView({
                         onClick={() => setDocViewMode("grid")}
                         className={classNames(
                           "inline-flex h-8 items-center gap-1.5 rounded-[8px] px-3 text-[12px] font-medium transition-colors",
-                          docViewMode === "grid" ? "bg-[#14244a] text-white" : "text-[#5d6675]",
+                          docViewMode === "grid" ? "bg-[#14244a] !text-white" : "text-[#5d6675]",
                         )}
                       >
                         <AppstoreOutlined /> Grid
@@ -1981,7 +1981,7 @@ export default function ComplianceReviewsView({
                   <button
                     type="button"
                     onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
-                    className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold text-white"
+                    className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
                     style={primaryActionStyle}
                   >
                     Post Note
@@ -2074,7 +2074,7 @@ export default function ComplianceReviewsView({
                     type="button"
                     disabled={reviewWorkflowMutation.isPending}
                     onClick={() => reviewWorkflowMutation.mutate({ reviewId: selectedRow.id, action: "approve" })}
-                    className="inline-flex h-10 items-center gap-2 bg-[#14244a] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-10 items-center gap-2 bg-[#14244a] px-4 text-[13px] font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <CheckCircleOutlined /> Approve Compliance
                   </button>
@@ -2082,7 +2082,7 @@ export default function ComplianceReviewsView({
                     type="button"
                     title="No approval variants are supported by the compliance workflow yet."
                     onClick={() => showToast("Only a standard approval is supported today.", "info")}
-                    className="flex h-10 w-8 items-center justify-center border-l border-white/20 bg-[#14244a] text-white hover:bg-[#1c2f5c]"
+                    className="flex h-10 w-8 items-center justify-center border-l border-white/20 bg-[#14244a] !text-white hover:bg-[#1c2f5c]"
                   >
                     <DownOutlined className="text-[10px]" />
                   </button>
@@ -2135,7 +2135,7 @@ export default function ComplianceReviewsView({
                     { onSuccess: () => setRejectReason(null) },
                   );
                 }}
-                className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#ef2f32] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#ef2f32] px-4 text-[13px] font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <CloseOutlined /> Confirm Rejection
               </button>

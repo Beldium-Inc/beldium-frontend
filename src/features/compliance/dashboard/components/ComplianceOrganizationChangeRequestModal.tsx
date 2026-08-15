@@ -102,7 +102,7 @@ export default function ComplianceOrganizationChangeRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,28,36,0.74)] px-4 py-8">
-      <div className="relative max-h-[90vh] w-full max-w-[760px] overflow-y-auto rounded-[32px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
+      <div className="relative max-h-[90vh] w-full max-w-[760px] overflow-y-auto rounded-[20px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
         <div className="flex items-center justify-between border-b border-[#edf1f6] px-7 py-6">
           <h2 className="text-[18px] font-semibold text-[#252b37] sm:text-[20px]">
             {copy.title}
@@ -226,7 +226,7 @@ export default function ComplianceOrganizationChangeRequestModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="inline-flex h-16 items-center justify-center rounded-[18px] bg-[#13264e] px-10 text-[16px] font-semibold text-white shadow-[0_22px_44px_-28px_rgba(19,38,78,0.85)] transition-colors hover:bg-[#182f5f]"
+            className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
           >
             Submit approval
           </button>

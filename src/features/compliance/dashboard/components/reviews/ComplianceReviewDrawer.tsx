@@ -128,7 +128,7 @@ export default function ComplianceReviewDrawer({
                   <div className="flex flex-col items-end gap-3">
                     <StatusBadgePill badge={formatReviewStatusBadge(status)} />
                     {status === "pending" ? (
-                      <span className="inline-flex rounded-full bg-[#1d5de2] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
+                      <span className="inline-flex rounded-full bg-[#1d5de2] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] !text-white">
                         New
                       </span>
                     ) : null}
@@ -234,7 +234,7 @@ export default function ComplianceReviewDrawer({
                 type="button"
                 onClick={() => onAction(primaryAction)}
                 disabled={activeAction != null}
-                className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-[16px] bg-[#14244a] px-5 text-[16px] font-semibold text-white shadow-[0_18px_36px_-24px_rgba(20,36,74,0.8)] transition-colors hover:bg-[#182c57] disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182c57] disabled:cursor-not-allowed disabled:opacity-70"
                 style={primaryActionStyle}
               >
                 {activeAction === primaryAction ? "Working..." : primaryLabel}
@@ -246,7 +246,7 @@ export default function ComplianceReviewDrawer({
                   type="button"
                   onClick={() => onAction("reject")}
                   disabled={activeAction != null}
-                  className="mt-3 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[16px] border border-[#dfe5ef] bg-white px-5 text-[16px] font-semibold text-[#2b3140] transition-colors hover:bg-[#fafbfd] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[#dfe5ef] bg-white px-4 text-[13px] font-semibold text-[#2b3140] transition-colors hover:bg-[#fafbfd] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {activeAction === "reject" ? "Working..." : "Pass/Ignore"}
                 </button>

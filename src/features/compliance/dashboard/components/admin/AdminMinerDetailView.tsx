@@ -58,7 +58,7 @@ export default function AdminMinerDetailView({
         <div className="space-y-5">
           <div className="rounded-[24px] border border-[#e8ecf4] bg-white p-6">
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-full text-[20px] font-semibold text-white"
+              className="flex h-16 w-16 items-center justify-center rounded-full text-[20px] font-semibold !text-white"
               style={{ backgroundColor: row.detail.logoColor }}
             >
               {row.detail.logoInitials}
@@ -187,7 +187,7 @@ export default function AdminMinerDetailView({
             type="button"
             onClick={onRequestDocuments}
             style={primaryActionStyle}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-4 text-[14px] font-semibold text-white"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#14244a] px-4 text-[14px] font-semibold !text-white"
           >
             Request Additional Documents
           </button>

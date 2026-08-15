@@ -122,19 +122,19 @@ const settingsCards: SettingsHubCard[] = [
 ];
 
 const settingsCardClassName =
-  "group flex h-full flex-col rounded-[28px] border border-[#e8ecf4] bg-white p-5 text-left shadow-[0_24px_60px_-48px_rgba(16,30,61,0.45)] transition-all hover:-translate-y-0.5 hover:border-[#d7e0f0] hover:shadow-[0_32px_70px_-44px_rgba(16,30,61,0.38)]";
+  "group flex h-full flex-col rounded-[16px] border border-[#e8ecf4] bg-white p-5 text-left shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] transition-all hover:-translate-y-0.5 hover:border-[#d7e0f0]";
 
 function SummaryCard({ card }: { card: SettingsSummaryCard }) {
   return (
-    <article className="rounded-[22px] border border-[#e8ecf4] bg-white px-5 py-4 shadow-[0_20px_45px_-42px_rgba(16,30,61,0.55)]">
-      <div className="flex items-center gap-3 text-[15px] text-[#7b8392]">
-        <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#eef4ff] text-[20px] text-[#2463eb]">
+    <article className="rounded-[16px] border border-[#e8ecf4] bg-white px-5 py-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+      <div className="flex items-center gap-3 text-[13px] text-[#7b8392]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef4ff] text-[16px] text-[#2463eb]">
           {card.icon}
         </span>
         <span>{card.label}</span>
       </div>
 
-      <div className="mt-5 text-[34px] font-semibold tracking-[-0.06em] text-[#252b37]">
+      <div className="mt-3 text-[28px] font-bold leading-none tracking-[-0.03em] text-[#1c2230]">
         {card.value}
       </div>
     </article>
@@ -153,7 +153,7 @@ function SettingsCardItem({
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-[#eef4ff] text-[25px] text-[#2463eb]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#eef4ff] text-[18px] text-[#2463eb]">
           {card.icon}
         </span>
         {card.view ? (
@@ -161,7 +161,7 @@ function SettingsCardItem({
             href={`/compliancedashboard?persona=${persona}&view=${card.view}`}
             onClick={onNavigate}
             aria-label={`Open ${card.title}`}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e6ebf4] text-[18px] text-[#2f3541] transition-colors group-hover:border-[#cfd9e8] group-hover:bg-[#f8fafc]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e6ebf4] text-[14px] text-[#2f3541] transition-colors group-hover:border-[#cfd9e8] group-hover:bg-[#f8fafc]"
           >
             <ArrowRightOutlined />
           </Link>
@@ -175,23 +175,23 @@ function SettingsCardItem({
               )
             }
             aria-label={`Open ${card.title}`}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e6ebf4] text-[18px] text-[#2f3541] transition-colors group-hover:border-[#cfd9e8] group-hover:bg-[#f8fafc]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e6ebf4] text-[14px] text-[#2f3541] transition-colors group-hover:border-[#cfd9e8] group-hover:bg-[#f8fafc]"
           >
             <ArrowRightOutlined />
           </button>
         )}
       </div>
 
-      <div className="mt-8 flex-1">
-        <h2 className="text-[20px] font-semibold tracking-[-0.05em] text-[#252b37]">
+      <div className="mt-5 flex-1">
+        <h2 className="text-[15px] font-semibold text-[#2a2f39]">
           {card.title}
         </h2>
-        <p className="mt-2 text-[15px] leading-7 text-[#727b8c]">
+        <p className="mt-1.5 text-[13px] leading-6 text-[#727b8c]">
           {card.description}
         </p>
       </div>
 
-      <div className="mt-7 border-t border-[#edf1f6] pt-5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#9aa2b0]">
+      <div className="mt-4 border-t border-[#edf1f6] pt-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#9aa2b0]">
         {card.footer}
       </div>
     </>
@@ -212,29 +212,21 @@ export default function ComplianceSettingsHomeView({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[32px] border border-[#e8ecf4] bg-white shadow-[0_28px_60px_-48px_rgba(16,30,61,0.35)]">
-        <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10 xl:px-10">
-          <div>
-            <h1 className="text-[38px] font-semibold tracking-[-0.06em] text-[#2a2f39] sm:text-[46px]">
-              Settings
-            </h1>
-            <p className="mt-3 max-w-[780px] text-[16px] leading-7 text-[#70798a]">
-              Manage institutional configuration, rules, and access controls.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[28px] font-bold tracking-[-0.03em] text-[#2a2f39]">Settings</h1>
+        <p className="mt-1 max-w-[560px] text-[14px] text-[#7a8291]">
+          Manage institutional configuration, rules, and access controls.
+        </p>
+      </div>
 
-          <div className="grid gap-4 md:max-w-[760px] md:grid-cols-2">
-            {summaryCards.map((card) => (
-              <SummaryCard key={card.label} card={card} />
-            ))}
-          </div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 md:max-w-[560px]">
+        {summaryCards.map((card) => (
+          <SummaryCard key={card.label} card={card} />
+        ))}
+      </div>
 
-        <div className="border-t border-[#edf1f6]" />
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {settingsCards.map((card) => (
           <SettingsCardItem
             key={card.id}
