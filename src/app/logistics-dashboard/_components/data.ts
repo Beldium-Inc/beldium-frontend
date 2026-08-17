@@ -662,6 +662,174 @@ export const walletRecentActivity = [
   { title: "Delivery Confirmed", jobId: "TRP-20499 · BUA Batteries", time: "Yesterday, 8:25 AM", kind: "check" as const },
 ];
 
+// ---------------- Fleet management page ----------------
+
+export const fleetStats = [
+  { label: "Total Fleet", value: "24", sub: "Registered vehicles" },
+  { label: "Available", value: "16", sub: "Ready for assignment" },
+  { label: "Assigned", value: "6", sub: "Currently on jobs" },
+  { label: "Maintenance", value: "2", sub: "Unavailable" },
+];
+
+export const fleetAlerts = [
+  { label: "Truck TRK-108 insurance expires in", days: "8 days" },
+  { label: "Truck TRK-015 roadworthiness expires in", days: "8 days" },
+  { label: "Truck TRK-015 roadworthiness expires in", days: "8 days" },
+];
+
+export interface FleetVehicle {
+  id: string;
+  vehicle: string;
+  make: string;
+  model: string;
+  year: string;
+  registration: string;
+  type: string;
+  insurance: "Valid" | "Expiring soon" | "Expired";
+  insuranceNumber: string;
+  insuranceExpiry: string;
+  roadworthiness: "Valid" | "Expiring soon" | "Expired";
+  roadworthinessNumber: string;
+  roadworthinessExpiry: string;
+  status: "Available" | "Assigned" | "Maintenance";
+  dateAdded: string;
+  photos: string[];
+  currentAssignment?: {
+    jobId: string;
+    job: string;
+    route: string;
+    assignedDate: string;
+    jobStatus: string;
+  };
+  driver?: {
+    name: string;
+    phone: string;
+    email: string;
+    dateAssigned: string;
+    status: "Active" | "Inactive";
+  };
+  maintenance?: { title: string; date: string; mileage: string; provider: string };
+  history: { title: string; time: string }[];
+}
+
+export const fleetVehicles: FleetVehicle[] = [
+  {
+    id: "VEH-B0284",
+    vehicle: "Mercedes-Benz Actros",
+    make: "Mercedes-Benz",
+    model: "Actros",
+    year: "2023",
+    registration: "JKA-482-RT",
+    type: "Truck",
+    insurance: "Valid",
+    insuranceNumber: "INS-2B26-48291",
+    insuranceExpiry: "12 Sep 2026",
+    roadworthiness: "Valid",
+    roadworthinessNumber: "RW-2B26-48291",
+    roadworthinessExpiry: "04 Nov 2026",
+    status: "Available",
+    dateAdded: "10 Jun 2026",
+    photos: [],
+    currentAssignment: {
+      jobId: "BLD-00481",
+      job: "Limestone transport",
+      route: "Oyo → Lagos",
+      assignedDate: "15 Aug 2026",
+      jobStatus: "Active",
+    },
+    driver: {
+      name: "David Okafor",
+      phone: "+234-000-0004",
+      email: "davidokafor@gmail.com",
+      dateAssigned: "15 Aug 2026",
+      status: "Active",
+    },
+    maintenance: { title: "Routine Service", date: "12 Aug 2026", mileage: "84,200 km", provider: "FleetCare services" },
+    history: [
+      { title: "Maintenance completed", time: "Today, 09:41 AM" },
+      { title: "Roadworthiness uploaded", time: "06 Aug 2026, 09:41 PM" },
+      { title: "Vehicle insurance", time: "06 Aug 2026, 09:41 PM" },
+      { title: "Vehicle added", time: "19 Jun 2025, 10:00 AM" },
+    ],
+  },
+  {
+    id: "VEH-B0285",
+    vehicle: "Volvo FH",
+    make: "Volvo",
+    model: "FH16",
+    year: "2022",
+    registration: "LAG-901-KD",
+    type: "Flatbed Truck",
+    insurance: "Valid",
+    insuranceNumber: "INS-2B26-48292",
+    insuranceExpiry: "20 Oct 2026",
+    roadworthiness: "Valid",
+    roadworthinessNumber: "RW-2B26-48292",
+    roadworthinessExpiry: "02 Dec 2026",
+    status: "Assigned",
+    dateAdded: "02 May 2026",
+    photos: [],
+    history: [{ title: "Vehicle added", time: "02 May 2026, 10:00 AM" }],
+  },
+  {
+    id: "VEH-B0286",
+    vehicle: "MAN TGS",
+    make: "MAN",
+    model: "TGS",
+    year: "2021",
+    registration: "ABJ-774-MN",
+    type: "Tipper",
+    insurance: "Expiring soon",
+    insuranceNumber: "INS-2B26-48293",
+    insuranceExpiry: "25 Aug 2026",
+    roadworthiness: "Valid",
+    roadworthinessNumber: "RW-2B26-48293",
+    roadworthinessExpiry: "14 Jan 2027",
+    status: "Maintenance",
+    dateAdded: "18 Mar 2026",
+    photos: [],
+    history: [{ title: "Vehicle added", time: "18 Mar 2026, 10:00 AM" }],
+  },
+  {
+    id: "VEH-B0287",
+    vehicle: "Toyota Hilux",
+    make: "Toyota",
+    model: "Hilux",
+    year: "2020",
+    registration: "IB-391-KP",
+    type: "Pickup",
+    insurance: "Expired",
+    insuranceNumber: "INS-2B26-48294",
+    insuranceExpiry: "02 Jul 2026",
+    roadworthiness: "Expiring soon",
+    roadworthinessNumber: "RW-2B26-48294",
+    roadworthinessExpiry: "28 Aug 2026",
+    status: "Available",
+    dateAdded: "09 Jan 2026",
+    photos: [],
+    history: [{ title: "Vehicle added", time: "09 Jan 2026, 10:00 AM" }],
+  },
+  {
+    id: "VEH-B0288",
+    vehicle: "Sinotruk Howo",
+    make: "Sinotruk",
+    model: "Howo",
+    year: "2019",
+    registration: "OG-PQ2-1Y",
+    type: "Tipper",
+    insurance: "Valid",
+    insuranceNumber: "INS-2B26-48295",
+    insuranceExpiry: "11 Nov 2026",
+    roadworthiness: "Expired",
+    roadworthinessNumber: "RW-2B26-48295",
+    roadworthinessExpiry: "30 Jun 2026",
+    status: "Maintenance",
+    dateAdded: "22 Feb 2026",
+    photos: [],
+    history: [{ title: "Vehicle added", time: "22 Feb 2026, 10:00 AM" }],
+  },
+];
+
 export interface AllocationVehicle {
   id: string;
   type: string;

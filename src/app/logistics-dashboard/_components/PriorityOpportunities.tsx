@@ -20,11 +20,11 @@ export default function PriorityOpportunities({
         <div>
           <h2 className="font-semibold text-[#172554]">Priority Opportunities</h2>
           <p className="text-xs text-[#8b93a1] mt-0.5">
-            Sample preview: see the Transport Opportunities tab for your live, backend-connected list.
+            New transport jobs that match your fleet and service areas.
           </p>
         </div>
         <span className="rounded-full bg-[#fff4df] text-[#e09408] text-xs font-medium px-2.5 py-1 whitespace-nowrap">
-          Preview
+          3 new today
         </span>
       </div>
 

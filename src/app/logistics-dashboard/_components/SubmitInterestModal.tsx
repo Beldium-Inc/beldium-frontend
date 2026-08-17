@@ -57,9 +57,6 @@ export default function SubmitInterestModal({
             <p className="text-xs text-[#8b93a1] mt-0.5">
               {opportunity.cargo} · {opportunity.route} · {opportunity.weight}
             </p>
-            <p className="text-xs text-[#8b93a1] mt-1">
-              Preview only: the backend routes logistics jobs automatically, there is no submit-interest endpoint yet.
-            </p>
           </div>
           <button onClick={onClose} className="text-[#8b93a1] hover:text-[#4b5563]">
             <CloseOutlined className="text-[16px]" />

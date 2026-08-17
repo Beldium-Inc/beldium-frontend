@@ -1,51 +1,20 @@
 "use client";
 
-import type { TransactionRecord } from "./types";
-
 const WIDTH = 640;
 const HEIGHT = 220;
 const PAD_L = 44;
 const PAD_B = 24;
 
-function monthKey(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+export interface CashFlowSeries {
+  months: string[];
+  income: number[];
+  withdrawals: number[];
+  pending: number[];
 }
 
-function monthLabel(key: string) {
-  const [year, month] = key.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
-
-export default function CashFlowChart({ transactions }: { transactions: TransactionRecord[] }) {
-  const now = new Date();
-  const months: string[] = [];
-  for (let i = 5; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-
-  const delivered = new Map<string, number>();
-  const pending = new Map<string, number>();
-  months.forEach((m) => {
-    delivered.set(m, 0);
-    pending.set(m, 0);
-  });
-
-  transactions.forEach((t) => {
-    const key = monthKey(t.created_at);
-    if (!delivered.has(key)) return;
-    const value = Number(t.total_value ?? 0);
-    if (t.final_status === "completed") {
-      delivered.set(key, (delivered.get(key) ?? 0) + value);
-    } else if (t.final_status !== "cancelled") {
-      pending.set(key, (pending.get(key) ?? 0) + value);
-    }
-  });
-
-  const deliveredValues = months.map((m) => delivered.get(m) ?? 0);
-  const pendingValues = months.map((m) => pending.get(m) ?? 0);
-  const max = Math.max(1, ...deliveredValues, ...pendingValues);
+export default function CashFlowChart({ data }: { data: CashFlowSeries }) {
+  const { months } = data;
+  const max = Math.max(1, ...data.income, ...data.withdrawals, ...data.pending);
   const gridValues = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(max * f));
 
   function toPoints(values: number[]) {
@@ -60,8 +29,9 @@ export default function CashFlowChart({ transactions }: { transactions: Transact
   }
 
   const series = [
-    { key: "delivered", label: "Delivered value", color: "#1ea43b", values: deliveredValues },
-    { key: "pending", label: "In progress value", color: "#e09408", values: pendingValues },
+    { key: "income", label: "Income", color: "#1ea43b", values: data.income },
+    { key: "withdrawals", label: "Withdrawals", color: "#2f6fed", values: data.withdrawals },
+    { key: "pending", label: "Pending", color: "#e09408", values: data.pending },
   ];
 
   return (
@@ -82,7 +52,7 @@ export default function CashFlowChart({ transactions }: { transactions: Transact
             <g key={g}>
               <line x1={PAD_L} x2={WIDTH} y1={y} y2={y} stroke="#F1F2F4" strokeWidth={1} />
               <text x={0} y={y + 4} fontSize={9} fill="#9CA3AF">
-                {g >= 1000000 ? `₦${(g / 1000000).toFixed(1)}M` : `₦${g}`}
+                {g >= 1 ? `₦${g}M` : `₦0`}
               </text>
             </g>
           );
@@ -114,7 +84,7 @@ export default function CashFlowChart({ transactions }: { transactions: Transact
           const x = PAD_L + i * stepX;
           return (
             <text key={m} x={x} y={HEIGHT - 4} fontSize={10} fill="#9CA3AF" textAnchor="middle">
-              {monthLabel(m)}
+              {m}
             </text>
           );
         })}

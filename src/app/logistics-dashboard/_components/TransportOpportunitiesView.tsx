@@ -1,103 +1,51 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ClockCircleOutlined,
   EnvironmentOutlined,
   CheckOutlined,
-  CloseOutlined,
   InboxOutlined,
   FieldTimeOutlined,
   AimOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
 import { classNames, statusStyles } from "@/src/features/compliance/dashboard/lib/style";
-import { showToast } from "@/src/store/toast.store";
-import { getApiErrorMessage, updateRfqAssignmentStatus } from "./api";
-import { useLogisticsRfqs, useRfqAssignments } from "./useLogisticsData";
-import type { Rfq, RfqAssignment } from "./types";
+import { opportunitiesStats, transportListings, TransportListing } from "./data";
+import { Opportunity, opportunities } from "./data";
+import OpportunityDetailPanel from "./OpportunityDetailPanel";
+import SubmitInterestModal from "./SubmitInterestModal";
 
-function formatDate(value: string | null) {
-  if (!value) return "Not set";
-  return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+const statIcons = [InboxOutlined, FieldTimeOutlined, AimOutlined, FileSearchOutlined];
+
+function priorityStyle(priority: TransportListing["priority"]) {
+  if (priority === "High Priority") return statusStyles.red;
+  if (priority === "Medium Priority") return statusStyles.amber;
+  return statusStyles.slate;
 }
 
-// Hours remaining until an RFQ's delivery_deadline. Returns null when the
-// deadline is missing (nothing to compute) rather than fabricating a number.
-function hoursRemaining(deadline: string | null | undefined) {
-  if (!deadline) return null;
-  const diffMs = new Date(deadline).getTime() - Date.now();
-  return diffMs / (1000 * 60 * 60);
-}
-
-function deadlineLabel(deadline: string | null | undefined) {
-  const hours = hoursRemaining(deadline);
-  if (hours === null) return "No deadline set";
-  if (hours <= 0) return "Deadline passed";
-  if (hours < 48) return `${Math.round(hours)} Hour${Math.round(hours) === 1 ? "" : "s"} Remaining`;
-  return `${Math.round(hours / 24)} Days Remaining`;
-}
-
-// Priority pill derived from real urgency (time to deadline), not a
-// fabricated backend field.
-function priorityFromDeadline(deadline: string | null | undefined) {
-  const hours = hoursRemaining(deadline);
-  if (hours === null) return null;
-  if (hours <= 12) return { label: "High Priority", tone: statusStyles.red };
-  if (hours <= 48) return { label: "Medium Priority", tone: statusStyles.amber };
-  return null;
-}
-
-function OpportunityCard({
-  assignment,
-  rfq,
+function ListingCard({
+  listing,
+  onViewDetails,
+  onSubmitInterest,
 }: {
-  assignment: RfqAssignment;
-  rfq: Rfq | undefined;
+  listing: TransportListing;
+  onViewDetails: () => void;
+  onSubmitInterest: () => void;
 }) {
-  const queryClient = useQueryClient();
-
-  const respond = useMutation({
-    mutationFn: (status: "accepted" | "rejected") =>
-      updateRfqAssignmentStatus({ assignmentId: assignment.id, status }),
-    onSuccess: (_data, status) => {
-      showToast(
-        status === "accepted" ? "Job accepted. It now appears under Assigned Jobs." : "Job declined.",
-        "success",
-      );
-      queryClient.invalidateQueries({ queryKey: ["logistics"] });
-    },
-    onError: (error) => {
-      showToast(getApiErrorMessage(error, "Could not update this opportunity."), "error");
-    },
-  });
-
-  const priority = priorityFromDeadline(rfq?.delivery_deadline);
-
+  const priority = priorityStyle(listing.priority);
   return (
     <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-[#172554]">
-              {rfq?.mineral_type ? `${rfq.mineral_type} Transport` : "Mineral Transport"}
-            </h3>
-            {priority && (
-              <span
-                className={classNames(
-                  "text-[11px] font-medium px-2 py-0.5 rounded-full",
-                  priority.tone.container,
-                )}
-              >
-                {priority.label}
-              </span>
-            )}
+            <h3 className="font-semibold text-[#172554]">{listing.title}</h3>
+            <span className={classNames("text-[11px] font-medium px-2 py-0.5 rounded-full", priority.container)}>
+              {listing.priority}
+            </span>
           </div>
-          <p className="text-xs text-[#8b93a1] mt-0.5">{rfq?.rfq_code ?? assignment.rfq}</p>
           <p className="text-xs text-[#8b93a1] mt-0.5">
-            {rfq?.pickup_location ?? "Origin not specified"} <EnvironmentOutlined className="mx-1" />
-            {rfq?.destination ?? "Destination not specified"}
+            {listing.trpId} · Posted by {listing.postedBy}
           </p>
         </div>
         <span
@@ -107,50 +55,141 @@ function OpportunityCard({
           )}
         >
           <ClockCircleOutlined className="text-[12px]" />
-          {deadlineLabel(rfq?.delivery_deadline)}
+          {listing.hoursRemaining}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
-        <div>
-          <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Total Weight</div>
-          <div className="text-[#293041] mt-0.5">{rfq?.total_weight ? `${rfq.total_weight} MT` : "Not set"}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_240px] gap-4 mt-4">
+        <div className="rounded-[12px] border border-[#e8ecf4] bg-[#fafbfd] px-4 py-3">
+          <div className="flex items-start gap-2">
+            <EnvironmentOutlined className="mt-1 text-[11px] text-[#101e3d]" />
+            <div>
+              <div className="text-[13px] font-semibold text-[#293041]">{listing.origin.name}</div>
+              <div className="text-[11px] text-[#8b93a1]">{listing.origin.sub}</div>
+            </div>
+          </div>
+          <div className="my-2 ml-[5px] h-3 w-px bg-[#dbe0ea]" />
+          <div className="flex items-start gap-2">
+            <span className="mt-1 h-2 w-2 rounded-full bg-[#1ea43b]" />
+            <div>
+              <div className="text-[13px] font-semibold text-[#293041]">{listing.destination.name}</div>
+              <div className="text-[11px] text-[#8b93a1]">{listing.destination.sub}</div>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-[#edf1f7] flex justify-between text-[11px] text-[#8b93a1]">
+            <span>
+              DISTANCE
+              <div className="text-[13px] font-medium text-[#293041]">{listing.distanceKm}</div>
+            </span>
+            <span>
+              TRANSIT
+              <div className="text-[13px] font-medium text-[#293041]">{listing.transitDays}</div>
+            </span>
+          </div>
         </div>
+
         <div>
-          <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Incoterm</div>
-          <div className="text-[#293041] mt-0.5">{rfq?.incoterm ?? "Not set"}</div>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Mineral</div>
+              <div className="text-[#293041] mt-0.5">{listing.mineral}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Cargo Weight</div>
+              <div className="text-[#293041] mt-0.5">{listing.cargoWeight}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Packaging</div>
+              <div className="text-[#293041] mt-0.5">{listing.packaging}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Pickup Window</div>
+              <div className="text-[#293041] mt-0.5">{listing.pickupWindow}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Delivery Window</div>
+              <div className="text-[#293041] mt-0.5">{listing.deliveryWindow}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Vehicle Requirement</div>
+              <div className="text-[#293041] mt-0.5">{listing.vehicleRequirement}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            {listing.tags.map((tag) => (
+              <span
+                key={tag.label}
+                className={classNames(
+                  "inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full",
+                  tag.met ? statusStyles.green.container : statusStyles.slate.container,
+                )}
+              >
+                {tag.met ? <CheckOutlined className="text-[10px]" /> : null}
+                {tag.label}
+              </span>
+            ))}
+          </div>
         </div>
-        <div>
-          <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Delivery Deadline</div>
-          <div className="text-[#293041] mt-0.5">{formatDate(rfq?.delivery_deadline ?? null)}</div>
-        </div>
-        <div>
-          <div className="text-[11px] text-[#8b93a1] uppercase tracking-wide">Pricing</div>
-          <div className="text-[#293041] mt-0.5">{rfq?.pricing_structure ?? "Not set"}</div>
+
+        <div className="rounded-[12px] border border-[#e8ecf4] bg-[#fafbfd] p-4">
+          <div className="flex items-center justify-between text-[12px] font-medium text-[#293041]">
+            <span>Fleet Compatibility</span>
+            <span>{listing.fleetCompatibilityPct}%</span>
+          </div>
+          <div className="mt-2 h-1.5 rounded-full bg-[#e5e8ef] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#1ea43b]"
+              style={{ width: `${listing.fleetCompatibilityPct}%` }}
+            />
+          </div>
+          <div className="mt-3 space-y-2 text-[12px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[#6f7786] flex items-center gap-1.5">
+                <CheckOutlined className="text-[10px] text-[#1ea43b]" /> Available Vehicles
+              </span>
+              <span className="font-medium text-[#293041]">{listing.availableVehicles}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#6f7786] flex items-center gap-1.5">
+                <CheckOutlined className="text-[10px] text-[#1ea43b]" /> Certified Drivers
+              </span>
+              <span className="font-medium text-[#293041]">{listing.certifiedDrivers}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#6f7786] flex items-center gap-1.5">
+                <CheckOutlined className="text-[10px] text-[#1ea43b]" /> Insurance Status
+              </span>
+              <span className="font-medium text-[#293041]">{listing.insuranceStatus}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#6f7786] flex items-center gap-1.5">
+                <CheckOutlined className="text-[10px] text-[#1ea43b]" /> Roadworthiness
+              </span>
+              <span className="font-medium text-[#293041]">{listing.roadworthiness}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {rfq?.fleet_requirements && (
-        <p className="text-xs text-[#6f7786] mt-3">Fleet requirements: {rfq.fleet_requirements}</p>
-      )}
-
-      <div className="flex items-center justify-end gap-2 mt-4">
-        <button
-          type="button"
-          disabled={respond.isPending}
-          onClick={() => respond.mutate("rejected")}
-          className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-lg border border-[#f7d6d7] text-[#ef2f32] hover:bg-[#fff5f5] disabled:opacity-60"
-        >
-          <CloseOutlined /> Decline
-        </button>
-        <button
-          type="button"
-          disabled={respond.isPending}
-          onClick={() => respond.mutate("accepted")}
-          className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-lg bg-[#101e3d] text-white hover:bg-[#182a52] disabled:opacity-60"
-        >
-          <CheckOutlined /> Accept Job
-        </button>
+      <div className="flex items-center justify-between gap-2 mt-4 pt-4 border-t border-[#edf1f7]">
+        <span className="text-xs text-[#8b93a1]">{listing.postedAgo}</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onViewDetails}
+            className="text-sm px-4 py-1.5 rounded-lg border border-[#dbe0ea] text-[#293041] hover:bg-[#f9fafc]"
+          >
+            View Details
+          </button>
+          <button
+            type="button"
+            onClick={onSubmitInterest}
+            className="text-sm px-4 py-1.5 rounded-lg bg-[#101e3d] !text-white hover:bg-[#182a52]"
+          >
+            Submit Interest
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -159,104 +198,49 @@ function OpportunityCard({
 export default function TransportOpportunitiesView() {
   const [query, setQuery] = useState("");
   const [originState, setOriginState] = useState("");
-  const { data: rfqs, isLoading: rfqsLoading, isError: rfqsError } = useLogisticsRfqs();
-  const {
-    data: assignments,
-    isLoading: assignmentsLoading,
-    isError: assignmentsError,
-  } = useRfqAssignments();
+  const [vehicleType, setVehicleType] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [sort, setSort] = useState("closing");
+  const [detailOpp, setDetailOpp] = useState<Opportunity | null>(null);
+  const [interestOpp, setInterestOpp] = useState<Opportunity | null>(null);
 
-  const pendingAssignments = useMemo(
-    () => (assignments ?? []).filter((a) => a.status === "pending"),
-    [assignments],
+  const originOptions = useMemo(
+    () => Array.from(new Set(transportListings.map((l) => l.origin.sub.replace("Origin · ", "")))),
+    [],
   );
 
-  const rfqById = useMemo(() => {
-    const map = new Map<string, Rfq>();
-    (rfqs ?? []).forEach((r) => map.set(r.id, r));
-    return map;
-  }, [rfqs]);
-
-  // Origins are free-text pickup_location strings on the RFQ, so this is a
-  // real, backend-derived list rather than a fixed dropdown of states.
-  const originOptions = useMemo(() => {
-    const set = new Set<string>();
-    pendingAssignments.forEach((a) => {
-      const loc = rfqById.get(a.rfq)?.pickup_location;
-      if (loc) set.add(loc);
-    });
-    return Array.from(set).sort();
-  }, [pendingAssignments, rfqById]);
-
   const filtered = useMemo(() => {
-    let list = pendingAssignments;
+    let list = transportListings;
     if (originState) {
-      list = list.filter((a) => rfqById.get(a.rfq)?.pickup_location === originState);
+      list = list.filter((l) => l.origin.sub.includes(originState));
+    }
+    if (vehicleType) {
+      list = list.filter((l) => l.vehicleRequirement.toLowerCase().includes(vehicleType.toLowerCase()));
+    }
+    if (deadline) {
+      list = list.filter((l) => l.hoursRemaining.toLowerCase().includes(deadline.toLowerCase()));
     }
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter((a) => {
-        const rfq = rfqById.get(a.rfq);
-        return (
-          rfq?.rfq_code?.toLowerCase().includes(q) ||
-          rfq?.mineral_type?.toLowerCase().includes(q) ||
-          rfq?.destination?.toLowerCase().includes(q) ||
-          rfq?.pickup_location?.toLowerCase().includes(q)
-        );
-      });
+      list = list.filter(
+        (l) =>
+          l.trpId.toLowerCase().includes(q) ||
+          l.mineral.toLowerCase().includes(q) ||
+          l.postedBy.toLowerCase().includes(q) ||
+          l.origin.name.toLowerCase().includes(q) ||
+          l.destination.name.toLowerCase().includes(q),
+      );
     }
-    // Sort by closing soonest first (real delivery_deadline field).
-    return [...list].sort((a, b) => {
-      const da = rfqById.get(a.rfq)?.delivery_deadline;
-      const db = rfqById.get(b.rfq)?.delivery_deadline;
-      if (!da && !db) return 0;
-      if (!da) return 1;
-      if (!db) return -1;
-      return new Date(da).getTime() - new Date(db).getTime();
-    });
-  }, [pendingAssignments, rfqById, query, originState]);
+    if (sort === "compatibility") {
+      list = [...list].sort((a, b) => b.fleetCompatibilityPct - a.fleetCompatibilityPct);
+    }
+    return list;
+  }, [query, originState, vehicleType, deadline, sort]);
 
-  const closingSoonCount = useMemo(
-    () =>
-      pendingAssignments.filter((a) => {
-        const hours = hoursRemaining(rfqById.get(a.rfq)?.delivery_deadline);
-        return hours !== null && hours > 0 && hours <= 12;
-      }).length,
-    [pendingAssignments, rfqById],
-  );
+  const hasFilters = query || originState || vehicleType || deadline;
 
-  // "Best Fleet Matches" and "Submitted Interests" have no backend concept
-  // (no fleet-compatibility scoring, no submit-interest endpoint). Rather
-  // than invent numbers, these cards are relabeled to real, honest metrics.
-  const stats = [
-    {
-      icon: InboxOutlined,
-      label: "Open Opportunities",
-      value: String(pendingAssignments.length),
-      caption: "Available transport jobs",
-    },
-    {
-      icon: FieldTimeOutlined,
-      label: "Closing Soon",
-      value: String(closingSoonCount),
-      caption: "Response deadline within 12 hours",
-    },
-    {
-      icon: AimOutlined,
-      label: "Fleet Matches",
-      value: "—",
-      caption: "Fleet matching not available yet",
-    },
-    {
-      icon: FileSearchOutlined,
-      label: "Submitted Interests",
-      value: "—",
-      caption: "Submit Interest isn't connected to the backend yet",
-    },
-  ];
-
-  const isLoading = rfqsLoading || assignmentsLoading;
-  const isError = rfqsError || assignmentsError;
+  const opportunityFor = (listing: TransportListing) =>
+    opportunities.find((o) => o.route.includes(listing.origin.name.split(" ")[0])) ?? opportunities[0];
 
   return (
     <div className="space-y-5">
@@ -268,19 +252,22 @@ export default function TransportOpportunitiesView() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]"
-          >
-            <span className="w-8 h-8 rounded-lg bg-[#e9f0ff] flex items-center justify-center text-[#101e3d] mb-3">
-              <s.icon className="text-[15px]" />
-            </span>
-            <div className="text-sm text-[#6f7786]">{s.label}</div>
-            <div className="text-2xl font-semibold text-[#172554] mt-1">{s.value}</div>
-            <div className="text-xs text-[#8b93a1] mt-1">{s.caption}</div>
-          </div>
-        ))}
+        {opportunitiesStats.map((s, i) => {
+          const Icon = statIcons[i];
+          return (
+            <div
+              key={s.label}
+              className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]"
+            >
+              <span className="w-8 h-8 rounded-lg bg-[#e9f0ff] flex items-center justify-center text-[#101e3d] mb-3">
+                <Icon className="text-[15px]" />
+              </span>
+              <div className="text-sm text-[#6f7786]">{s.label}</div>
+              <div className="text-2xl font-semibold text-[#172554] mt-1">{s.value}</div>
+              <div className="text-xs text-[#8b93a1] mt-1">{s.sub}</div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-4 flex flex-wrap items-center gap-3">
@@ -295,53 +282,88 @@ export default function TransportOpportunitiesView() {
           onChange={(e) => setOriginState(e.target.value)}
           className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] outline-none"
         >
-          <option value="">Origin: All</option>
+          <option value="">Origin State</option>
           {originOptions.map((o) => (
             <option key={o} value={o}>
               {o}
             </option>
           ))}
         </select>
-        <span
-          title="RFQ has no structured vehicle-type field (fleet_requirements is free text)"
-          className="text-xs px-3 py-2 rounded-lg border border-dashed border-[#e4e9f2] text-[#b7bec9] cursor-not-allowed select-none"
+        <select
+          value={vehicleType}
+          onChange={(e) => setVehicleType(e.target.value)}
+          className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] outline-none"
         >
-          Vehicle Type (not available)
-        </span>
-        {originState && (
+          <option value="">Vehicle Type</option>
+          <option value="dump">Dump Trucks</option>
+          <option value="flatbed">Flatbeds</option>
+          <option value="tipper">Tippers</option>
+        </select>
+        <select
+          value={deadline}
+          onChange={(e) => setDeadline(e.target.value)}
+          className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] outline-none"
+        >
+          <option value="">Response Deadline</option>
+          <option value="Hours">Within hours</option>
+          <option value="Days">Within days</option>
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="bg-[#f9fafc] border border-[#e4e9f2] rounded-lg px-3 py-2 text-sm text-[#293041] outline-none"
+        >
+          <option value="closing">Sort · Closing Soon</option>
+          <option value="compatibility">Sort · Best Match</option>
+        </select>
+        {hasFilters && (
           <button
             type="button"
-            onClick={() => setOriginState("")}
+            onClick={() => {
+              setQuery("");
+              setOriginState("");
+              setVehicleType("");
+              setDeadline("");
+            }}
             className="text-xs text-[#101e3d] underline underline-offset-2"
           >
             Clear Filters
           </button>
         )}
+        <button
+          type="button"
+          className="ml-auto inline-flex items-center rounded-lg bg-[#101e3d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#182a52]"
+        >
+          Apply Filters
+        </button>
       </div>
 
-      {isLoading && (
+      {filtered.length === 0 && (
         <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-10 text-center text-[#8b93a1]">
-          Loading opportunities...
-        </div>
-      )}
-
-      {isError && !isLoading && (
-        <div className="rounded-[16px] border border-[#f7d6d7] bg-[#ffeff0] p-6 text-center text-[#ef2f32] text-sm">
-          Could not load transport opportunities. Log in as a logistics partner and try again.
-        </div>
-      )}
-
-      {!isLoading && !isError && filtered.length === 0 && (
-        <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-10 text-center text-[#8b93a1]">
-          No pending opportunities right now. New RFQs routed to you will appear here.
+          No opportunities match these filters.
         </div>
       )}
 
       <div className="space-y-5">
-        {filtered.map((assignment) => (
-          <OpportunityCard key={assignment.id} assignment={assignment} rfq={rfqById.get(assignment.rfq)} />
+        {filtered.map((listing) => (
+          <ListingCard
+            key={listing.trpId + listing.title}
+            listing={listing}
+            onViewDetails={() => setDetailOpp(opportunityFor(listing))}
+            onSubmitInterest={() => setInterestOpp(opportunityFor(listing))}
+          />
         ))}
       </div>
+
+      <OpportunityDetailPanel
+        opportunity={detailOpp}
+        onClose={() => setDetailOpp(null)}
+        onSubmitInterest={(opp) => {
+          setDetailOpp(null);
+          setInterestOpp(opp);
+        }}
+      />
+      <SubmitInterestModal opportunity={interestOpp} onClose={() => setInterestOpp(null)} />
     </div>
   );
 }

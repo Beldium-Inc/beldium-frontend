@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowUpOutlined,
+  BellOutlined,
   CheckCircleOutlined,
   CloseOutlined,
   DownloadOutlined,
@@ -12,169 +12,87 @@ import {
   ReloadOutlined,
   RightOutlined,
   SearchOutlined,
-  ThunderboltOutlined,
   UserSwitchOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 import { showToast } from "@/src/store/toast.store";
-import { getComplianceTeamMembers, type ComplianceTeamMember } from "@/src/features/compliance/dashboard/api";
+import {
+  getComplianceTeamMembers,
+  getPolicyAlerts,
+  getRegulatoryAlerts,
+  updateRegulatoryAlertStatus,
+  assignRegulatoryAlert,
+  type ComplianceTeamMember,
+  type RegulatoryAlertRecord,
+  type RegulatoryAlertSeverity,
+  type RegulatoryAlertStatus,
+  type RegulatoryAlertType,
+} from "@/src/features/compliance/dashboard/api";
+import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+function formatDateTime(value: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
-type AlertSeverity = "Critical" | "High" | "Medium" | "Low";
-type AlertStatus = "Open" | "Investigating" | "Pending" | "Resolved" | "Awaiting response";
-
-type EscalationInfo = {
-  escalatedBy: string;
-  reason: string;
-  escalatedAt: string;
-  reviewerNote: string;
+const ALERT_TYPE_LABEL: Record<RegulatoryAlertType, string> = {
+  license_expiry: "Licence Expiry",
+  rule_violation: "Rule Violation",
+  document: "Document",
 };
 
-type RegAlert = {
-  id: string;
-  severity: AlertSeverity;
-  alertType: string;
-  miner: string;
-  caseId: string;
-  assigned: string | null;
-  status: AlertStatus;
-  mineral: string;
-  location: string;
-  createdAt: string;
-  ruleId: string;
-  ruleDescription: string;
-  escalation: EscalationInfo | null;
+const SEVERITY_LABEL: Record<RegulatoryAlertSeverity, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  critical: "Critical",
 };
 
-type Reviewer = {
-  id: string;
-  name: string;
-  title: string;
-  workload: number;
-  availability: "Available" | "At capacity";
+const STATUS_LABEL: Record<RegulatoryAlertStatus, string> = {
+  open: "Open",
+  in_review: "In Review",
+  resolved: "Resolved",
 };
 
-const ESCALATION_REASONS = [
-  "Expired document",
-  "Suspected fraud",
-  "Repeated non-compliance",
-  "Data inconsistency",
-  "Community risk",
-];
+const severityBadgeStyle: Record<RegulatoryAlertSeverity, string> = {
+  critical: "bg-[#fff0f1] text-[#ef2f32] border border-[#f7d6d7]",
+  high: "bg-[#fff4df] text-[#df8b19] border border-[#f6e3bf]",
+  medium: "bg-[#fff4df] text-[#c99a2e] border border-[#f6e3bf]",
+  low: "bg-[#f4f6f9] text-[#6b7280] border border-[#e5e8ef]",
+};
 
-// ─── Mock data ───────────────────────────────────────────────────────────────
+const severityDot: Record<RegulatoryAlertSeverity, string> = {
+  critical: "bg-[#ef2f32]",
+  high: "bg-[#f3a000]",
+  medium: "bg-[#e0af3a]",
+  low: "bg-[#9ca3af]",
+};
 
-const ALERTS: RegAlert[] = [
-  {
-    id: "1",
-    severity: "Critical",
-    alertType: "Expired Mining License",
-    miner: "GreenRock Resources",
-    caseId: "BLD-00231",
-    assigned: "A. Bello",
-    status: "Open",
-    mineral: "Copper",
-    location: "Oyo state",
-    createdAt: "Aug, 15 2026. 3:34PM",
-    ruleId: "RULE-017",
-    ruleDescription:
-      "License expiry date (2024-05-12) has passed for active mining concession ID GRC-992. Operation flagged as continuing without valid regulatory clearance.",
-    escalation: null,
-  },
-  {
-    id: "2",
-    severity: "Medium",
-    alertType: "Exceeded Production Threshold",
-    miner: "TriVault Minerals",
-    caseId: "BLD-00231",
-    assigned: "A. Bello",
-    status: "Investigating",
-    mineral: "Lithium",
-    location: "Kaduna state",
-    createdAt: "Aug, 15 2026. 3:34PM",
-    ruleId: "RULE-089",
-    ruleDescription:
-      "Reported production volume exceeded the approved extraction cap of 15,000 MT for the current quarter.",
-    escalation: null,
-  },
-  {
-    id: "3",
-    severity: "Medium",
-    alertType: "Duplicate document",
-    miner: "Emerald Group",
-    caseId: "BLD-00233",
-    assigned: null,
-    status: "Pending",
-    mineral: "Gold",
-    location: "Gombe state",
-    createdAt: "Aug, 15 2026. 3:34PM",
-    ruleId: "RULE-017",
-    ruleDescription:
-      "License expiry date (2024-05-12) has passed for active mining concession ID GRC-992. Operation flagged as continuing without valid regulatory clearance.",
-    escalation: null,
-  },
-  {
-    id: "4",
-    severity: "High",
-    alertType: "Failed Verification Rule",
-    miner: "Atlas Mining Co.",
-    caseId: "BLD-00231",
-    assigned: "A. Bello",
-    status: "Investigating",
-    mineral: "Iron Ore",
-    location: "Kogi state",
-    createdAt: "Aug, 15 2026. 3:34PM",
-    ruleId: "RULE-033",
-    ruleDescription:
-      "Submitted carbon report failed automated verification checks against declared operational capacity.",
-    escalation: null,
-  },
-  {
-    id: "5",
-    severity: "Low",
-    alertType: "Duplicate documents",
-    miner: "Atlas Mining Co.",
-    caseId: "BLD-00231",
-    assigned: "A. Bello",
-    status: "Resolved",
-    mineral: "Iron Ore",
-    location: "Kogi state",
-    createdAt: "Aug, 14 2026. 11:02AM",
-    ruleId: "RULE-014",
-    ruleDescription: "Duplicate document detected across two separate submissions for the same case.",
-    escalation: null,
-  },
-  {
-    id: "6",
-    severity: "Low",
-    alertType: "Community Complaint",
-    miner: "PlainsGold Ltd",
-    caseId: "BLD-00231",
-    assigned: "A. Bello",
-    status: "Awaiting response",
-    mineral: "Gold",
-    location: "Zamfara state",
-    createdAt: "Aug, 14 2026. 9:47AM",
-    ruleId: "RULE-062",
-    ruleDescription: "Community complaint logged against operation; awaiting miner response.",
-    escalation: null,
-  },
-];
+const statusStyle: Record<RegulatoryAlertStatus, string> = {
+  open: "border border-[#e1e5ee] text-[#2f3541] bg-white",
+  in_review: "border border-[#dce7ff] bg-[#eef4ff] text-[#2661d8]",
+  resolved: "border border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b]",
+};
+
+type Reviewer = { id: string; name: string; title: string };
 
 function mapTeamMembersToReviewers(members: ComplianceTeamMember[]): Reviewer[] {
   return members
-    .filter((m) => m.status?.toLowerCase() !== "removed")
+    .filter((m) => m.status?.toLowerCase() !== "removed" && Boolean(m.user))
     .map((m) => ({
-      id: m.id,
+      id: m.user as string,
       name: m.full_name,
       title: m.role_detail?.name || m.department || "Team member",
-      workload: 0,
-      availability: m.status?.toLowerCase() === "active" ? "Available" : "At capacity",
     }));
 }
 
@@ -188,47 +106,8 @@ function useReviewerDirectory() {
   const raw = teamMembersQ.data?.data;
   const members = Array.isArray(raw) ? raw : raw?.results ?? [];
 
-  return {
-    reviewers: mapTeamMembersToReviewers(members),
-    isLoading: teamMembersQ.isLoading,
-    hasRealData: members.length > 0,
-  };
+  return { reviewers: mapTeamMembersToReviewers(members) };
 }
-
-type AlertHistoryEntry = { label: string; note?: string; time: string };
-
-const HISTORY_BY_STATUS: Record<string, AlertHistoryEntry[]> = {
-  assigned: [
-    { label: "Investigation / reviewed", note: "Note added by A. Bello", time: "Today, 09:41 AM" },
-    { label: "Assigned to A. Bello", time: "Today, 08:30 AM" },
-    { label: "Alert created", note: "System generated based on RULE-017", time: "Yesterday, 03:43 PM" },
-  ],
-  unassigned: [{ label: "Alert created", note: "System generated based on RULE-017", time: "Yesterday, 03:43 PM" }],
-};
-
-// ─── Severity / status styles ─────────────────────────────────────────────────
-
-const severityBadgeStyle: Record<AlertSeverity, string> = {
-  Critical: "bg-[#fff0f1] text-[#ef2f32] border border-[#f7d6d7]",
-  High: "bg-[#fff4df] text-[#df8b19] border border-[#f6e3bf]",
-  Medium: "bg-[#fff4df] text-[#c99a2e] border border-[#f6e3bf]",
-  Low: "bg-[#f4f6f9] text-[#6b7280] border border-[#e5e8ef]",
-};
-
-const severityDot: Record<AlertSeverity, string> = {
-  Critical: "bg-[#ef2f32]",
-  High: "bg-[#f3a000]",
-  Medium: "bg-[#e0af3a]",
-  Low: "bg-[#9ca3af]",
-};
-
-const statusStyle: Record<AlertStatus, string> = {
-  Open: "border border-[#e1e5ee] text-[#2f3541] bg-white",
-  Investigating: "border border-[#e1e5ee] text-[#2f3541] bg-white",
-  Pending: "border border-[#e1e5ee] text-[#2f3541] bg-white",
-  Resolved: "border border-[#caebd1] bg-[#ecfaf0] text-[#1ea43b]",
-  "Awaiting response": "border border-[#dce7ff] bg-[#eef4ff] text-[#2661d8]",
-};
 
 // ─── Metric card ─────────────────────────────────────────────────────────────
 
@@ -263,11 +142,9 @@ function MetricCard({
 
 function MoreMenu({
   alert,
-  onViewRule,
   onAssign,
 }: {
-  alert: RegAlert;
-  onViewRule: () => void;
+  alert: RegulatoryAlertRecord;
   onAssign: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -302,23 +179,11 @@ function MoreMenu({
               onClick={(e) => {
                 e.stopPropagation();
                 setOpen(false);
-                onViewRule();
-              }}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[13px] font-medium text-[#2f3541] hover:bg-[#f7f9fc]"
-            >
-              Triggered rule
-              <ThunderboltOutlined className="text-[13px] text-[#8a92a1]" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(false);
                 onAssign();
               }}
               className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[13px] font-medium text-[#2f3541] hover:bg-[#f7f9fc]"
             >
-              {alert.assigned ? "Re-assign to" : "Assign to"}
+              {alert.assigned_to ? "Re-assign to" : "Assign to"}
               <UserSwitchOutlined className="text-[13px] text-[#8a92a1]" />
             </button>
           </div>
@@ -344,11 +209,11 @@ function AlertsEmptyState({
         <InboxOutlined />
       </span>
       <div className="text-[16px] font-semibold text-[#2a2f39]">
-        {isError ? "Alert unavailable" : "No alert yet"}
+        {isError ? "Alert unavailable" : "No alerts yet"}
       </div>
       <p className="max-w-[320px] text-[13px] text-[#8a92a1]">
         {isError
-          ? "We couldn't load regulatory alerts. Check your connection and try again"
+          ? "We couldn't load regulatory alerts. Check your connection and try again."
           : "No alerts to review yet. Alerts will appear here when a compliance issue or regulatory risk is detected."}
       </p>
       <button
@@ -368,15 +233,15 @@ function AlertDetailDrawer({
   alert,
   onClose,
   onAssign,
-  onEscalate,
+  onSetStatus,
+  isUpdatingStatus,
 }: {
-  alert: RegAlert;
+  alert: RegulatoryAlertRecord;
   onClose: () => void;
   onAssign: () => void;
-  onEscalate: () => void;
+  onSetStatus: (status: RegulatoryAlertStatus) => void;
+  isUpdatingStatus: boolean;
 }) {
-  const history = alert.assigned ? HISTORY_BY_STATUS.assigned : HISTORY_BY_STATUS.unassigned;
-
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <button
@@ -390,9 +255,11 @@ function AlertDetailDrawer({
         <div className="flex items-center justify-between border-b border-[#edf1f7] px-6 py-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[18px] font-semibold text-[#202534]">Regulatory Alert</h2>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f6f9] px-2.5 py-1 text-[11px] font-medium text-[#6b7280]">
-              {alert.caseId}
-            </span>
+            {alert.miner_code ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f6f9] px-2.5 py-1 text-[11px] font-medium text-[#6b7280]">
+                {alert.miner_code}
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
@@ -405,10 +272,10 @@ function AlertDetailDrawer({
 
         <div className="flex-1 space-y-6 px-6 py-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-[20px] font-semibold text-[#1c2230]">{alert.alertType}</h3>
+            <h3 className="text-[20px] font-semibold text-[#1c2230]">{ALERT_TYPE_LABEL[alert.alert_type]}</h3>
             <span className={classNames("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", severityBadgeStyle[alert.severity])}>
               <span className={classNames("h-1.5 w-1.5 rounded-full", severityDot[alert.severity])} />
-              {alert.severity}
+              {SEVERITY_LABEL[alert.severity]}
             </span>
           </div>
 
@@ -417,31 +284,31 @@ function AlertDetailDrawer({
             <div className="grid grid-cols-2 gap-y-4 rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4 text-[13px]">
               <div>
                 <div className="text-[#8a92a1]">Miner</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.miner}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.miner_name || "—"}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Status</div>
                 <div className="mt-1">
-                  <span className="inline-flex items-center rounded-[8px] border border-[#e1e5ee] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#2f3541]">
-                    {alert.status}
+                  <span className={classNames("inline-flex items-center rounded-[8px] px-2.5 py-1 text-[11px] font-semibold", statusStyle[alert.status])}>
+                    {STATUS_LABEL[alert.status]}
                   </span>
                 </div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Reviewer</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.assigned ?? "Unassigned"}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.assigned_to_name || "Unassigned"}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Mineral</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.mineral}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.mineral || "—"}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Created on</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.createdAt}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{formatDateTime(alert.created_at)}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Location</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.location}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.location || "—"}</div>
               </div>
             </div>
           </section>
@@ -449,80 +316,48 @@ function AlertDetailDrawer({
           <section>
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Why this alert was triggered</div>
             <div className="rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4">
-              <div className="text-[13px] font-semibold text-[#2a2f39]">{alert.ruleId}</div>
-              <p className="mt-1.5 text-[13px] leading-5 text-[#5d6675]">{alert.ruleDescription}</p>
+              <div className="text-[13px] font-semibold text-[#2a2f39]">{alert.rule_name || ALERT_TYPE_LABEL[alert.alert_type]}</div>
+              <p className="mt-1.5 text-[13px] leading-5 text-[#5d6675]">
+                {alert.rule_description || "No linked compliance rule description is available for this alert."}
+              </p>
             </div>
           </section>
 
-          <section>
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Related entity</div>
-            <div className="flex items-center justify-between rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
-                  {alert.miner.slice(0, 2).toUpperCase()}
-                </span>
-                <div>
-                  <div className="text-[13px] font-semibold text-[#2a2f39]">{alert.miner}</div>
-                  <div className="text-[12px] text-[#8a92a1]">Mining company</div>
+          {alert.miner_name ? (
+            <section>
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Related entity</div>
+              <div className="flex items-center justify-between rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
+                    {alert.miner_name.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div>
+                    <div className="text-[13px] font-semibold text-[#2a2f39]">{alert.miner_name}</div>
+                    <div className="text-[12px] text-[#8a92a1]">Mining company</div>
+                  </div>
                 </div>
+                <RightOutlined className="text-[10px] text-[#8a92a1]" />
               </div>
-              <button type="button" className="flex items-center gap-1 text-[12px] font-semibold text-[#2661d8]">
-                View miner <RightOutlined className="text-[10px]" />
-              </button>
-            </div>
-          </section>
+            </section>
+          ) : null}
 
           <section>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Alert history</div>
-              <button type="button" className="text-[12px] font-semibold text-[#2661d8]">
-                See all
-              </button>
-            </div>
-            <div className="space-y-4">
-              {history.map((entry, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <span
-                      className={classNames(
-                        "mt-1 h-2.5 w-2.5 rounded-full",
-                        i === 0 ? "bg-[#2661d8]" : "border-2 border-[#d1d7e3] bg-white",
-                      )}
-                    />
-                    {i < history.length - 1 ? <span className="mt-1 h-full w-px flex-1 bg-[#e5e9f1]" /> : null}
-                  </div>
-                  <div className="pb-1">
-                    <div className="text-[12px] text-[#8a92a1]">{entry.time}</div>
-                    <div className="text-[13px] font-semibold text-[#2a2f39]">{entry.label}</div>
-                    {entry.note ? (
-                      <div className="text-[12px] text-[#8a92a1]">
-                        {entry.note}{" "}
-                        <button type="button" className="font-semibold text-[#2661d8]">
-                          View
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Timeline</div>
+            <div className="space-y-2 rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4 text-[13px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#8a92a1]">Created</span>
+                <span className="font-medium text-[#2a2f39]">{formatDateTime(alert.created_at)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8a92a1]">Last updated</span>
+                <span className="font-medium text-[#2a2f39]">{formatDateTime(alert.updated_at)}</span>
+              </div>
+              {alert.resolved_at ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a92a1]">Resolved</span>
+                  <span className="font-medium text-[#2a2f39]">{formatDateTime(alert.resolved_at)}</span>
                 </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Review notes</div>
-            <textarea
-              rows={3}
-              placeholder="Add an internal note..."
-              className="w-full rounded-[14px] border border-[#e1e5ee] bg-white p-3 text-[13px] text-[#2a2f39] outline-none placeholder:text-[#a0a6b3] focus:border-[#101e3d]"
-            />
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => showToast("Note added", "success")}
-                className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-medium text-[#2f3541] hover:bg-[#f7f9fc]"
-              >
-                Post Note
-              </button>
+              ) : null}
             </div>
           </section>
         </div>
@@ -533,35 +368,37 @@ function AlertDetailDrawer({
             onClick={onAssign}
             className="inline-flex h-10 items-center rounded-[10px] border border-[#dce7ff] bg-[#eef4ff] px-4 text-[13px] font-semibold text-[#2661d8] hover:bg-[#e2ecff]"
           >
-            {alert.assigned ? "Re-assign" : "Assign"}
+            {alert.assigned_to ? "Re-assign" : "Assign"}
           </button>
-          <button
-            type="button"
-            onClick={onEscalate}
-            className="inline-flex h-10 items-center rounded-[10px] border border-[#f6e3bf] bg-white px-4 text-[13px] font-semibold text-[#df8b19] hover:bg-[#fffaf0]"
-          >
-            Escalate
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              showToast(`Case ${alert.caseId} dismissed`, "info");
-              onClose();
-            }}
-            className="inline-flex h-10 items-center rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-semibold text-[#2f3541] hover:bg-[#f7f9fc]"
-          >
-            Dismiss
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              showToast(`Case ${alert.caseId} marked resolved`, "success");
-              onClose();
-            }}
-            className="ml-auto inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-5 text-[13px] font-semibold !text-white hover:bg-[#182c57]"
-          >
-            Mark Resolved
-          </button>
+          {alert.status !== "in_review" ? (
+            <button
+              type="button"
+              disabled={isUpdatingStatus}
+              onClick={() => onSetStatus("in_review")}
+              className="inline-flex h-10 items-center rounded-[10px] border border-[#f6e3bf] bg-white px-4 text-[13px] font-semibold text-[#df8b19] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Start Review
+            </button>
+          ) : null}
+          {alert.status !== "resolved" ? (
+            <button
+              type="button"
+              disabled={isUpdatingStatus}
+              onClick={() => onSetStatus("resolved")}
+              className="ml-auto inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-5 text-[13px] font-semibold !text-white hover:bg-[#182c57] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Mark Resolved
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={isUpdatingStatus}
+              onClick={() => onSetStatus("open")}
+              className="ml-auto inline-flex h-10 items-center rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-semibold text-[#2f3541] hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Reopen
+            </button>
+          )}
         </div>
       </aside>
     </div>
@@ -576,14 +413,14 @@ function AssignReviewerModal({
   onClose,
   onAssigned,
 }: {
-  alert: RegAlert;
+  alert: RegulatoryAlertRecord;
   reviewers: Reviewer[];
   onClose: () => void;
-  onAssigned: (reviewerName: string) => void;
+  onAssigned: (reviewerId: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string>(reviewers[0]?.id ?? "");
-  const isReassign = Boolean(alert.assigned);
+  const isReassign = Boolean(alert.assigned_to);
 
   const filtered = useMemo(
     () =>
@@ -593,22 +430,15 @@ function AssignReviewerModal({
     [search, reviewers],
   );
 
-  const handleConfirm = () => {
-    const reviewer = reviewers.find((r) => r.id === selectedId);
-    onAssigned(reviewer?.name ?? "Reviewer");
-    showToast("Reviewer assigned successfully", "success");
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,28,36,0.6)] px-4 py-8">
-      <div className="relative w-full max-w-[520px] rounded-[24px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
+      <div className="relative w-full max-w-[480px] rounded-[20px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
         <div className="flex items-start justify-between border-b border-[#edf1f6] px-6 py-5">
           <div>
-            <h2 className="text-[17px] font-semibold text-[#252b37]">
-              {isReassign ? "Re-assign Reviewer" : "Assign Reviewer"}
-            </h2>
-            <p className="mt-1 text-[13px] text-[#8a92a1]">Select an analyst to handle case {alert.caseId}</p>
+            <h2 className="text-[17px] font-semibold text-[#252b37]">{isReassign ? "Re-assign Reviewer" : "Assign Reviewer"}</h2>
+            <p className="mt-1 text-[13px] text-[#8a92a1]">
+              Select a team member{alert.miner_code ? ` to handle case ${alert.miner_code}` : ""}
+            </p>
           </div>
           <button
             type="button"
@@ -627,107 +457,48 @@ function AssignReviewerModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, level or department type..."
+              placeholder="Search by name or role..."
               className="h-11 w-full rounded-[12px] border border-[#dfe4ec] bg-white pl-9 pr-3 text-[13px] text-[#2d3441] outline-none placeholder:text-[#a0a6b3] focus:border-[#101e3d]"
             />
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-[12px] text-[#8a92a1]">Filter by:</span>
-            <button type="button" className="inline-flex h-8 items-center rounded-full border border-[#e1e5ee] px-3 text-[12px] font-medium text-[#4b5260]">
-              Available
-            </button>
-            <button type="button" className="inline-flex h-8 items-center rounded-full border border-[#e1e5ee] px-3 text-[12px] font-medium text-[#4b5260]">
-              Senior analyst
-            </button>
-          </div>
-
-          {isReassign ? (
-            <div className="mt-4">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Previous reviewer</div>
-              <div className="flex items-center justify-between rounded-[12px] border border-[#e8ecf4] bg-[#fbfcfe] px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
-                    {alert.assigned
-                      ?.split(" ")
-                      .map((p) => p[0])
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                  <div>
-                    <div className="text-[13px] font-semibold text-[#2a2f39]">{alert.assigned}</div>
-                    <div className="text-[12px] text-[#8a92a1]">Compliance I</div>
-                  </div>
-                </div>
-                <div className="text-right text-[12px]">
-                  <span className="text-[#8a92a1]">Workload: </span>
-                  <span className="font-semibold text-[#2f3541]">5 active</span>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mt-4 max-h-[260px] space-y-2 overflow-y-auto">
-            {filtered.map((r) => (
-              <label
-                key={r.id}
-                className={classNames(
-                  "flex cursor-pointer items-center justify-between rounded-[12px] border px-4 py-3 transition-colors",
-                  selectedId === r.id ? "border-[#101e3d] bg-[#fafbfe]" : "border-[#e8ecf4] hover:bg-[#fafbfe]",
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
-                    {r.name
-                      .split(" ")
-                      .map((p) => p[0])
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                  <div>
-                    <div className="text-[13px] font-semibold text-[#2a2f39]">{r.name}</div>
-                    <div className="text-[12px] text-[#8a92a1]">{r.title}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right text-[12px]">
+          {reviewers.length === 0 ? (
+            <p className="mt-4 text-[13px] text-[#8a92a1]">
+              No active team members found. Invite reviewers from Settings → Teams & Roles — they can be assigned once they accept their invite.
+            </p>
+          ) : (
+            <div className="mt-4 max-h-[280px] space-y-2 overflow-y-auto">
+              {filtered.map((r) => (
+                <label
+                  key={r.id}
+                  className={classNames(
+                    "flex cursor-pointer items-center justify-between rounded-[12px] border px-4 py-3 transition-colors",
+                    selectedId === r.id ? "border-[#101e3d] bg-[#fafbfe]" : "border-[#e8ecf4] hover:bg-[#fafbfe]",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
+                      {r.name
+                        .split(" ")
+                        .map((p) => p[0])
+                        .join("")
+                        .toUpperCase()}
+                    </span>
                     <div>
-                      <span className="text-[#8a92a1]">Workload: </span>
-                      <span
-                        className={classNames(
-                          "font-semibold",
-                          r.availability === "At capacity" ? "text-[#ef2f32]" : "text-[#2f3541]",
-                        )}
-                      >
-                        {r.workload} active
-                      </span>
-                    </div>
-                    <div className={classNames("font-medium", r.availability === "At capacity" ? "text-[#ef2f32]" : "text-[#2661d8]")}>
-                      {r.availability}
+                      <div className="text-[13px] font-semibold text-[#2a2f39]">{r.name}</div>
+                      <div className="text-[12px] text-[#8a92a1]">{r.title}</div>
                     </div>
                   </div>
-                  <input
-                    type="radio"
-                    name="reviewer"
-                    checked={selectedId === r.id}
-                    onChange={() => setSelectedId(r.id)}
-                    className="h-4 w-4"
-                  />
-                </div>
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-3 text-right">
-            <button type="button" className="text-[12px] font-semibold text-[#2661d8]">
-              See all
-            </button>
-          </div>
+                  <input type="radio" name="reviewer" checked={selectedId === r.id} onChange={() => setSelectedId(r.id)} className="h-4 w-4" />
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f6] px-6 py-4">
           <span className="flex items-center gap-1.5 text-[12px] text-[#8a92a1]">
-            <ExclamationCircleOutlined /> Assignment notifies Reviewer immediately.
+            <ExclamationCircleOutlined /> Assignment updates the alert immediately.
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -739,8 +510,9 @@ function AssignReviewerModal({
             </button>
             <button
               type="button"
-              onClick={handleConfirm}
-              className="inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white hover:bg-[#182c57]"
+              onClick={() => selectedId && onAssigned(selectedId)}
+              disabled={!selectedId}
+              className="inline-flex h-10 items-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white hover:bg-[#182c57] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Confirm assignment
             </button>
@@ -751,349 +523,82 @@ function AssignReviewerModal({
   );
 }
 
-// ─── Escalate alert modal ───────────────────────────────────────────────────────
-
-function EscalateAlertModal({
-  alert,
-  reviewers,
-  onClose,
-  onEscalated,
-}: {
-  alert: RegAlert;
-  reviewers: Reviewer[];
-  onClose: () => void;
-  onEscalated: (info: EscalationInfo) => void;
-}) {
-  const [reason, setReason] = useState("");
-  const [investigatorId, setInvestigatorId] = useState("");
-  const [notes, setNotes] = useState("");
-
-  const canSubmit = reason.trim().length > 0;
-
-  const handleEscalate = () => {
-    if (!canSubmit) return;
-    const investigator = reviewers.find((r) => r.id === investigatorId);
-    onEscalated({
-      escalatedBy: "You",
-      reason,
-      escalatedAt: "Just now",
-      reviewerNote: notes,
-    });
-    showToast(`Case ${alert.caseId} escalated${investigator ? ` to ${investigator.name}` : ""}`, "success");
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,28,36,0.6)] px-4 py-8">
-      <div className="relative w-full max-w-[480px] rounded-[24px] bg-white shadow-[0_40px_120px_-56px_rgba(15,23,42,0.75)]">
-        <div className="flex items-start justify-between border-b border-[#edf1f6] px-6 py-5">
-          <div>
-            <h2 className="text-[17px] font-semibold text-[#252b37]">Escalate</h2>
-            <p className="mt-1 text-[13px] text-[#8a92a1]">Escalate this alert for investigation</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[16px] text-[#303744] hover:bg-[#f7f9fc]"
-            aria-label="Close escalate modal"
-          >
-            <CloseOutlined />
-          </button>
-        </div>
-
-        <div className="space-y-4 px-6 py-5">
-          <div className="grid grid-cols-2 gap-4 rounded-[12px] border border-[#e8ecf4] bg-[#fbfcfe] p-4 text-[13px]">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Miner</div>
-              <div className="mt-1 font-semibold text-[#2a2f39]">{alert.miner}</div>
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Case ID</div>
-              <div className="mt-1 font-mono font-semibold text-[#2a2f39]">{alert.caseId}</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Alert trigger</div>
-              <div className="mt-1 font-semibold text-[#2a2f39]">{alert.alertType}</div>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[13px] font-medium text-[#2f3541]">Escalation reason</label>
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="mt-1.5 h-11 w-full appearance-none rounded-[10px] border border-[#dfe4ec] bg-white px-3 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
-            >
-              <option value="">Select reason</option>
-              {ESCALATION_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[13px] font-medium text-[#2f3541]">Investigators</label>
-            <select
-              value={investigatorId}
-              onChange={(e) => setInvestigatorId(e.target.value)}
-              className="mt-1.5 h-11 w-full appearance-none rounded-[10px] border border-[#dfe4ec] bg-white px-3 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
-            >
-              <option value="">Select investigator</option>
-              {reviewers.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name} — {r.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[13px] font-medium text-[#2f3541]">Notes</label>
-            <textarea
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add an internal note..."
-              className="mt-1.5 w-full rounded-[10px] border border-[#dfe4ec] bg-white p-3 text-[13px] text-[#2a2f39] outline-none placeholder:text-[#a0a6b3] focus:border-[#101e3d]"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 border-t border-[#edf1f6] px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 items-center rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-semibold text-[#2f3541] hover:bg-[#f7f9fc]"
-          >
-            Dismiss
-          </button>
-          <button
-            type="button"
-            onClick={handleEscalate}
-            disabled={!canSubmit}
-            className="inline-flex h-10 items-center rounded-[10px] bg-[#ef2f32] px-4 text-[13px] font-semibold !text-white hover:bg-[#d92629] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Escalate alert
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Escalated case review (full page) ─────────────────────────────────────────
-
-function EscalatedCaseReviewView({
-  alert,
-  onBack,
-  onAssign,
-}: {
-  alert: RegAlert;
-  onBack: () => void;
-  onAssign: () => void;
-}) {
-  const history = alert.assigned ? HISTORY_BY_STATUS.assigned : HISTORY_BY_STATUS.unassigned;
-  const escalation = alert.escalation;
-
-  return (
-    <div className="space-y-4">
-      <div className="text-[13px] text-[#8a92a1]">
-        <button type="button" onClick={onBack} className="font-medium text-[#8a92a1] hover:text-[#2a2f39]">
-          Escalated cases
-        </button>
-        <span className="mx-2">›</span>
-        <span className="text-[#2a2f39]">Case ID: {alert.caseId}</span>
-      </div>
-
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[24px] font-bold tracking-[-0.02em] text-[#1c2230]">{alert.miner}</h1>
-            <span className={classNames("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", severityBadgeStyle[alert.severity])}>
-              <span className={classNames("h-1.5 w-1.5 rounded-full", severityDot[alert.severity])} />
-              {alert.severity}
-            </span>
-          </div>
-          <div className="mt-1 text-[13px] text-[#8a92a1]">Subject: {alert.alertType}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onAssign}
-            className="inline-flex h-9 items-center rounded-[10px] border border-[#dce7ff] bg-[#eef4ff] px-4 text-[13px] font-semibold text-[#2661d8] hover:bg-[#e2ecff]"
-          >
-            {alert.assigned ? "Re-assign" : "Assign"}
-          </button>
-          <button
-            type="button"
-            onClick={() => showToast(`Case ${alert.caseId} dismissed`, "info")}
-            className="inline-flex h-9 items-center rounded-[10px] border border-[#e1e5ee] bg-white px-4 text-[13px] font-semibold text-[#2f3541] hover:bg-[#f7f9fc]"
-          >
-            Dismiss
-          </button>
-          <button
-            type="button"
-            onClick={() => showToast(`Case ${alert.caseId} marked resolved`, "success")}
-            className="inline-flex h-9 items-center rounded-[10px] bg-[#14244a] px-4 text-[13px] font-semibold !text-white hover:bg-[#182c57]"
-          >
-            Mark as Resolved
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
-          <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
-            <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#2a2f39]">
-              <ExclamationCircleOutlined className="text-[#df8b19]" />
-              Escalation Context
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-[13px]">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Escalated by</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{escalation?.escalatedBy ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Escalated reason</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{escalation?.reason ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Escalated on</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{escalation?.escalatedAt ?? "—"}</div>
-              </div>
-            </div>
-            <div className="mt-4 rounded-[12px] bg-[#fbfcfe] p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Reviewer note</div>
-              <p className="mt-1.5 text-[13px] leading-5 text-[#5d6675]">
-                {escalation?.reviewerNote?.trim() || "No note was added when this case was escalated."}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
-            <div className="mb-3 text-[13px] font-semibold text-[#2a2f39]">Investigation workspace</div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a92a1]">Alert trigger</div>
-            <p className="mt-1.5 text-[13px] leading-5 text-[#5d6675]">
-              {alert.ruleId}. {alert.ruleDescription}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[14px] border border-[#e8ecf4] bg-white p-5">
-          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a92a1]">Alert history</div>
-          <div className="space-y-4">
-            {(escalation
-              ? [
-                  {
-                    label: "Escalated for investigation",
-                    note: escalation.reviewerNote ? `Note added by ${escalation.escalatedBy}` : undefined,
-                    time: escalation.escalatedAt,
-                  },
-                  ...history,
-                ]
-              : history
-            ).map((entry, i, arr) => (
-              <div key={i} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <span
-                    className={classNames(
-                      "mt-1 h-2.5 w-2.5 rounded-full",
-                      i === 0 ? "bg-[#2661d8]" : "border-2 border-[#d1d7e3] bg-white",
-                    )}
-                  />
-                  {i < arr.length - 1 ? <span className="mt-1 h-full w-px flex-1 bg-[#e5e9f1]" /> : null}
-                </div>
-                <div className="pb-1">
-                  <div className="text-[12px] text-[#8a92a1]">{entry.time}</div>
-                  <div className="text-[13px] font-semibold text-[#2a2f39]">{entry.label}</div>
-                  {entry.note ? <div className="text-[12px] text-[#8a92a1]">{entry.note}</div> : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function RegulatoryAlertsView() {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [alerts, setAlerts] = useState<RegAlert[]>(ALERTS);
   const [activeAlertId, setActiveAlertId] = useState<string | null>(null);
   const [assignTargetId, setAssignTargetId] = useState<string | null>(null);
-  const [escalateTargetId, setEscalateTargetId] = useState<string | null>(null);
-  const [escalatedCaseId, setEscalatedCaseId] = useState<string | null>(null);
   const { reviewers } = useReviewerDirectory();
 
-  const allChecked = alerts.length > 0 && selectedIds.size === alerts.length;
+  const alertsQ = useQuery({
+    queryKey: ["regulatoryAlerts"],
+    queryFn: () => getRegulatoryAlerts(),
+    retry: false,
+  });
 
-  const toggleAll = () => {
-    if (allChecked) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(alerts.map((a) => a.id)));
-    }
-  };
+  const policyAlertsQ = useQuery({
+    queryKey: ["policyAlerts"],
+    queryFn: getPolicyAlerts,
+    retry: false,
+  });
 
-  const toggleOne = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const rawAlerts = alertsQ.data?.data;
+  const alerts: RegulatoryAlertRecord[] = Array.isArray(rawAlerts) ? rawAlerts : rawAlerts?.results ?? [];
+
+  const rawPolicyAlerts = policyAlertsQ.data?.data;
+  const policyAlerts = Array.isArray(rawPolicyAlerts) ? rawPolicyAlerts : rawPolicyAlerts?.results ?? [];
+
+  const statusMutation = useMutation({
+    mutationFn: ({ alertId, status }: { alertId: string; status: RegulatoryAlertStatus }) =>
+      updateRegulatoryAlertStatus(alertId, status),
+    onSuccess: () => {
+      showToast("Alert status updated", "success");
+      queryClient.invalidateQueries({ queryKey: ["regulatoryAlerts"] });
+    },
+    onError: (error: unknown) => {
+      showToast(getApiErrorMessage(error, "Unable to update this alert right now."), "error");
+    },
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ alertId, reviewerId }: { alertId: string; reviewerId: string }) =>
+      assignRegulatoryAlert(alertId, reviewerId),
+    onSuccess: () => {
+      showToast("Reviewer assigned successfully", "success");
+      queryClient.invalidateQueries({ queryKey: ["regulatoryAlerts"] });
+      setAssignTargetId(null);
+    },
+    onError: (error: unknown) => {
+      showToast(getApiErrorMessage(error, "Unable to assign this alert right now."), "error");
+    },
+  });
 
   const filteredAlerts = alerts.filter((a) =>
     search.trim()
-      ? a.miner.toLowerCase().includes(search.toLowerCase()) ||
-        a.caseId.toLowerCase().includes(search.toLowerCase()) ||
-        a.alertType.toLowerCase().includes(search.toLowerCase())
+      ? (a.miner_name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (a.miner_code || "").toLowerCase().includes(search.toLowerCase()) ||
+        ALERT_TYPE_LABEL[a.alert_type].toLowerCase().includes(search.toLowerCase())
       : true,
   );
 
   const activeAlert = alerts.find((a) => a.id === activeAlertId) ?? null;
   const assignTarget = alerts.find((a) => a.id === assignTargetId) ?? null;
-  const escalateTarget = alerts.find((a) => a.id === escalateTargetId) ?? null;
-  const escalatedCase = alerts.find((a) => a.id === escalatedCaseId) ?? null;
 
-  const handleAssigned = (alertId: string, reviewerName: string) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === alertId ? { ...a, assigned: reviewerName, status: a.status === "Pending" ? "Investigating" : a.status } : a)),
-    );
-  };
-
-  const handleEscalated = (alertId: string, info: EscalationInfo) => {
-    setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, escalation: info } : a)));
-    setActiveAlertId(null);
-    setEscalatedCaseId(alertId);
-  };
-
-  if (escalatedCase) {
+  const criticalCount = alerts.filter((a) => a.severity === "critical" && a.status !== "resolved").length;
+  const highCount = alerts.filter((a) => a.severity === "high" && a.status !== "resolved").length;
+  const inReviewCount = alerts.filter((a) => a.status === "in_review").length;
+  const resolvedTodayCount = alerts.filter((a) => {
+    if (!a.resolved_at) return false;
+    const resolvedDate = new Date(a.resolved_at);
+    const today = new Date();
     return (
-      <>
-        <EscalatedCaseReviewView
-          alert={escalatedCase}
-          onBack={() => setEscalatedCaseId(null)}
-          onAssign={() => setAssignTargetId(escalatedCase.id)}
-        />
-        {assignTarget ? (
-          <AssignReviewerModal
-            alert={assignTarget}
-            reviewers={reviewers}
-            onClose={() => setAssignTargetId(null)}
-            onAssigned={(name) => handleAssigned(assignTarget.id, name)}
-          />
-        ) : null}
-      </>
+      resolvedDate.getFullYear() === today.getFullYear() &&
+      resolvedDate.getMonth() === today.getMonth() &&
+      resolvedDate.getDate() === today.getDate()
     );
-  }
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -1116,7 +621,11 @@ export function RegulatoryAlertsView() {
           </button>
           <button
             type="button"
-            onClick={() => showToast("Alerts refreshed", "success")}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["regulatoryAlerts"] });
+              queryClient.invalidateQueries({ queryKey: ["policyAlerts"] });
+              showToast("Alerts refreshed", "success");
+            }}
             className="inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#e1e5ee] bg-white text-[#2f3541] hover:bg-[#f7f9fc] transition-colors"
             aria-label="Refresh alerts"
           >
@@ -1131,7 +640,7 @@ export function RegulatoryAlertsView() {
           icon={<WarningOutlined />}
           iconBg="bg-[#fff0f1]"
           iconColor="text-[#ef2f32]"
-          value="3"
+          value={String(criticalCount)}
           label="Critical Alerts"
           sub="Require immediate action"
         />
@@ -1139,23 +648,23 @@ export function RegulatoryAlertsView() {
           icon={<WarningOutlined />}
           iconBg="bg-[#fff4df]"
           iconColor="text-[#df8b19]"
-          value="3"
-          label="Warnings"
+          value={String(highCount)}
+          label="High Severity"
           sub="Action within 24-72 hrs"
         />
         <MetricCard
-          icon={<ArrowUpOutlined />}
-          iconBg="bg-[#fff0e6]"
-          iconColor="text-[#e5793a]"
-          value="4"
-          label="Escalated Cases"
+          icon={<ExclamationCircleOutlined />}
+          iconBg="bg-[#eef4ff]"
+          iconColor="text-[#2661d8]"
+          value={String(inReviewCount)}
+          label="In Review"
           sub="Under active investigation"
         />
         <MetricCard
           icon={<CheckCircleOutlined />}
           iconBg="bg-[#ecfaf0]"
           iconColor="text-[#1ea43b]"
-          value="1"
+          value={String(resolvedTodayCount)}
           label="Resolved Today"
           sub="Successfully closed"
         />
@@ -1168,7 +677,7 @@ export function RegulatoryAlertsView() {
           { dot: "bg-[#ef2f32]", label: "Critical", desc: "Immediate action" },
           { dot: "bg-[#f3a000]", label: "High", desc: "Within 24 hours" },
           { dot: "bg-[#e0af3a]", label: "Medium", desc: "Within 7 days" },
-          { dot: "bg-[#2661d8]", label: "Low", desc: "Monitor" },
+          { dot: "bg-[#9ca3af]", label: "Low", desc: "Monitor" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-2 text-[#4b5260]">
             <span className={classNames("h-2 w-2 rounded-full", item.dot)} />
@@ -1178,28 +687,6 @@ export function RegulatoryAlertsView() {
         ))}
       </div>
 
-      {/* Info cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-[14px] border border-[#e8ecf4] bg-white px-5 py-4">
-          <div>
-            <div className="text-[14px] font-semibold text-[#2a2f39]">Regulatory policy update</div>
-            <div className="mt-0.5 text-[13px] text-[#8a92a1]">Review latest changes to extraction guidelines (v2.4)</div>
-          </div>
-          <button type="button" className="shrink-0 text-[13px] font-medium text-[#2a2f39] underline underline-offset-2">
-            See all
-          </button>
-        </div>
-        <div className="flex items-center justify-between rounded-[14px] border border-[#e8ecf4] bg-white px-5 py-4">
-          <div>
-            <div className="text-[14px] font-semibold text-[#2a2f39]">Risk alert</div>
-            <div className="mt-0.5 text-[13px] text-[#8a92a1]">Unusual pattern detected in section 4 (logistics)</div>
-          </div>
-          <button type="button" className="shrink-0 text-[13px] font-medium text-[#2a2f39] underline underline-offset-2">
-            See all
-          </button>
-        </div>
-      </div>
-
       {/* Search */}
       <div className="relative max-w-[420px]">
         <SearchOutlined className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a0a6b3] text-[13px]" />
@@ -1207,93 +694,113 @@ export function RegulatoryAlertsView() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search miner, case ID, alert type..."
+          placeholder="Search miner, miner ID, alert type..."
           className="h-10 w-full rounded-[10px] border border-[#dfe4ec] bg-white pl-9 pr-3 text-[13px] text-[#2d3441] outline-none placeholder:text-[#a0a6b3] focus:border-[#101e3d]"
         />
       </div>
 
       {/* Table */}
       <div className="overflow-hidden rounded-[14px] border border-[#e5e9f1] bg-white">
-        {filteredAlerts.length === 0 ? (
-          <AlertsEmptyState variant="empty" onRefresh={() => setSearch("")} />
+        {alertsQ.isLoading ? (
+          <div className="px-6 py-20 text-center text-[13px] text-[#8a92a1]">Loading alerts…</div>
+        ) : alertsQ.isError ? (
+          <AlertsEmptyState variant="error" onRefresh={() => alertsQ.refetch()} />
+        ) : filteredAlerts.length === 0 ? (
+          <AlertsEmptyState variant="empty" onRefresh={() => alertsQ.refetch()} />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[820px] border-separate border-spacing-0 text-left text-[13px]">
                 <thead>
                   <tr className="bg-[#fafbfe] text-[#6b7280]">
-                    <th className="border-b border-[#e5e9f1] px-4 py-3 w-10">
-                      <input type="checkbox" checked={allChecked} onChange={toggleAll} className="rounded border-[#d1d5db]" />
-                    </th>
-                    <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Severity</th>
+                    <th className="border-b border-[#e5e9f1] px-4 py-3 font-medium">Severity</th>
                     <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Alert type</th>
                     <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Miner</th>
-                    <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Case ID</th>
+                    <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Miner ID</th>
                     <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Assigned</th>
                     <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">Status</th>
                     <th className="border-b border-[#e5e9f1] px-3 py-3 font-medium">More</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAlerts.map((alert, index) => {
-                    const isSelected = selectedIds.has(alert.id);
-                    return (
-                      <tr
-                        key={alert.id}
-                        onClick={() => (alert.escalation ? setEscalatedCaseId(alert.id) : setActiveAlertId(alert.id))}
-                        className={classNames(
-                          "cursor-pointer transition-colors",
-                          isSelected ? "bg-[#f0f5ff]" : index % 2 === 0 ? "bg-white" : "bg-[#fafbfe]",
-                          "hover:bg-[#f4f7fc]",
-                        )}
-                      >
-                        <td className="border-b border-[#f0f3f8] px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <input type="checkbox" checked={isSelected} onChange={() => toggleOne(alert.id)} className="rounded border-[#d1d5db]" />
-                        </td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3">
-                          <span className={classNames("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", severityBadgeStyle[alert.severity])}>
-                            <span className={classNames("h-1.5 w-1.5 rounded-full", severityDot[alert.severity])} />
-                            {alert.severity}
-                          </span>
-                        </td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3 font-medium text-[#2a2f39] whitespace-nowrap">{alert.alertType}</td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.miner}</td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3 font-mono text-[#5d6675]">{alert.caseId}</td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.assigned ?? "Unassigned"}</td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3">
-                          <span className={classNames("inline-flex items-center rounded-[8px] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap", statusStyle[alert.status])}>
-                            {alert.status}
-                          </span>
-                        </td>
-                        <td className="border-b border-[#f0f3f8] px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                          <MoreMenu
-                            alert={alert}
-                            onViewRule={() => setActiveAlertId(alert.id)}
-                            onAssign={() => setAssignTargetId(alert.id)}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filteredAlerts.map((alert, index) => (
+                    <tr
+                      key={alert.id}
+                      onClick={() => setActiveAlertId(alert.id)}
+                      className={classNames("cursor-pointer transition-colors", index % 2 === 0 ? "bg-white" : "bg-[#fafbfe]", "hover:bg-[#f4f7fc]")}
+                    >
+                      <td className="border-b border-[#f0f3f8] px-4 py-3">
+                        <span className={classNames("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", severityBadgeStyle[alert.severity])}>
+                          <span className={classNames("h-1.5 w-1.5 rounded-full", severityDot[alert.severity])} />
+                          {SEVERITY_LABEL[alert.severity]}
+                        </span>
+                      </td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 font-medium text-[#2a2f39] whitespace-nowrap">{ALERT_TYPE_LABEL[alert.alert_type]}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.miner_name || "—"}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 font-mono text-[#5d6675]">{alert.miner_code || "—"}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.assigned_to_name || "Unassigned"}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3">
+                        <span className={classNames("inline-flex items-center rounded-[8px] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap", statusStyle[alert.status])}>
+                          {STATUS_LABEL[alert.status]}
+                        </span>
+                      </td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                        <MoreMenu alert={alert} onAssign={() => setAssignTargetId(alert.id)} />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="flex items-center justify-between border-t border-[#f0f3f8] px-4 py-3 text-[13px] text-[#8a92a1]">
               <span>
                 Showing {filteredAlerts.length} of {alerts.length} alerts
               </span>
-              <div className="flex items-center gap-1">
-                <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#14244a] !text-white text-[12px] font-semibold">
-                  1
-                </button>
-                <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[#4b5260] hover:bg-[#f4f6fa] text-[12px]">
-                  2
-                </button>
-              </div>
             </div>
           </>
+        )}
+      </div>
+
+      {/* Regulatory Policy Alerts */}
+      <div className="rounded-[14px] border border-[#e8ecf4] bg-white overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f3f8]">
+          <div className="flex items-center gap-2">
+            <BellOutlined className="text-[#2661d8]" />
+            <span className="text-[15px] font-semibold text-[#2a2f39]">Regulatory Policy Alerts</span>
+            {policyAlerts.length > 0 ? (
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2661d8] text-[11px] font-semibold text-white">
+                {policyAlerts.length}
+              </span>
+            ) : null}
+          </div>
+          <span className="text-[12px] text-[#8a92a1]">Institution-level regulatory updates</span>
+        </div>
+
+        {policyAlerts.length === 0 ? (
+          <div className="px-5 py-8 text-center text-[13px] text-[#8a92a1]">No policy updates published yet.</div>
+        ) : (
+          <div className="divide-y divide-[#f0f3f8]">
+            {policyAlerts.map((p) => (
+              <div key={p.id} className="flex items-start gap-4 px-5 py-4">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-[#2661d8]">
+                  <BellOutlined className="text-[14px]" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[14px] font-semibold text-[#2a2f39]">{p.title}</span>
+                    <span className={classNames("inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold", severityBadgeStyle[p.severity])}>
+                      {SEVERITY_LABEL[p.severity]}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-[#8a92a1]">
+                    {p.category} · {formatDateTime(p.published_at)}
+                  </div>
+                  <div className="mt-1 text-[13px] text-[#5d6675] leading-5">{p.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -1302,7 +809,8 @@ export function RegulatoryAlertsView() {
           alert={activeAlert}
           onClose={() => setActiveAlertId(null)}
           onAssign={() => setAssignTargetId(activeAlert.id)}
-          onEscalate={() => setEscalateTargetId(activeAlert.id)}
+          onSetStatus={(status) => statusMutation.mutate({ alertId: activeAlert.id, status })}
+          isUpdatingStatus={statusMutation.isPending}
         />
       ) : null}
 
@@ -1311,16 +819,7 @@ export function RegulatoryAlertsView() {
           alert={assignTarget}
           reviewers={reviewers}
           onClose={() => setAssignTargetId(null)}
-          onAssigned={(name) => handleAssigned(assignTarget.id, name)}
-        />
-      ) : null}
-
-      {escalateTarget ? (
-        <EscalateAlertModal
-          alert={escalateTarget}
-          reviewers={reviewers}
-          onClose={() => setEscalateTargetId(null)}
-          onEscalated={(info) => handleEscalated(escalateTarget.id, info)}
+          onAssigned={(reviewerId) => assignMutation.mutate({ alertId: assignTarget.id, reviewerId })}
         />
       ) : null}
     </div>

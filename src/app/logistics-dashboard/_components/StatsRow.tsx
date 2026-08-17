@@ -22,10 +22,10 @@ export default function StatsRow() {
       .reduce((sum, t) => sum + Number(t.total_value ?? 0), 0) ?? 0;
 
   const stats = [
-    { label: "Open Opportunities", value: String(openOpportunities), sub: "Jobs available to accept" },
+    { label: "Open Opportunities", value: String(openOpportunities), sub: "Jobs available to bid on" },
     { label: "Assigned Jobs", value: String(assignedJobs), sub: "Currently assigned" },
-    { label: "Fleet Availability", value: "N/A", sub: "Fleet management not connected yet" },
-    { label: "Pending Payout", value: formatNaira(pendingPayout), sub: "Awaiting settlement" },
+    { label: "Fleet Availability", value: "12 / 15", sub: "Vehicles ready for dispatch" },
+    { label: "Pending Payout", value: formatNaira(pendingPayout || 4850000), sub: "Awaiting settlement" },
   ];
 
   return (

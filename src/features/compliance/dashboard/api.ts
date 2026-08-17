@@ -428,6 +428,7 @@ export const DEFAULT_COMPLIANCE_MY_TASKS: ComplianceReviewsResponse = {
 
 export type ComplianceTeamMember = {
   id: string;
+  user: string | null;
   full_name: string;
   email: string;
   role_detail?: { id: string; name: string } | null;
@@ -714,5 +715,78 @@ export type ChangePasswordPayload = {
 
 export async function changePassword(payload: ChangePasswordPayload) {
   const { data } = await authApi.post("/user/change_password/", payload);
+  return data;
+}
+
+export type RegulatoryAlertSeverity = "low" | "medium" | "high" | "critical";
+export type RegulatoryAlertStatus = "open" | "in_review" | "resolved";
+export type RegulatoryAlertType = "license_expiry" | "rule_violation" | "document";
+
+export type RegulatoryAlertRecord = {
+  id: string;
+  severity: RegulatoryAlertSeverity;
+  alert_type: RegulatoryAlertType;
+  miner: string | null;
+  miner_name: string | null;
+  miner_code: string | null;
+  mineral: string | null;
+  location: string | null;
+  review: string | null;
+  triggered_rule: string | null;
+  rule_name: string | null;
+  rule_description: string | null;
+  assigned_to: string | null;
+  assigned_to_name: string | null;
+  assigned_to_email: string | null;
+  status: RegulatoryAlertStatus;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RegulatoryAlertsResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: RegulatoryAlertRecord[];
+    count?: number;
+  } | RegulatoryAlertRecord[];
+};
+
+export async function getRegulatoryAlerts(params?: { status?: RegulatoryAlertStatus }) {
+  const { data } = await authApi.get<RegulatoryAlertsResponse>("/compliance/regulatory-alerts/", { params });
+  return data;
+}
+
+export async function updateRegulatoryAlertStatus(alertId: string, status: RegulatoryAlertStatus) {
+  const { data } = await authApi.patch(`/compliance/regulatory-alerts/${alertId}/status/`, { status });
+  return data;
+}
+
+export async function assignRegulatoryAlert(alertId: string, assignedTo: string) {
+  const { data } = await authApi.patch(`/compliance/regulatory-alerts/${alertId}/assign/`, { assigned_to: assignedTo });
+  return data;
+}
+
+export type PolicyAlertRecord = {
+  id: string;
+  title: string;
+  severity: RegulatoryAlertSeverity;
+  category: string;
+  description: string;
+  published_at: string;
+};
+
+export type PolicyAlertsResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: PolicyAlertRecord[];
+    count?: number;
+  } | PolicyAlertRecord[];
+};
+
+export async function getPolicyAlerts() {
+  const { data } = await authApi.get<PolicyAlertsResponse>("/compliance/policy-alerts/");
   return data;
 }
