@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Poppins, Bungee } from "next/font/google";
 import "antd/dist/reset.css";
 import "@/src/styles/global.css";
@@ -46,6 +46,11 @@ export const metadata: Metadata = {
     shortcut: "/assets/images/logo.png",
     apple: "/assets/images/logo.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
