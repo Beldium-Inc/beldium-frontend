@@ -10,7 +10,6 @@ import ComplianceSecurityAccessControlsView from "@/src/features/compliance/dash
 import ComplianceAuditsLegalRecordsView from "@/src/features/compliance/dashboard/components/ComplianceAuditsLegalRecordsView";
 import NotificationsAlertsView from "@/src/features/compliance/dashboard/components/settings/NotificationsAlertsView";
 import DocumentsDataControlsView from "@/src/features/compliance/dashboard/components/settings/DocumentsDataControlsView";
-import VerificationRulesSettingsView from "@/src/features/compliance/dashboard/components/settings/VerificationRulesSettingsView";
 
 export default function ComplianceSettingsView({
   persona,
@@ -64,10 +63,6 @@ export default function ComplianceSettingsView({
     return <ComplianceAuditsLegalRecordsView />;
   }
 
-  return view === "documents-data-controls" ? (
-    <DocumentsDataControlsView />
-  ) : (
-    <VerificationRulesSettingsView />
-  );
+  return <DocumentsDataControlsView />;
 }
 

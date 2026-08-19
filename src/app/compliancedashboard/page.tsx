@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  type AdminPipelineRow,
-  ADMIN_PIPELINE_ROWS,
-  PARTNER_DIRECTORY_ROWS,
   REGULATORY_READINESS_METRICS,
   REGULATORY_RISK_STATES,
   REGULATORY_STATUS_DISTRIBUTION,
@@ -58,15 +55,12 @@ import ComplianceInstitutionProfileView from "@/src/features/compliance/dashboar
 import ComplianceSettingsView from "@/src/features/compliance/dashboard/components/settings/ComplianceSettingsView";
 import AdminDashboardView from "@/src/features/compliance/dashboard/components/admin/AdminDashboardView";
 import AdminMinerPipelineView from "@/src/features/compliance/dashboard/components/admin/AdminMinerPipelineView";
-import AdminMinerDetailView from "@/src/features/compliance/dashboard/components/admin/AdminMinerDetailView";
 import AdminPartnerDirectoryView from "@/src/features/compliance/dashboard/components/admin/AdminPartnerDirectoryView";
 import AdminRegulatoryReadinessView from "@/src/features/compliance/dashboard/components/admin/AdminRegulatoryReadinessView";
 import ComplianceDashboardView from "@/src/features/compliance/dashboard/components/open-task-pool/ComplianceDashboardView";
 import ComplianceReviewsView from "@/src/features/compliance/dashboard/components/reviews/ComplianceReviewsView";
 import ComplianceReviewDrawer from "@/src/features/compliance/dashboard/components/reviews/ComplianceReviewDrawer";
 import ComplianceClaimConflictModal from "@/src/features/compliance/dashboard/components/reviews/ComplianceClaimConflictModal";
-import EscalateToSeniorReviewModal from "@/src/features/compliance/dashboard/components/reviews/EscalateToSeniorReviewModal";
-import RequestComplianceDocumentModal from "@/src/features/compliance/dashboard/components/reviews/RequestComplianceDocumentModal";
 import ComplianceMinerDetailView from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 import ComplianceNotificationsView from "@/src/features/compliance/dashboard/components/notifications/ComplianceNotificationsView";
 
@@ -165,12 +159,6 @@ export default function ComplianceDashboardPage() {
   const [dismissedAlertKey, setDismissedAlertKey] = useState<string | null>(
     null,
   );
-  const [selectedAdminMiner, setSelectedAdminMiner] =
-    useState<AdminPipelineRow | null>(null);
-  const [escalateModalMiner, setEscalateModalMiner] =
-    useState<AdminPipelineRow | null>(null);
-  const [requestDocumentModalMiner, setRequestDocumentModalMiner] =
-    useState<AdminPipelineRow | null>(null);
   const hasAccessToken =
     typeof window !== "undefined" &&
     Boolean(window.sessionStorage.getItem("accessToken"));
@@ -642,13 +630,6 @@ export default function ComplianceDashboardPage() {
                   }
                   onNavigate={resetCompliancePanels}
                 />
-              ) : persona === "admin" && complianceView === "miner-pipeline" && selectedAdminMiner ? (
-                <AdminMinerDetailView
-                  row={selectedAdminMiner}
-                  onBack={() => setSelectedAdminMiner(null)}
-                  onEscalate={() => setEscalateModalMiner(selectedAdminMiner)}
-                  onRequestDocuments={() => setRequestDocumentModalMiner(selectedAdminMiner)}
-                />
               ) : persona === "admin" ? (
                 <>
                   {complianceView !== "regulatory-alerts" && complianceView !== "reviews" ? (
@@ -656,11 +637,23 @@ export default function ComplianceDashboardPage() {
                   ) : null}
                   {complianceView === "miner-pipeline" ? (
                     <AdminMinerPipelineView
-                      rows={ADMIN_PIPELINE_ROWS}
-                      onSelectMiner={setSelectedAdminMiner}
+                      rows={adminRows}
+                      onSelectMiner={(row) => {
+                        const matchedItem = (adminReviewsQ.data?.data?.results ?? []).find(
+                          (item) => item.id === row.id,
+                        );
+                        if (!matchedItem) {
+                          showToast("Miner detail is unavailable for this row.", "error");
+                          return;
+                        }
+                        setOpenedMinerDetail({
+                          selection: buildSelectionFromItem(matchedItem),
+                          reviewDetail: undefined,
+                        });
+                      }}
                     />
                   ) : complianceView === "partner-directory" ? (
-                    <AdminPartnerDirectoryView rows={PARTNER_DIRECTORY_ROWS} />
+                    <AdminPartnerDirectoryView />
                   ) : complianceView === "regulatory-readiness" ? (
                     <AdminRegulatoryReadinessView
                       metrics={REGULATORY_READINESS_METRICS}
@@ -737,22 +730,6 @@ export default function ComplianceDashboardPage() {
             setClaimConflictTask(null);
             setClaimConflictLoggedAt(null);
           }}
-        />
-      ) : null}
-
-      {escalateModalMiner ? (
-        <EscalateToSeniorReviewModal
-          minerCode={escalateModalMiner.minerId}
-          onClose={() => setEscalateModalMiner(null)}
-          onConfirm={() => setEscalateModalMiner(null)}
-        />
-      ) : null}
-
-      {requestDocumentModalMiner ? (
-        <RequestComplianceDocumentModal
-          minerCode={requestDocumentModalMiner.minerId}
-          onClose={() => setRequestDocumentModalMiner(null)}
-          onConfirm={() => setRequestDocumentModalMiner(null)}
         />
       ) : null}
     </div>

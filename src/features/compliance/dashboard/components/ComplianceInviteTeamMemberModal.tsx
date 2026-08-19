@@ -2,35 +2,51 @@
 
 import { CloseOutlined, DownOutlined } from "@ant-design/icons";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/src/store/toast.store";
-
-const ROLE_OPTIONS = [
-  "Super Admin",
-  "Compliance Officer",
-  "Reviewer",
-  "Auditor",
-] as const;
+import { getComplianceRoles, inviteTeamMember } from "@/src/features/compliance/dashboard/api";
+import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
 
 export default function ComplianceInviteTeamMemberModal({
   onClose,
 }: {
   onClose: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
   const [workEmail, setWorkEmail] = useState("");
-  const [role, setRole] = useState<(typeof ROLE_OPTIONS)[number]>(
-    ROLE_OPTIONS[1],
-  );
+  const [roleId, setRoleId] = useState("");
   const [department, setDepartment] = useState("");
   const [accessNotes, setAccessNotes] = useState("");
 
-  const handleSubmit = () => {
-    showToast(
-      `Mock invite sent to ${workEmail || fullName || "team member"}. API wiring is pending.`,
-      "success",
-    );
-    onClose();
-  };
+  const rolesQ = useQuery({
+    queryKey: ["complianceRoles"],
+    queryFn: getComplianceRoles,
+    retry: false,
+  });
+  const rawRoles = rolesQ.data?.data;
+  const roles = Array.isArray(rawRoles) ? rawRoles : rawRoles?.results ?? [];
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      inviteTeamMember({
+        full_name: fullName,
+        email: workEmail,
+        role: roleId,
+        department: department || undefined,
+        access_notes: accessNotes || undefined,
+      }),
+    onSuccess: () => {
+      showToast(`Invite sent to ${workEmail}`, "success");
+      queryClient.invalidateQueries({ queryKey: ["complianceTeamMembers"] });
+      onClose();
+    },
+    onError: (error: unknown) => {
+      showToast(getApiErrorMessage(error, "Unable to send this invite right now."), "error");
+    },
+  });
+
+  const canSubmit = fullName.trim() && workEmail.trim() && roleId;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,28,36,0.74)] px-4 py-8">
@@ -80,22 +96,27 @@ export default function ComplianceInviteTeamMemberModal({
             <label className="text-[15px] font-medium text-[#303744]">
               Role Assignment <span className="text-[#ef4444]">*</span>
             </label>
-            <div className="relative mt-3">
-              <select
-                value={role}
-                onChange={(event) =>
-                  setRole(event.target.value as (typeof ROLE_OPTIONS)[number])
-                }
-                className="h-14 w-full appearance-none rounded-[18px] border border-[#d9e0ec] bg-white px-5 pr-14 text-[16px] text-[#2a2f39] outline-none transition-shadow focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]"
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#24324c]" />
-            </div>
+            {roles.length === 0 && !rolesQ.isLoading ? (
+              <p className="mt-3 text-[14px] text-[#8a92a1]">
+                No roles have been created for your organization yet. Create a role first before inviting team members.
+              </p>
+            ) : (
+              <div className="relative mt-3">
+                <select
+                  value={roleId}
+                  onChange={(event) => setRoleId(event.target.value)}
+                  className="h-14 w-full appearance-none rounded-[18px] border border-[#d9e0ec] bg-white px-5 pr-14 text-[16px] text-[#2a2f39] outline-none transition-shadow focus:shadow-[0_0_0_4px_rgba(16,30,61,0.06)]"
+                >
+                  <option value="">{rolesQ.isLoading ? "Loading roles…" : "Select a role"}</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                <DownOutlined className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-[#24324c]" />
+              </div>
+            )}
           </div>
 
           <div>
@@ -135,11 +156,11 @@ export default function ComplianceInviteTeamMemberModal({
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
-            className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
-            style={{ color: "#ffffff" }}
+            onClick={() => mutation.mutate()}
+            disabled={!canSubmit || mutation.isPending}
+            className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Send Invitation
+            {mutation.isPending ? "Sending..." : "Send Invitation"}
           </button>
         </div>
       </div>

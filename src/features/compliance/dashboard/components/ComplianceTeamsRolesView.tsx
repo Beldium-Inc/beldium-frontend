@@ -11,82 +11,41 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ComplianceInviteTeamMemberModal from "@/src/features/compliance/dashboard/components/ComplianceInviteTeamMemberModal";
-import ComplianceTeamMemberDetailsDrawer, {
-  type TeamMemberProfile,
-} from "@/src/features/compliance/dashboard/components/ComplianceTeamMemberDetailsDrawer";
+import ComplianceTeamMemberDetailsDrawer from "@/src/features/compliance/dashboard/components/ComplianceTeamMemberDetailsDrawer";
+import { getComplianceTeamMembers, type ComplianceTeamMember } from "@/src/features/compliance/dashboard/api";
 import { showToast } from "@/src/store/toast.store";
+
+function formatRelativeOrDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? "" : "s"} ago`;
+  const diffHours = Math.round(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
+function initialsFor(name: string) {
+  return (
+    name
+      .split(" ")
+      .map((p) => p[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
 
 const teamRolesData = {
   title: "Teams & Roles",
   subtitle:
     "Manage institutional access, compliance permissions, and user security.",
-  members: [
-    {
-      name: "Floyd Miles",
-      role: "Super Admin",
-      status: "active" as const,
-      lastLogin: "4 hours ago",
-      securityLabel: "2FA Enabled",
-      securityTone: "green" as const,
-      avatar: { type: "initials" as const, label: "FM", tone: "bg-[#f2e4d7]" },
-      email: "floydmiles@gmail.com",
-      department: "Compliance & Regulatory",
-      joinedDate: "January 15, 2026",
-      lastActiveLabel: "4 hours ago",
-      lastActiveDate: "Today at 8:20 AM",
-      activeSessions: "1 device",
-      permissionsGranted: 6,
-    },
-    {
-      name: "Cody Fisher",
-      role: "Compliance Officer",
-      status: "active" as const,
-      lastLogin: "3 mins ago",
-      securityLabel: "2FA Disabled",
-      securityTone: "rose" as const,
-      avatar: { type: "initials" as const, label: "CF", tone: "bg-[#eef1f6]" },
-      email: "codyfisher@beldium.com",
-      department: "Operations & Compliance",
-      joinedDate: "February 2, 2026",
-      lastActiveLabel: "3 mins ago",
-      lastActiveDate: "Today at 12:11 PM",
-      activeSessions: "2 devices",
-      permissionsGranted: 4,
-    },
-    {
-      name: "Courtney Henry",
-      role: "Reviewer",
-      status: "invite-pending" as const,
-      lastLogin: "-",
-      securityLabel: "2FA Disabled",
-      securityTone: "rose" as const,
-      avatar: { type: "initials" as const, label: "CH", tone: "bg-[#f3d9ef]" },
-      email: "courtneyhenry@beldium.com",
-      department: "Review & Escalations",
-      joinedDate: "March 28, 2026",
-      lastActiveLabel: "Invitation sent",
-      lastActiveDate: "Awaiting first login",
-      activeSessions: "0 devices",
-      permissionsGranted: 2,
-    },
-    {
-      name: "Brooklyn Simmons",
-      role: "Compliance Officer",
-      status: "active" as const,
-      lastLogin: "1 day ago",
-      securityLabel: "2FA Disabled",
-      securityTone: "rose" as const,
-      avatar: { type: "initials" as const, label: "BS", tone: "bg-[#ffe3b8]" },
-      email: "brooklynsimmons@beldium.com",
-      department: "Risk & Compliance",
-      joinedDate: "January 27, 2026",
-      lastActiveLabel: "1 day ago",
-      lastActiveDate: "Yesterday at 3:42 PM",
-      activeSessions: "1 device",
-      permissionsGranted: 4,
-    },
-  ] satisfies TeamMemberProfile[],
   permissionRows: [
     {
       permission: "View miner submissions",
@@ -150,37 +109,17 @@ const teamRolesData = {
   ],
 };
 
-function StatusPill({ status }: { status: TeamMemberProfile["status"] }) {
+function StatusPill({ status }: { status: string }) {
+  const active = status.toLowerCase() === "active";
   return (
     <span
       className={
-        status === "active"
+        active
           ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]"
           : "inline-flex rounded-full border border-[#f5ddb2] bg-[#fff5de] px-3 py-1 text-[11px] font-semibold text-[#d29019]"
       }
     >
-      {status === "active" ? "Active" : "Invite pending"}
-    </span>
-  );
-}
-
-function SecurityPill({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "green" | "rose";
-}) {
-  return (
-    <span
-      className={
-        tone === "green"
-          ? "inline-flex items-center gap-2 rounded-full border border-[#dde8dd] bg-[#f7faf7] px-3 py-1 text-[12px] font-medium text-[#5e6674]"
-          : "inline-flex items-center gap-2 rounded-full border border-[#f3d6d7] bg-[#fff3f3] px-3 py-1 text-[12px] font-medium text-[#9b6d73]"
-      }
-    >
-      <span className="h-3.5 w-3.5 rounded-full border border-[#c4ccd8]" />
-      {label}
+      {status}
     </span>
   );
 }
@@ -237,9 +176,17 @@ export default function ComplianceTeamsRolesView() {
   const [requiresAdmin2FA, setRequiresAdmin2FA] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState("30 minutes");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<TeamMemberProfile | null>(
+  const [selectedMember, setSelectedMember] = useState<ComplianceTeamMember | null>(
     null,
   );
+
+  const teamMembersQ = useQuery({
+    queryKey: ["complianceTeamMembers"],
+    queryFn: getComplianceTeamMembers,
+    retry: false,
+  });
+  const rawMembers = teamMembersQ.data?.data;
+  const members = Array.isArray(rawMembers) ? rawMembers : rawMembers?.results ?? [];
 
   return (
     <>
@@ -284,69 +231,61 @@ export default function ComplianceTeamsRolesView() {
           </div>
 
           <div className="p-5 sm:p-6">
-            <div className="overflow-hidden rounded-[24px] border border-[#dfe5ef]">
-              <div className="overflow-x-auto">
-                <table className="min-w-[1180px] w-full border-separate border-spacing-0 text-left">
-                  <thead>
-                    <tr className="bg-[#f7f9fc] text-[15px] font-medium text-[#2f3541]">
-                      <th className="border-b border-[#edf1f6] px-5 py-4">Name</th>
-                      <th className="border-b border-[#edf1f6] px-5 py-4">Role</th>
-                      <th className="border-b border-[#edf1f6] px-5 py-4">Status</th>
-                      <th className="border-b border-[#edf1f6] px-5 py-4">Last Login</th>
-                      <th className="border-b border-[#edf1f6] px-5 py-4">Security</th>
-                      <th className="border-b border-[#edf1f6] px-5 py-4 text-right">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamRolesData.members.map((member, index) => (
-                      <tr
-                        key={member.name}
-                        className={index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]"}
-                      >
-                        <td className="border-b border-[#edf1f6] px-5 py-5">
-                          <div className="flex items-center gap-4">
-                            <span
-                              className={`flex h-11 w-11 items-center justify-center rounded-full text-[15px] font-medium text-[#5a6170] ${member.avatar.tone}`}
-                            >
-                              {member.avatar.label}
-                            </span>
-                            <span className="text-[16px] font-medium text-[#2a2f39]">
-                              {member.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#4d5565]">
-                          {member.role}
-                        </td>
-                        <td className="border-b border-[#edf1f6] px-5 py-5">
-                          <StatusPill status={member.status} />
-                        </td>
-                        <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#4d5565]">
-                          {member.lastLogin}
-                        </td>
-                        <td className="border-b border-[#edf1f6] px-5 py-5">
-                          <SecurityPill
-                            label={member.securityLabel}
-                            tone={member.securityTone}
-                          />
-                        </td>
-                        <td className="border-b border-[#edf1f6] px-5 py-5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedMember(member)}
-                            className="inline-flex h-12 items-center justify-center rounded-[16px] border border-[#dfe5ef] bg-white px-6 text-[16px] font-medium text-[#24324c] transition-colors hover:bg-[#f7f9fc]"
-                          >
-                            Manage
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {teamMembersQ.isLoading ? (
+              <div className="px-5 py-12 text-center text-[13px] text-[#8a92a1]">Loading team members…</div>
+            ) : members.length === 0 ? (
+              <div className="px-5 py-12 text-center text-[13px] text-[#8a92a1]">
+                No team members yet. Click &quot;Invite Team Member&quot; to add your first one.
               </div>
-            </div>
+            ) : (
+              <div className="overflow-hidden rounded-[14px] border border-[#e8ecf4]">
+                <div className="overflow-x-auto">
+                  <table className="min-w-[900px] w-full border-separate border-spacing-0 text-left">
+                    <thead>
+                      <tr className="bg-[#f7f9fc] text-[13px] font-medium text-[#2f3541]">
+                        <th className="border-b border-[#edf1f6] px-4 py-3">Name</th>
+                        <th className="border-b border-[#edf1f6] px-4 py-3">Role</th>
+                        <th className="border-b border-[#edf1f6] px-4 py-3">Status</th>
+                        <th className="border-b border-[#edf1f6] px-4 py-3">Last Login</th>
+                        <th className="border-b border-[#edf1f6] px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {members.map((member, index) => (
+                        <tr key={member.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]"}>
+                          <td className="border-b border-[#f0f3f8] px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-[12px] font-semibold text-[#2661d8]">
+                                {initialsFor(member.full_name)}
+                              </span>
+                              <span className="text-[13px] font-medium text-[#2a2f39]">{member.full_name}</span>
+                            </div>
+                          </td>
+                          <td className="border-b border-[#f0f3f8] px-4 py-3 text-[13px] text-[#4d5565]">
+                            {member.role_detail?.name || "Unassigned"}
+                          </td>
+                          <td className="border-b border-[#f0f3f8] px-4 py-3">
+                            <StatusPill status={member.status} />
+                          </td>
+                          <td className="border-b border-[#f0f3f8] px-4 py-3 text-[13px] text-[#4d5565]">
+                            {formatRelativeOrDate(member.last_login)}
+                          </td>
+                          <td className="border-b border-[#f0f3f8] px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMember(member)}
+                              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[#dfe5ef] bg-white px-4 text-[13px] font-medium text-[#24324c] transition-colors hover:bg-[#f7f9fc]"
+                            >
+                              Manage
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

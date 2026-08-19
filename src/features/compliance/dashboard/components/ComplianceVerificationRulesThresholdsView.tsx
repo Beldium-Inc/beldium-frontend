@@ -13,92 +13,81 @@ import {
   SafetyCertificateOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ComplianceCreateRuleModal from "@/src/features/compliance/dashboard/components/ComplianceCreateRuleModal";
-import ComplianceRuleConfigurationDrawer from "@/src/features/compliance/dashboard/components/ComplianceRuleConfigurationDrawer";
 import {
-  COMPLIANCE_ACTIVE_RULE_ROWS,
+  getComplianceRules,
+  type ComplianceRuleRecord,
+} from "@/src/features/compliance/dashboard/api";
+import {
   COMPLIANCE_RISK_RULE_CARDS,
-  COMPLIANCE_RULE_CATEGORIES,
   COMPLIANCE_THRESHOLD_CARDS,
   type ComplianceRiskRuleCard,
-  type ComplianceRuleCategory,
-  type ComplianceRuleRow,
   type ComplianceThresholdCard,
 } from "@/src/features/compliance/dashboard/mock";
 import { showToast } from "@/src/store/toast.store";
 
-function CategoryIcon({ icon }: { icon: ComplianceRuleCategory["icon"] }) {
-  const className =
-    "flex h-12 w-12 items-center justify-center rounded-[16px] border border-[#e8edf4] bg-[#fbfcfe] text-[21px] text-[#2f3541]";
+const CATEGORY_ICON: Record<string, React.ReactNode> = {
+  eia: <EnvironmentOutlined />,
+  esg: <WarningOutlined />,
+  community: <GlobalOutlined />,
+  export: <FilePdfOutlined />,
+};
 
-  if (icon === "environmental") {
-    return (
-      <span className={className}>
-        <EnvironmentOutlined />
-      </span>
-    );
-  }
+type RuleCategorySummary = { value: string; label: string; count: number };
 
-  if (icon === "framework") {
-    return (
-      <span className={className}>
-        <WarningOutlined />
-      </span>
-    );
-  }
-
-  if (icon === "community") {
-    return (
-      <span className={className}>
-        <GlobalOutlined />
-      </span>
-    );
-  }
-
-  return (
-    <span className={className}>
-      <FilePdfOutlined />
-    </span>
-  );
-}
-
-function RuleCategoryCard({ category }: { category: ComplianceRuleCategory }) {
+function RuleCategoryCard({ category }: { category: RuleCategorySummary }) {
   return (
     <article className="rounded-[22px] border border-[#dde5ef] bg-white px-5 py-5 shadow-[0_22px_48px_-44px_rgba(16,30,61,0.45)]">
       <div className="flex items-start gap-4">
-        <CategoryIcon icon={category.icon} />
+        <span className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-[#e8edf4] bg-[#fbfcfe] text-[21px] text-[#2f3541]">
+          {CATEGORY_ICON[category.value] ?? <FilePdfOutlined />}
+        </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-[15px] font-medium leading-6 text-[#2a2f39]">
-            {category.title}
+            {category.label}
           </h3>
-          <p className="mt-1 text-[12px] leading-5 text-[#9098a7]">
-            {category.description}
-          </p>
         </div>
       </div>
 
       <div className="mt-6 flex items-center gap-2 text-[12px] text-[#9aa2b0]">
         <span className="h-2.5 w-2.5 rounded-full bg-[#1db32b]" />
-        {category.activeRules} active rules
+        {category.count} active rule{category.count === 1 ? "" : "s"}
       </div>
     </article>
   );
 }
 
-function RuleStatusPill({ rule }: { rule: ComplianceRuleRow }) {
+function RuleStatusPill({ status }: { status: string }) {
+  const isActive = status.toLowerCase() === "active";
   return (
-    <span className="inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]">
-      {rule.status.label}
+    <span
+      className={
+        isActive
+          ? "inline-flex rounded-full border border-[#bdeec9] bg-[#e9faef] px-3 py-1 text-[11px] font-semibold text-[#1ea43b]"
+          : "inline-flex rounded-full border border-[#e5e8ef] bg-[#f6f7fa] px-3 py-1 text-[11px] font-semibold text-[#8a92a1]"
+      }
+    >
+      {status}
     </span>
   );
 }
 
+function formatTriggerConditions(rule: ComplianceRuleRecord) {
+  if (!rule.trigger_conditions.length) return "—";
+  return rule.trigger_conditions
+    .map((c) => `${c.field} ${c.operator} ${c.value}${c.unit ? ` ${c.unit}` : ""}`)
+    .join("; ");
+}
+
 function ActiveRulesTable({
   rows,
+  isLoading,
   onEditRule,
 }: {
-  rows: ComplianceRuleRow[];
+  rows: ComplianceRuleRecord[];
+  isLoading: boolean;
   onEditRule: (ruleId: string) => void;
 }) {
   return (
@@ -128,85 +117,63 @@ function ActiveRulesTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => (
-                <tr
-                  key={row.id}
-                  className={index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]"}
-                >
-                  <td className="border-b border-[#edf1f6] px-5 py-5">
-                    <div className="text-[16px] font-medium leading-6 text-[#2a2f39]">
-                      {row.name}
-                    </div>
-                    <div className="mt-1 text-[12px] text-[#a0a8b6]">
-                      {row.version}
-                    </div>
-                  </td>
-                  <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#7c8493]">
-                    {row.category}
-                  </td>
-                  <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#7c8493]">
-                    {row.triggerCondition}
-                  </td>
-                  <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#4d5565]">
-                    {row.action}
-                  </td>
-                  <td className="border-b border-[#edf1f6] px-5 py-5">
-                    <RuleStatusPill rule={row} />
-                  </td>
-                  <td className="border-b border-[#edf1f6] px-5 py-5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onEditRule(row.id)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[18px] text-[#6e7786] transition-colors hover:bg-[#f7f9fc]"
-                      aria-label={`Edit ${row.name}`}
-                    >
-                      <EditOutlined />
-                    </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-[14px] text-[#8a92a1]">
+                    Loading rules…
                   </td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-[14px] text-[#8a92a1]">
+                    No compliance rules yet. Click &quot;Create New Rule&quot; to add your first one.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-[#fcfdff]"}
+                  >
+                    <td className="border-b border-[#edf1f6] px-5 py-5">
+                      <div className="text-[16px] font-medium leading-6 text-[#2a2f39]">
+                        {row.name}
+                      </div>
+                    </td>
+                    <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#7c8493]">
+                      {row.category_label}
+                    </td>
+                    <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#7c8493]">
+                      {formatTriggerConditions(row)}
+                    </td>
+                    <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#4d5565]">
+                      {row.action || "—"}
+                    </td>
+                    <td className="border-b border-[#edf1f6] px-5 py-5">
+                      <RuleStatusPill status={row.status} />
+                    </td>
+                    <td className="border-b border-[#edf1f6] px-5 py-5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => onEditRule(row.id)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[18px] text-[#6e7786] transition-colors hover:bg-[#f7f9fc]"
+                        aria-label={`Edit ${row.name}`}
+                      >
+                        <EditOutlined />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-[#edf1f6] px-6 py-4 text-[15px] text-[#8a92a1] lg:flex-row lg:items-center lg:justify-between">
-          <div>(Displaying 5 per page)</div>
-
-          <div className="flex flex-wrap items-center gap-0 overflow-hidden rounded-[14px] border border-[#dfe5ef]">
-            <button
-              type="button"
-              onClick={() => showToast("Mock pagination. API wiring is pending.", "info")}
-              className="inline-flex h-10 items-center gap-2 border-r border-[#e8edf4] px-4 text-[#9aa2b0]"
-            >
-              <span>←</span>
-              Previous
-            </button>
-            {["1", "2", "3", "...", "8", "9", "10"].map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() =>
-                  showToast("Mock pagination. API wiring is pending.", "info")
-                }
-                className={
-                  page === "1"
-                    ? "inline-flex h-10 min-w-9 items-center justify-center border-r border-[#e8edf4] bg-[#f2f5f9] px-3 text-[#2a2f39]"
-                    : "inline-flex h-10 min-w-9 items-center justify-center border-r border-[#e8edf4] px-3 text-[#2a2f39]"
-                }
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => showToast("Mock pagination. API wiring is pending.", "info")}
-              className="inline-flex h-10 items-center gap-2 px-4 text-[#2a2f39]"
-            >
-              Next
-              <span>→</span>
-            </button>
+        {rows.length > 0 ? (
+          <div className="flex items-center justify-between border-t border-[#edf1f6] px-6 py-4 text-[13px] text-[#8a92a1]">
+            <span>Showing {rows.length} rule{rows.length === 1 ? "" : "s"}</span>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );
@@ -345,30 +312,29 @@ function RiskRuleCard({ card }: { card: ComplianceRiskRuleCard }) {
 
 export default function ComplianceVerificationRulesThresholdsView() {
   const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
-  const [ruleRows, setRuleRows] = useState<ComplianceRuleRow[]>(
-    COMPLIANCE_ACTIVE_RULE_ROWS,
+  const rulesQ = useQuery({
+    queryKey: ["complianceRules"],
+    queryFn: getComplianceRules,
+    retry: false,
+  });
+  const rawRules = rulesQ.data?.data;
+  const ruleRows: ComplianceRuleRecord[] = useMemo(
+    () => (Array.isArray(rawRules) ? rawRules : rawRules?.results ?? []),
+    [rawRules],
   );
-  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
-  const editingRule =
-    editingRuleId != null
-      ? ruleRows.find((rule) => rule.id === editingRuleId) ?? null
-      : null;
 
-  const handleUpdateRule = (
-    updatedRule: ComplianceRuleRow,
-    mode: "draft" | "publish",
-  ) => {
-    setRuleRows((current) =>
-      current.map((rule) => (rule.id === updatedRule.id ? updatedRule : rule)),
-    );
-    setEditingRuleId(null);
-    showToast(
-      mode === "publish"
-        ? `Mock rule ${updatedRule.name} published locally. API wiring is pending.`
-        : `Mock draft for ${updatedRule.name} saved locally. API wiring is pending.`,
-      "success",
-    );
-  };
+  const categorySummaries = useMemo<RuleCategorySummary[]>(() => {
+    const byCategory = new Map<string, RuleCategorySummary>();
+    for (const rule of ruleRows) {
+      const existing = byCategory.get(rule.category);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        byCategory.set(rule.category, { value: rule.category, label: rule.category_label, count: 1 });
+      }
+    }
+    return Array.from(byCategory.values());
+  }, [ruleRows]);
 
   return (
     <>
@@ -426,15 +392,20 @@ export default function ComplianceVerificationRulesThresholdsView() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {COMPLIANCE_RULE_CATEGORIES.map((category) => (
-              <RuleCategoryCard key={category.id} category={category} />
-            ))}
+            {categorySummaries.length === 0 ? (
+              <p className="text-[13px] text-[#8a92a1]">No rules created yet.</p>
+            ) : (
+              categorySummaries.map((category) => (
+                <RuleCategoryCard key={category.value} category={category} />
+              ))
+            )}
           </div>
         </section>
 
         <ActiveRulesTable
           rows={ruleRows}
-          onEditRule={(ruleId) => setEditingRuleId(ruleId)}
+          isLoading={rulesQ.isLoading}
+          onEditRule={() => showToast("Editing rules isn't available yet.", "info")}
         />
 
         <section className="space-y-5">
@@ -483,14 +454,6 @@ export default function ComplianceVerificationRulesThresholdsView() {
       {isCreateRuleModalOpen ? (
         <ComplianceCreateRuleModal
           onClose={() => setIsCreateRuleModalOpen(false)}
-        />
-      ) : null}
-
-      {editingRule ? (
-        <ComplianceRuleConfigurationDrawer
-          rule={editingRule}
-          onClose={() => setEditingRuleId(null)}
-          onSubmit={handleUpdateRule}
         />
       ) : null}
     </>

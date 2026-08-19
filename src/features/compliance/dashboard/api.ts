@@ -434,6 +434,8 @@ export type ComplianceTeamMember = {
   role_detail?: { id: string; name: string } | null;
   department?: string | null;
   status: string;
+  invited_at: string | null;
+  last_login: string | null;
 };
 
 export type ComplianceTeamMembersResponse = {
@@ -688,6 +690,8 @@ export type UpdateComplianceProfilePayload = Partial<{
   full_name: string;
   organization_name: string;
   primary_office_address: string;
+  require_two_factor_authentication: boolean;
+  session_timeout_minutes: number;
 }>;
 
 export async function updateComplianceProfile(
@@ -788,5 +792,132 @@ export type PolicyAlertsResponse = {
 
 export async function getPolicyAlerts() {
   const { data } = await authApi.get<PolicyAlertsResponse>("/compliance/policy-alerts/");
+  return data;
+}
+
+export type ComplianceRole = {
+  id: string;
+  name: string;
+};
+
+export type ComplianceRolesResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: ComplianceRole[];
+    count?: number;
+  } | ComplianceRole[];
+};
+
+export async function getComplianceRoles() {
+  const { data } = await authApi.get<ComplianceRolesResponse>("/compliance/roles/");
+  return data;
+}
+
+export type InviteTeamMemberPayload = {
+  full_name: string;
+  email: string;
+  role: string;
+  department?: string;
+  access_notes?: string;
+};
+
+export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
+  const { data } = await authApi.post("/compliance/team-members/", payload);
+  return data;
+}
+
+export type UpdateTeamMemberPayload = Partial<{
+  full_name: string;
+  role: string;
+  department: string;
+  access_notes: string;
+}>;
+
+export async function updateTeamMember(memberId: string, payload: UpdateTeamMemberPayload) {
+  const { data } = await authApi.patch(`/compliance/team-members/${memberId}/`, payload);
+  return data;
+}
+
+export type PartnerDirectoryRecord = {
+  id: string;
+  user_id: string;
+  organization_name: string;
+  full_name: string;
+  email: string;
+  phone_number: string | null;
+  organization_type: string;
+  organization_type_display: string;
+  accreditation_status: string;
+  regions_covered: string[];
+  availability_status: "AVAILABLE" | "NEAR_CAPACITY" | "BUSY";
+  availability_label: string;
+  active_assignments_count: number;
+  can_assign: boolean;
+  recommended_for_assignment: boolean;
+};
+
+export type PartnerDirectoryResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: PartnerDirectoryRecord[];
+    count?: number;
+  } | PartnerDirectoryRecord[];
+};
+
+export async function getPartnerDirectory(params?: { search?: string; organization_type?: string }) {
+  const { data } = await authApi.get<PartnerDirectoryResponse>("/compliance/partner-directory/", { params });
+  return data;
+}
+
+export type RuleTriggerCondition = {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+  unit: string | null;
+  order: number;
+};
+
+export type ComplianceRuleRecord = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  category_label: string;
+  trigger_conditions: RuleTriggerCondition[];
+  action: string | null;
+  severity: string;
+  scope: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ComplianceRulesResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: ComplianceRuleRecord[];
+    count?: number;
+  } | ComplianceRuleRecord[];
+};
+
+export async function getComplianceRules() {
+  const { data } = await authApi.get<ComplianceRulesResponse>("/compliance-rules/");
+  return data;
+}
+
+export type RuleCategoryOption = { value: string; label: string };
+
+export type RuleCategoriesResponse = {
+  status: string;
+  message: string | null;
+  data: RuleCategoryOption[];
+};
+
+export async function getRuleCategories() {
+  const { data } = await authApi.get<RuleCategoriesResponse>("/compliance-rules/categories/");
   return data;
 }

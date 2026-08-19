@@ -1,6 +1,7 @@
 import {
   AppstoreOutlined,
   CodeSandboxOutlined,
+  EnvironmentOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   UnorderedListOutlined,
@@ -25,6 +26,12 @@ export const AppRoutes = [
     label: "Orders",
     href: "/dashboard?view=orders",
     icon: CodeSandboxOutlined,
+  },
+  {
+    key: "sites",
+    label: "Sites",
+    href: "/dashboard/sites",
+    icon: EnvironmentOutlined,
   },
   {
     key: "wallet",

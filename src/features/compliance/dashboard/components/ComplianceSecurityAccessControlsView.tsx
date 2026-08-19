@@ -10,7 +10,24 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/src/store/toast.store";
+import { getUser } from "@/src/features/onboarding/api";
+import { updateComplianceProfile } from "@/src/features/compliance/dashboard/api";
+import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
+
+const SESSION_TIMEOUT_MINUTES: Record<string, number> = {
+  "15 minutes": 15,
+  "30 minutes": 30,
+  "45 minutes": 45,
+  "1 hour": 60,
+};
+
+function minutesToLabel(minutes: number | undefined) {
+  if (!minutes) return "30 minutes";
+  const match = Object.entries(SESSION_TIMEOUT_MINUTES).find(([, v]) => v === minutes);
+  return match ? match[0] : `${minutes} minutes`;
+}
 
 type ActiveSessionRow = {
   user: string;
@@ -191,11 +208,46 @@ function LoginStatusPill({ status }: { status: LoginHistoryRow["status"] }) {
 }
 
 export default function ComplianceSecurityAccessControlsView() {
-  const [requires2FA, setRequires2FA] = useState(true);
+  const queryClient = useQueryClient();
+  const [requires2FAOverride, setRequires2FAOverride] = useState<boolean | null>(null);
   const [maxFailedAttempts, setMaxFailedAttempts] = useState("5");
-  const [sessionTimeout, setSessionTimeout] = useState("30 minutes");
+  const [sessionTimeoutOverride, setSessionTimeoutOverride] = useState<string | null>(null);
   const [suspiciousLoginDetectionEnabled, setSuspiciousLoginDetectionEnabled] =
     useState(true);
+
+  const currentUserQ = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: getUser,
+    retry: false,
+  });
+  const profile = (currentUserQ.data?.data as { profile?: {
+    id?: string;
+    require_two_factor_authentication?: boolean;
+    session_timeout_minutes?: number;
+  } | null } | undefined)?.profile;
+
+  const requires2FA = requires2FAOverride ?? Boolean(profile?.require_two_factor_authentication);
+  const sessionTimeout = sessionTimeoutOverride ?? minutesToLabel(profile?.session_timeout_minutes);
+
+  const setRequires2FA = (value: boolean) => setRequires2FAOverride(value);
+  const setSessionTimeout = (value: string) => setSessionTimeoutOverride(value);
+
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      if (!profile?.id) throw new Error("Your compliance profile isn't loaded yet.");
+      return updateComplianceProfile(profile.id, {
+        require_two_factor_authentication: requires2FA,
+        session_timeout_minutes: SESSION_TIMEOUT_MINUTES[sessionTimeout] ?? 30,
+      });
+    },
+    onSuccess: () => {
+      showToast("Security settings saved", "success");
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+    },
+    onError: (error: unknown) => {
+      showToast(getApiErrorMessage(error, "Unable to save security settings right now."), "error");
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -221,13 +273,9 @@ export default function ComplianceSecurityAccessControlsView() {
 
           <button
             type="button"
-            onClick={() =>
-              showToast(
-                "Mock security settings saved locally. API integration pending.",
-                "success",
-              )
-            }
-            className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f]"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending || !profile?.id}
+            className="inline-flex h-11 items-center gap-3 rounded-[10px] bg-[#13264e] px-4 text-[13px] font-semibold !text-white transition-colors hover:bg-[#182f5f] disabled:cursor-not-allowed disabled:opacity-60"
             style={{ color: "#ffffff" }}
           >
             <SaveOutlined />
@@ -257,7 +305,7 @@ export default function ComplianceSecurityAccessControlsView() {
           </div>
           <ToggleSwitch
             enabled={requires2FA}
-            onToggle={() => setRequires2FA((current) => !current)}
+            onToggle={() => setRequires2FA(!requires2FA)}
             ariaLabel="Toggle two-factor authentication requirement"
           />
         </div>

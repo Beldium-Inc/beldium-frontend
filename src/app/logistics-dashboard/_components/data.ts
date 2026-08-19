@@ -830,6 +830,94 @@ export const fleetVehicles: FleetVehicle[] = [
   },
 ];
 
+// ---------------- Notifications page ----------------
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  unread: boolean;
+  icon: "person" | "job" | "doc" | "payment" | "truck";
+}
+
+export const notificationItems: NotificationItem[] = [
+  {
+    id: "n1",
+    title: "Job accepted",
+    description: "David Okafor accepted job BLD-00481",
+    time: "Just now",
+    unread: false,
+    icon: "person",
+  },
+  {
+    id: "n2",
+    title: "New job assigned",
+    description: "Job BLD-00481 has been assigned to your company.",
+    time: "12 mins ago",
+    unread: true,
+    icon: "job",
+  },
+  {
+    id: "n3",
+    title: "Vehicle insurance expired",
+    description: "The insurance document for KJA-482-RT expired today.",
+    time: "12 mins ago",
+    unread: false,
+    icon: "doc",
+  },
+  {
+    id: "n4",
+    title: "Roadworthiness certificate expiring soon",
+    description: "The Roadworthiness for KJA-482-RT expires in 7 days.",
+    time: "12 mins ago",
+    unread: false,
+    icon: "doc",
+  },
+  {
+    id: "n5",
+    title: "Payment released",
+    description: "450,000 has been released for job BLD-00481.",
+    time: "12 mins ago",
+    unread: true,
+    icon: "payment",
+  },
+  {
+    id: "n6",
+    title: "Driver assigned",
+    description: "David Okafor has been assigned to KJA-482-RT",
+    time: "Yesterday",
+    unread: false,
+    icon: "doc",
+  },
+  {
+    id: "n7",
+    title: "Vehicle added to fleet",
+    description: "Mercedes-Benz Actros (KJA-482-RT) was successfully added to your fleet",
+    time: "4 days ago",
+    unread: true,
+    icon: "truck",
+  },
+];
+
+// ---------------- Settings page ----------------
+
+export const accountSettings = {
+  fullName: "David Emmanuel",
+  workEmail: "davidemmanuel@beldium.com",
+  phoneNumber: "+234-000-0004",
+  userId: "BLD-012-Admin",
+  language: "English",
+  theme: "System",
+};
+
+export const companySettings = {
+  companyName: "DLK Logistics",
+  companyPhone: "+234-8000-0001",
+  companyEmail: "dlk@gmail.com",
+  registrationNumber: "DLK-921-01",
+};
+
 export interface AllocationVehicle {
   id: string;
   type: string;
