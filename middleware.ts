@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-
-const COMPLIANCE_HOSTS = new Set(["compliance.beldium.com"]);
+import { isComplianceHost, isMarketplaceHost } from "@/src/lib/subdomain";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -9,9 +8,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL("/assets/images/logo.png", req.url));
   }
 
-  const host = req.headers.get("host")?.split(":")[0] ?? "";
-  if (COMPLIANCE_HOSTS.has(host) && pathname === "/") {
+  const host = req.headers.get("host") ?? "";
+
+  if (isComplianceHost(host) && pathname === "/") {
     return NextResponse.rewrite(new URL("/compliancedashboard", req.url));
+  }
+
+  if (isMarketplaceHost(host) && pathname === "/") {
+    return NextResponse.rewrite(new URL("/marketplace", req.url));
   }
 
   return NextResponse.next();

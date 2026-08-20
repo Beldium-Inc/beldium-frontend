@@ -14,6 +14,7 @@ type LoginFormValues = {
 };
 
 import { useOnboardingStore } from "@/src/features/onboarding/onboarding.store";
+import { isComplianceHost, COMPLIANCE_APP_URL } from "@/src/lib/subdomain";
 
 // ... existing imports ...
 
@@ -57,15 +58,39 @@ export function Login() {
         const userRes = await getUser();
         const completed = userRes?.data?.has_completed_onboarding;
         const role = userRes?.data?.role; // "Miner" | "Compliance"
+        const isComplianceRole = role === "Compliance";
+        const onComplianceHost = isComplianceHost(window.location.hostname);
+
+        // Keep the two portals strictly separated: a miner account can't
+        // land inside the compliance app and vice versa, regardless of
+        // which subdomain they happened to submit the login form on.
+        if (onComplianceHost !== isComplianceRole) {
+          sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("refreshToken");
+          sessionStorage.removeItem("tokenExpiration");
+
+          if (onComplianceHost) {
+            showToast(
+              "This isn't a compliance account. Please log in at app.beldium.com instead.",
+              "error",
+            );
+          } else {
+            showToast("Redirecting you to the compliance portal...", "success");
+            window.location.href = `${COMPLIANCE_APP_URL}${
+              completed ? "/compliancedashboard?persona=admin" : "/complianceonboarding"
+            }`;
+          }
+          return;
+        }
 
         if (completed) {
-          if (role === "Compliance") {
+          if (isComplianceRole) {
             router.push("/compliancedashboard?persona=admin");
           } else {
             router.push("/dashboard");
           }
         } else {
-          if (role === "Compliance") {
+          if (isComplianceRole) {
             router.push("/complianceonboarding");
           } else {
             router.push("/onboarding");

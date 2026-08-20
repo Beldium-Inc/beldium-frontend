@@ -38,6 +38,22 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* iOS Safari auto-zooms the viewport when a focused input's computed
+   font-size is under 16px. AntD's default input/select/textarea font-size
+   is 14px, which triggers this on real devices (not reproducible by
+   resizing a desktop browser, which is why it only showed up in prod). */
+@media (max-width: 767px) {
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-select-selector,
+  .ant-select-selection-search-input,
+  .ant-picker,
+  textarea.ant-input,
+  input.ant-input {
+    font-size: 16px !important;
+  }
+}
+
 .mobile-sidebar .ant-drawer-content-wrapper {
   width: 260px !important;
 }
