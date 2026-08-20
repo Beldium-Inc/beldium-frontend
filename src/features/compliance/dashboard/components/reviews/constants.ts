@@ -2,6 +2,7 @@
 
 export type CaseReviewTab =
   | "overview"
+  | "sites"
   | "licensing"
   | "environmental-esg"
   | "operational"
@@ -13,6 +14,7 @@ export type CaseReviewTab =
 
 export const CASE_REVIEW_TABS: { key: CaseReviewTab; label: string }[] = [
   { key: "overview", label: "Overview" },
+  { key: "sites", label: "Sites" },
   { key: "licensing", label: "Licensing" },
   { key: "environmental-esg", label: "Environmental & ESG" },
   { key: "operational", label: "Operational" },

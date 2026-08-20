@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Table, Skeleton, Drawer, Empty, Card } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Table, Skeleton, Drawer, Empty, Card, Button } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   EnvironmentOutlined,
@@ -15,12 +15,16 @@ import {
   AlertOutlined,
   WarningOutlined,
   CompassOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import {
   getMiningSites,
   getMiningSiteSourceProfile,
+  updateMiningSiteCoordinates,
   MiningSite,
 } from "@/src/features/miner/sites/api";
+import { MineLocationPicker, MineLocationResult } from "@/src/features/onboard/component/MineLocationPicker";
+import { showToast } from "@/src/store/toast.store";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   virgin: { bg: "bg-gray-100", text: "text-gray-600", label: "Virgin Site" },
@@ -59,7 +63,10 @@ function avatarColor(seed: string) {
 }
 
 export default function SitesPage() {
+  const queryClient = useQueryClient();
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["mining-sites"],
@@ -73,6 +80,39 @@ export default function SitesPage() {
   });
 
   const sites = data?.data?.results ?? [];
+
+  const initialMapLocation: MineLocationResult | null =
+    profile?.data?.latitude && profile?.data?.longitude
+      ? {
+          pin: { lat: Number(profile.data.latitude), lng: Number(profile.data.longitude) },
+          boundary: [],
+          areaHectares: 0,
+          perimeterMeters: 0,
+        }
+      : null;
+
+  const handleSaveLocation = async (result: MineLocationResult) => {
+    if (!selectedSiteId || !result.pin) return;
+    try {
+      setSavingLocation(true);
+      await updateMiningSiteCoordinates(selectedSiteId, {
+        latitude: result.pin.lat,
+        longitude: result.pin.lng,
+      });
+      showToast("Site location updated", "success");
+      setMapOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["mining-site-source-profile", selectedSiteId] });
+      queryClient.invalidateQueries({ queryKey: ["mining-sites"] });
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } } };
+      showToast(e?.response?.data?.message || "Failed to update location", "error");
+      // Re-throw so the picker's own submit button can show an inline error
+      // and stay open for a retry, instead of silently closing on failure.
+      throw error;
+    } finally {
+      setSavingLocation(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const total = sites.length;
@@ -238,7 +278,7 @@ export default function SitesPage() {
                 />
               </div>
 
-              <div className="mt-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4">
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4">
                 {profile.data.latitude && profile.data.longitude ? (
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -257,8 +297,18 @@ export default function SitesPage() {
                     <span className="text-sm">No coordinates set for this site yet.</span>
                   </div>
                 )}
+                <Button
+                  size="small"
+                  icon={<EditOutlined />}
+                  disabled={savingLocation}
+                  onClick={() => setMapOpen(true)}
+                >
+                  {profile.data.latitude ? "Edit" : "Set location"}
+                </Button>
               </div>
             </Card>
+              <br />
+
 
             <div className="grid grid-cols-2 gap-3">
               <SummaryCard icon={<SafetyCertificateOutlined />} label="Ownership" count={profile.data.ownership_records.length} tone="bg-indigo-50 text-indigo-600" />
@@ -273,6 +323,13 @@ export default function SitesPage() {
           </div>
         )}
       </Drawer>
+
+      <MineLocationPicker
+        open={mapOpen}
+        initial={initialMapLocation}
+        onClose={() => setMapOpen(false)}
+        onSubmit={handleSaveLocation}
+      />
     </div>
   );
 }

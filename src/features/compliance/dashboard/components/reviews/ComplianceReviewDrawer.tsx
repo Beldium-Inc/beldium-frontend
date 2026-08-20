@@ -50,17 +50,23 @@ export default function ComplianceReviewDrawer({
   onAction: (action: ReviewActionType) => void;
 }) {
   const status = detail?.status ?? "pending";
-  const requiresClaim = Boolean(selection.claimRequired);
+  // The backend's review state machine only ever has status "pending" while
+  // a review is unclaimed (claim() is what moves it to "claimed") — so
+  // "pending" alone is sufficient to know a claim is required, and doesn't
+  // depend on `selection.claimRequired`, which was never actually set when
+  // opening a review from the task pool/pipeline table. That gap meant every
+  // pending-but-unclaimed review's primary button silently fired "approve"
+  // instead of "claim", which the backend correctly rejected with
+  // "You are not assigned to this task."
+  const requiresClaim = status === "pending";
   const primaryAction: ReviewActionType =
     requiresClaim
       ? "claim"
-      : status === "pending"
-        ? "approve"
-        : status === "under_review"
-          ? "open_detail"
-          : "start_review";
+      : status === "under_review"
+        ? "open_detail"
+        : "start_review";
   const primaryLabel = formatReviewActionLabel(status, requiresClaim);
-  const showReject = status === "pending" && !requiresClaim;
+  const showReject = !requiresClaim;
   const waitLabel = selection.createdAt
     ? formatWaitTime(selection.createdAt, now).label
     : null;

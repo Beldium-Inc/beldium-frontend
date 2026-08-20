@@ -47,8 +47,7 @@ import {
 } from "@/src/features/compliance/dashboard/components/reviews/constants";
 import {
   type CaseChecklistItem,
-  CASE_OPERATIONAL_ITEMS,
-  CASE_EXPORT_ITEMS,
+  buildOperationalChecklist,
   caseChecklistStatusMeta,
 } from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 
@@ -1806,16 +1805,13 @@ export default function ComplianceReviewsView({
                   scoreLabel="Operational Score"
                   requirementColumnLabel="Operational Requirement"
                   categoryLabel="Operational"
-                  items={CASE_OPERATIONAL_ITEMS}
+                  items={buildOperationalChecklist(minerDetailQ.data)}
                 />
               ) : activeTab === "export-compliance" ? (
-                <ChecklistReviewTab
-                  title="Export Compliance"
-                  scoreLabel="Export Compliance Score"
-                  requirementColumnLabel="Export Compliance Requirement"
-                  categoryLabel="Export"
-                  items={CASE_EXPORT_ITEMS}
-                />
+                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-8 text-center text-[14px] leading-6 text-[#7b8392]">
+                  Export compliance tracking (export licenses, shipment manifests, customs declarations) isn&apos;t
+                  wired up on the backend yet — this tab will populate once those records exist.
+                </div>
               ) : activeTab === "documents" ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

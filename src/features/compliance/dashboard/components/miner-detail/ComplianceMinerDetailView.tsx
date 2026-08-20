@@ -47,22 +47,81 @@ export type CaseChecklistItem = {
   status: "verified" | "pending" | "flagged";
 };
 
-export const CASE_OPERATIONAL_ITEMS: CaseChecklistItem[] = [
-  { title: "Production Reports", detail: "Latest declared output verified against Ministry data.", status: "verified" },
-  { title: "Mining Permit", detail: "Active. No violations recorded.", status: "verified" },
-  { title: "Inspection Reports", detail: "Latest site inspection report awaited.", status: "pending" },
-  { title: "Equipment Compliance", detail: "All heavy equipment certified under NIS standards.", status: "verified" },
-  { title: "Operational Incidents", detail: "Minor incidents on file. Remediation plans submitted.", status: "flagged" },
-  { title: "Site Visits", detail: "Scheduled site visit not yet completed.", status: "pending" },
-  { title: "Production Consistency", detail: "Declared capacity aligns with production data.", status: "verified" },
-];
+type MinerLicenseRecord = { verification_status: string };
+type MinerInspectionRecord = { status: string; outcome: string | null; scheduled_date: string };
+type MinerSafetyRecord = { status: string; severity: string; incident_date: string };
+type MinerProductionRecord = { record_date: string; mineral_type: string; quantity: string };
 
-export const CASE_EXPORT_ITEMS: CaseChecklistItem[] = [
-  { title: "Export License", detail: "Valid and on file with the export authority.", status: "verified" },
-  { title: "Shipment Manifests", detail: "Latest manifest pending upload.", status: "pending" },
-  { title: "Customs Declarations", detail: "All declarations reconciled with export volumes.", status: "verified" },
-  { title: "Mineral Origin Certificate", detail: "Discrepancy flagged against declared origin state.", status: "flagged" },
-];
+/**
+ * Real, backend-driven checklist — replaces the previous hardcoded mock array.
+ * Each item is derived from actual records on the miner detail payload, so an
+ * empty/pending state here means the miner genuinely has no data on file yet,
+ * not that the check hasn't been wired up.
+ */
+export function buildOperationalChecklist(minerDetail?: ComplianceMinerDetailResponse): CaseChecklistItem[] {
+  const data = minerDetail?.data as
+    | {
+        licenses?: MinerLicenseRecord[];
+        inspections?: MinerInspectionRecord[];
+        safety_records?: MinerSafetyRecord[];
+        production_records?: MinerProductionRecord[];
+      }
+    | undefined;
+
+  const licenses = data?.licenses ?? [];
+  const inspections = data?.inspections ?? [];
+  const safetyRecords = data?.safety_records ?? [];
+  const productionRecords = data?.production_records ?? [];
+
+  const licenseStatus: CaseChecklistItem["status"] = licenses.some((l) => l.verification_status === "verified")
+    ? "verified"
+    : licenses.some((l) => l.verification_status === "rejected" || l.verification_status === "issues_found")
+      ? "flagged"
+      : "pending";
+
+  const latestInspection = inspections[0];
+  const inspectionStatus: CaseChecklistItem["status"] =
+    latestInspection?.outcome === "passed" || latestInspection?.outcome === "passed_with_conditions"
+      ? "verified"
+      : latestInspection?.outcome === "failed"
+        ? "flagged"
+        : "pending";
+
+  const openSafetyIncidents = safetyRecords.filter((r) => r.status !== "resolved");
+  const safetyStatus: CaseChecklistItem["status"] =
+    safetyRecords.length === 0 ? "pending" : openSafetyIncidents.length > 0 ? "flagged" : "verified";
+
+  return [
+    {
+      title: "Mining Permit",
+      detail: licenses.length
+        ? `${licenses.length} license${licenses.length === 1 ? "" : "s"} on file — ${licenseStatus === "verified" ? "at least one verified" : licenseStatus === "flagged" ? "issues found on review" : "pending verification"}.`
+        : "No license on file for this miner yet.",
+      status: licenses.length ? licenseStatus : "pending",
+    },
+    {
+      title: "Production Reports",
+      detail: productionRecords.length
+        ? `${productionRecords.length} production record${productionRecords.length === 1 ? "" : "s"} logged for this miner's sites.`
+        : "No production records logged yet.",
+      status: productionRecords.length > 0 ? "verified" : "pending",
+    },
+    {
+      title: "Site Inspections",
+      detail: latestInspection
+        ? `Latest inspection scheduled ${latestInspection.scheduled_date} — ${latestInspection.outcome ? latestInspection.outcome.replace(/_/g, " ") : latestInspection.status}.`
+        : "No site inspection has been scheduled or logged yet.",
+      status: inspections.length ? inspectionStatus : "pending",
+    },
+    {
+      title: "Safety Records",
+      detail: safetyRecords.length
+        ? `${safetyRecords.length} safety record${safetyRecords.length === 1 ? "" : "s"} on file, ${openSafetyIncidents.length} still open.`
+        : "No safety incidents recorded.",
+      status: safetyStatus,
+    },
+  ];
+}
 
 export function caseChecklistStatusMeta(status: CaseChecklistItem["status"]) {
   switch (status) {
@@ -95,6 +154,28 @@ export function CaseChecklistCard({ item }: { item: CaseChecklistItem }) {
           <EyeOutlined />
         </button>
       </div>
+    </div>
+  );
+}
+
+type MinerSiteRecord = {
+  id: string;
+  name: string;
+  status: string;
+  mineral_type: string | null;
+  mining_method: string | null;
+  country: string | null;
+  state_of_operation: string | null;
+  local_government_area: string | null;
+  latitude: string | null;
+  longitude: string | null;
+};
+
+function SiteDetailField({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <div className="text-[#8a92a1]">{label}</div>
+      <div className="mt-0.5 font-medium capitalize text-[#2a2f39]">{value || "—"}</div>
     </div>
   );
 }
@@ -139,6 +220,8 @@ export default function ComplianceMinerDetailView({
   const [activeTab, setActiveTab] = useState<CaseReviewTab>("overview");
   const minerSummary = getMinerDetailSummary(minerDetail);
   const documents = getMinerDetailDocuments(minerDetail);
+  const minerSites = (minerDetail?.data?.sites as MinerSiteRecord[] | undefined) ?? [];
+  const operationalChecklist = buildOperationalChecklist(minerDetail);
   const reviewStatus = reviewDetail?.status ?? "under_review";
   const riskBadge = formatRiskLevelBadge(reviewDetail?.risk_level ?? null);
   const scoreText = formatReviewScore(reviewDetail?.compliance_score);
@@ -310,6 +393,40 @@ export default function ComplianceMinerDetailView({
                 </aside>
               </div>
             </div>
+          ) : activeTab === "sites" ? (
+            <div className="space-y-4">
+              {minerSites.length > 0 ? (
+                minerSites.map((site) => (
+                  <div key={site.id} className="rounded-[18px] border border-[#e8ecf4] bg-white p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <EnvironmentOutlined className="text-[#8a92a1]" />
+                        <span className="text-[15px] font-semibold text-[#2a2f39]">{site.name}</span>
+                      </div>
+                      <span className="rounded-full border border-[#dce3ef] bg-[#fafbfd] px-3 py-1 text-[12px] font-medium capitalize text-[#5d6675]">
+                        {(site.status || "").replace(/_/g, " ") || "Unknown"}
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-4 text-[13px] sm:grid-cols-4">
+                      <SiteDetailField label="Mineral Type" value={site.mineral_type} />
+                      <SiteDetailField label="Mining Method" value={site.mining_method} />
+                      <SiteDetailField
+                        label="Location"
+                        value={[site.local_government_area, site.state_of_operation, site.country].filter(Boolean).join(", ")}
+                      />
+                      <SiteDetailField
+                        label="Coordinates"
+                        value={site.latitude && site.longitude ? `${site.latitude}, ${site.longitude}` : null}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+                  No mining sites were returned by the miner detail endpoint for this miner yet.
+                </div>
+              )}
+            </div>
           ) : activeTab === "licensing" ? (
             <div className="space-y-4">
               {documents.length > 0 ? (
@@ -354,15 +471,15 @@ export default function ComplianceMinerDetailView({
             </div>
           ) : activeTab === "operational" ? (
             <div className="space-y-4">
-              {CASE_OPERATIONAL_ITEMS.map((item) => (
+              {operationalChecklist.map((item) => (
                 <CaseChecklistCard key={item.title} item={item} />
               ))}
             </div>
           ) : activeTab === "export-compliance" ? (
-            <div className="space-y-4">
-              {CASE_EXPORT_ITEMS.map((item) => (
-                <CaseChecklistCard key={item.title} item={item} />
-              ))}
+            <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-8 text-center text-[14px] leading-6 text-[#7b8392]">
+              Export compliance tracking (export licenses, shipment manifests, customs declarations) isn&apos;t
+              wired up on the backend yet — this tab will populate once those records exist. It is intentionally
+              left empty rather than showing placeholder data.
             </div>
           ) : activeTab === "documents" ? (
             <div className="overflow-x-auto rounded-[18px] border border-[#e8ecf4]">

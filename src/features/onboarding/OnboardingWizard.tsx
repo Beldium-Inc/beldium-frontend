@@ -7,10 +7,15 @@ import { Onboard } from "./Onboard";
 import { StepOne } from "./steps/StepOne";
 import { VerifySuccess } from "./steps/VerifySuccess";
 
-// Renders steps 2+; step 1 (role selection) lives on its own route ("/").
+// Renders steps 2+. Step 1 (the role chooser) is currently hidden — Miner
+// and Compliance each have their own entry route ("/" and "/compliance")
+// that preset `data.role` and jump straight to step 2, so "back" from here
+// needs to return to whichever entry route matches the current role rather
+// than a shared "/".
 export function OnboardingWizard() {
   const router = useRouter();
   const { step, data, setStep } = useOnboardingStore();
+  const entryRoute = data?.role === "partner" ? "/compliance" : "/";
 
   if (step <= 2) {
     return (
@@ -20,7 +25,7 @@ export function OnboardingWizard() {
           onNext={() => setStep(3)}
           onBack={() => {
             setStep(1);
-            router.push("/");
+            router.push(entryRoute);
           }}
         />
       </OnboardingLayout>

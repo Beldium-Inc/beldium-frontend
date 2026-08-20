@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/src/features/onboarding/api";
 
-// Miner-only entry point. The Miner-vs-Compliance role chooser
-// (RoleSelection) is hidden for now — Miner and Compliance now have fully
-// separate entry points ("/" for Miner, "/compliance" for Compliance) so a
-// miner never sees the option to create a compliance account. See the
-// commented-out block at the bottom of this file to restore the chooser.
-export default function Home() {
+// Compliance / regulator partner signup entry point. Mirrors "/" (the Miner
+// entry point) but presets role="partner" so a compliance partner never
+// sees the Miner-vs-Compliance chooser — that screen (RoleSelection) is
+// hidden for now; see src/app/page.tsx for how to restore it if a shared
+// chooser is wanted again.
+export default function CompliancePage() {
   const router = useRouter();
   const { setStep, setData } = useOnboardingStore();
 
@@ -39,10 +39,11 @@ export default function Home() {
             router.replace(role === "Compliance" ? "/complianceonboarding" : "/onboarding");
           }
         } catch {
-          router.replace("/onboarding");
+          router.replace("/complianceonboarding");
         }
         return;
       }
+
       const hasRegistered =
         typeof window !== "undefined" ? localStorage.getItem("hasRegistered") === "true" : false;
       const allowRegistration =
@@ -53,7 +54,7 @@ export default function Home() {
         return;
       }
 
-      setData({ role: "miner" });
+      setData({ role: "partner" });
       setStep(2);
       router.replace("/register");
     };
@@ -62,24 +63,3 @@ export default function Home() {
 
   return null;
 }
-
-/*
- * Role-selection screen — commented out, not deleted. Restore by:
- *   1. Reverting this file to render <RoleSelection onNext={...} /> when
- *      step <= 1 (as it did before), instead of presetting role="miner"
- *      and redirecting straight to /register.
- *   2. Optionally retiring the separate "/compliance" entry point in
- *      src/app/compliance/page.tsx if a shared chooser is preferred again.
- *
- * import { RoleSelection } from "@/src/features/onboarding/steps/RoleSelection";
- *
- * if (step > 1) return null;
- * return (
- *   <RoleSelection
- *     onNext={() => {
- *       setStep(2);
- *       router.push("/register");
- *     }}
- *   />
- * );
- */

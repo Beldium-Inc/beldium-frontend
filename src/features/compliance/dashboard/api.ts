@@ -449,7 +449,7 @@ export type ComplianceTeamMembersResponse = {
 
 export async function getComplianceTeamMembers() {
   const { data } = await authApi.get<ComplianceTeamMembersResponse>(
-    "/compliance/team-members/",
+    "/compliance/team-members",
   );
   return data;
 }
@@ -823,7 +823,7 @@ export type InviteTeamMemberPayload = {
 };
 
 export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
-  const { data } = await authApi.post("/compliance/team-members/", payload);
+  const { data } = await authApi.post("/compliance/team-members", payload);
   return data;
 }
 
@@ -835,7 +835,7 @@ export type UpdateTeamMemberPayload = Partial<{
 }>;
 
 export async function updateTeamMember(memberId: string, payload: UpdateTeamMemberPayload) {
-  const { data } = await authApi.patch(`/compliance/team-members/${memberId}/`, payload);
+  const { data } = await authApi.patch(`/compliance/team-members/${memberId}`, payload);
   return data;
 }
 

@@ -19,7 +19,8 @@ export function StepOne({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const { step, totalSteps } = useOnboardingStore();
+  const { step, totalSteps, data: storeData } = useOnboardingStore();
+  const entryRoute = storeData?.role === "partner" ? "/compliance" : "/";
   const [code, setCode] = useState("");
   const [timeLeft, setTimeLeft] = useState(30);
   const canResend = timeLeft === 0;
@@ -146,7 +147,7 @@ export function StepOne({
         </Button>
         <LoadingOverlay visible={verifying} message="Verifying your account..." />
         <p className="text-sm">
-          Wrong number or email?. <Link href="/">Edit details</Link>
+          Wrong number or email?. <Link href={entryRoute}>Edit details</Link>
         </p>
       </div>
     </div>

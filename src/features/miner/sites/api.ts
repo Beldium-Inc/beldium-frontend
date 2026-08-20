@@ -71,6 +71,17 @@ export const createMiningSite = async (payload: CreateMiningSitePayload) => {
   return res.data;
 };
 
+export const updateMiningSiteCoordinates = async (
+  siteId: string,
+  coords: { latitude: number; longitude: number }
+) => {
+  const res = await authApi.patch(`/mining-sites/${siteId}/`, {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  });
+  return res.data;
+};
+
 export const getMiningOrganisations = async () => {
   const res = await authApi.get("/mining-organisations/");
   return res.data;
