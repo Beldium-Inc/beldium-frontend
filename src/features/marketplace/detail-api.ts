@@ -5,7 +5,7 @@ import type { MinerProfileListItem } from "./api";
 // (src/app/miner-detail/[minerId]/proxy/route.ts) via getComplianceMinerDetail, per
 // compliance/views.py MinerComplianceDetailView + MinerComplianceDetailSerializer.
 // It lives under /proxy (not directly at /miner-detail/[minerId]) because that base path
-// is the actual miner detail page (src/app/miner-detail/[minerId]/page.tsx) — Next.js
+// is the actual miner detail page (src/app/miner-detail/[minerId]/page.tsx) - Next.js
 // App Router doesn't allow a route.ts and page.tsx at the same segment.
 // Do not create a second proxy route for this data.
 

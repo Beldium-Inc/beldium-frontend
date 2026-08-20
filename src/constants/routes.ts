@@ -27,12 +27,12 @@ export const AppRoutes = [
     href: "/dashboard?view=orders",
     icon: CodeSandboxOutlined,
   },
-  {
-    key: "sites",
-    label: "Sites",
-    href: "/dashboard/sites",
-    icon: EnvironmentOutlined,
-  },
+  // {
+  //   key: "sites",
+  //   label: "Sites",
+  //   href: "/dashboard/sites",
+  //   icon: EnvironmentOutlined,
+  // },
   {
     key: "wallet",
     label: "Wallet",

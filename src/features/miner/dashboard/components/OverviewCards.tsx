@@ -91,7 +91,7 @@ function complianceAuditDisplay(status: string) {
   if (v === "rejected") {
     return {
       tag: <Tag color="red" className="rounded-full px-2 border-none bg-red-50 text-red-600 font-medium">Rejected</Tag>,
-      helpText: "Your compliance audit was rejected — check your documentation.",
+      helpText: "Your compliance audit was rejected - check your documentation.",
     };
   }
   return {

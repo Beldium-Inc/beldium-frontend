@@ -35,7 +35,7 @@ function classNames(...classes: Array<string | false | null | undefined>) {
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   return new Date(value).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -284,7 +284,7 @@ function AlertDetailDrawer({
             <div className="grid grid-cols-2 gap-y-4 rounded-[14px] border border-[#e8ecf4] bg-[#fbfcfe] p-4 text-[13px]">
               <div>
                 <div className="text-[#8a92a1]">Miner</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.miner_name || "—"}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.miner_name || "-"}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Status</div>
@@ -300,7 +300,7 @@ function AlertDetailDrawer({
               </div>
               <div>
                 <div className="text-[#8a92a1]">Mineral</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.mineral || "—"}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.mineral || "-"}</div>
               </div>
               <div>
                 <div className="text-[#8a92a1]">Created on</div>
@@ -308,7 +308,7 @@ function AlertDetailDrawer({
               </div>
               <div>
                 <div className="text-[#8a92a1]">Location</div>
-                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.location || "—"}</div>
+                <div className="mt-1 font-semibold text-[#2a2f39]">{alert.location || "-"}</div>
               </div>
             </div>
           </section>
@@ -464,7 +464,7 @@ function AssignReviewerModal({
 
           {reviewers.length === 0 ? (
             <p className="mt-4 text-[13px] text-[#8a92a1]">
-              No active team members found. Invite reviewers from Settings → Teams & Roles — they can be assigned once they accept their invite.
+              No active team members found. Invite reviewers from Settings → Teams & Roles - they can be assigned once they accept their invite.
             </p>
           ) : (
             <div className="mt-4 max-h-[280px] space-y-2 overflow-y-auto">
@@ -736,8 +736,8 @@ export function RegulatoryAlertsView() {
                         </span>
                       </td>
                       <td className="border-b border-[#f0f3f8] px-3 py-3 font-medium text-[#2a2f39] whitespace-nowrap">{ALERT_TYPE_LABEL[alert.alert_type]}</td>
-                      <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.miner_name || "—"}</td>
-                      <td className="border-b border-[#f0f3f8] px-3 py-3 font-mono text-[#5d6675]">{alert.miner_code || "—"}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.miner_name || "-"}</td>
+                      <td className="border-b border-[#f0f3f8] px-3 py-3 font-mono text-[#5d6675]">{alert.miner_code || "-"}</td>
                       <td className="border-b border-[#f0f3f8] px-3 py-3 text-[#4b5260]">{alert.assigned_to_name || "Unassigned"}</td>
                       <td className="border-b border-[#f0f3f8] px-3 py-3">
                         <span className={classNames("inline-flex items-center rounded-[8px] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap", statusStyle[alert.status])}>

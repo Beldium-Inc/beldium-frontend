@@ -75,7 +75,7 @@ function RuleStatusPill({ status }: { status: string }) {
 }
 
 function formatTriggerConditions(rule: ComplianceRuleRecord) {
-  if (!rule.trigger_conditions.length) return "—";
+  if (!rule.trigger_conditions.length) return "-";
   return rule.trigger_conditions
     .map((c) => `${c.field} ${c.operator} ${c.value}${c.unit ? ` ${c.unit}` : ""}`)
     .join("; ");
@@ -147,7 +147,7 @@ function ActiveRulesTable({
                       {formatTriggerConditions(row)}
                     </td>
                     <td className="border-b border-[#edf1f6] px-5 py-5 text-[16px] text-[#4d5565]">
-                      {row.action || "—"}
+                      {row.action || "-"}
                     </td>
                     <td className="border-b border-[#edf1f6] px-5 py-5">
                       <RuleStatusPill status={row.status} />

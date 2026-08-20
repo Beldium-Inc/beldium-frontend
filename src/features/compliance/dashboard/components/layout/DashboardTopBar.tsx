@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BellOutlined,
   MenuOutlined,
@@ -18,6 +18,10 @@ import type {
   ComplianceView,
 } from "@/src/features/compliance/dashboard/types";
 import { classNames } from "@/src/features/compliance/dashboard/lib/style";
+import { updateComplianceProfile } from "@/src/features/compliance/dashboard/api";
+import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
+import { getUser } from "@/src/features/onboarding/api";
+import { showToast } from "@/src/store/toast.store";
 
 export type DashboardTopBarUser = {
   name: string;
@@ -26,14 +30,55 @@ export type DashboardTopBarUser = {
   avatarSrc: string | null;
 };
 
+type ComplianceProfileAvailability = {
+  id?: string;
+  is_available?: boolean;
+};
+
 function OnlineToggle() {
-  const [online, setOnline] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: userRes } = useQuery({
+    queryKey: ["compliance-profile-user"],
+    queryFn: getUser,
+  });
+  const profile = userRes?.data?.profile as ComplianceProfileAvailability | undefined;
+  const online = profile?.is_available ?? true;
+
+  const mutation = useMutation({
+    mutationFn: (nextAvailable: boolean) => {
+      if (!profile?.id) {
+        throw new Error("Your compliance profile hasn't loaded yet.");
+      }
+      return updateComplianceProfile(profile.id, { is_available: nextAvailable });
+    },
+    onMutate: async (nextAvailable) => {
+      await queryClient.cancelQueries({ queryKey: ["compliance-profile-user"] });
+      const previous = queryClient.getQueryData(["compliance-profile-user"]);
+      queryClient.setQueryData(["compliance-profile-user"], (current: typeof userRes) =>
+        current?.data?.profile
+          ? { ...current, data: { ...current.data, profile: { ...current.data.profile, is_available: nextAvailable } } }
+          : current,
+      );
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["compliance-profile-user"], context.previous);
+      }
+      showToast(getApiErrorMessage(error, "Couldn't update your availability status."), "error");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["compliance-profile-user"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-team-members"] });
+    },
+  });
 
   return (
     <button
       type="button"
-      onClick={() => setOnline((prev) => !prev)}
-      className="flex items-center gap-3"
+      onClick={() => mutation.mutate(!online)}
+      disabled={mutation.isPending || !profile?.id}
+      className="flex items-center gap-3 disabled:opacity-60"
       aria-pressed={online}
     >
       <span

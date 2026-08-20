@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Modal, Select, Input, Upload, Switch, Skeleton, Drawer } from "antd";
 import type { UploadFile } from "antd";
@@ -12,9 +12,13 @@ import {
   DownloadOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
+  ExpandOutlined,
+  UndoOutlined,
+  ExportOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { getUser } from "@/src/features/miner/settings/api";
+import { downloadFile, getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
 import { createMinerDocument, getMinerComplianceDetail, MinerDocument, MinerLicense } from "@/src/features/miner/compliance/api";
 import { showToast } from "@/src/store/toast.store";
 
@@ -340,10 +344,61 @@ function UploadDocumentModal({ open, onClose, minerId }: { open: boolean; onClos
   );
 }
 
+function isPdfUrl(url: string) {
+  return /\.pdf($|\?)/i.test(url);
+}
+
 function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () => void }) {
   const [zoom, setZoom] = useState(100);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // Reset zoom/pan whenever a different document is opened, so leftover
+  // state from the previous preview doesn't carry over.
+  const rowKey = row?.key;
+  const lastKeyRef = useRef<string | undefined>(undefined);
+  if (rowKey !== lastKeyRef.current) {
+    lastKeyRef.current = rowKey;
+    if (zoom !== 100) setZoom(100);
+    if (pan.x !== 0 || pan.y !== 0) setPan({ x: 0, y: 0 });
+    if (imgFailed) setImgFailed(false);
+  }
 
   if (!row) return null;
+
+  const isPdf = row.fileUrl ? isPdfUrl(row.fileUrl) : false;
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (zoom <= 100) return;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, originX: pan.x, originY: pan.y };
+    setDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setPan({ x: dragRef.current.originX + dx, y: dragRef.current.originY + dy });
+  };
+  const handlePointerUp = () => {
+    dragRef.current = null;
+    setDragging(false);
+  };
+
+  const handleDownload = async () => {
+    if (!row.fileUrl || downloading) return;
+    try {
+      setDownloading(true);
+      await downloadFile(row.fileUrl, row.documentType);
+    } catch (error) {
+      showToast(getApiErrorMessage(error, "Couldn't download this file."), "error");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <Modal
@@ -352,27 +407,16 @@ function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () =>
       footer={null}
       closeIcon={<CloseOutlined />}
       title="Document Details"
-      width={700}
+      width={1180}
+      styles={{ body: { padding: 0 } }}
     >
-      <div className="mt-4 flex items-start justify-between gap-3 mb-8">
-        <div>
-          <div className="text-xs text-gray-400 mb-1">Document Type</div>
-          <div className="text-xl font-semibold text-gray-900">{row.documentType}</div>
-        </div>
-        {row.fileUrl && (
-          <Button
-            icon={<DownloadOutlined />}
-            href={row.fileUrl}
-            target="_blank"
-            size="large"
-          >
-            Download
-          </Button>
-        )}
-      </div>
+      <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 lg:h-[78vh]">
+        <div className="lg:w-64 flex-shrink-0 px-6 pt-4 pb-4 lg:pb-6 space-y-6">
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Document Type</div>
+            <div className="text-lg font-semibold text-gray-900">{row.documentType}</div>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
           <div>
             <div className="text-xs text-gray-400 mb-2">Status</div>
             <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${STATUS_STYLES[row.status]}`}>
@@ -393,42 +437,104 @@ function DocumentDetailModal({ row, onClose }: { row: Row | null; onClose: () =>
               {row.expiry ? dayjs(row.expiry).format("MMM DD, YYYY") : "No expiry"}
             </div>
           </div>
+
+          {row.fileUrl && (
+            <div className="flex flex-col gap-2 pt-2">
+              <Button icon={<DownloadOutlined />} onClick={handleDownload} loading={downloading} block>
+                Download
+              </Button>
+              <Button icon={<ExportOutlined />} href={row.fileUrl} target="_blank" type="text" block>
+                Open in new tab
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm text-gray-500">Document Preview</div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                className="flex h-7 w-7 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
-              >
-                <ZoomInOutlined className="text-xs" />
-              </button>
-              <span className="text-xs text-gray-500 w-10 text-center">{zoom}%</span>
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                className="flex h-7 w-7 items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
-              >
-                <ZoomOutOutlined className="text-xs" />
-              </button>
-            </div>
+        <div className="flex-1 min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-100 bg-gray-50">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
+            <div className="text-sm font-medium text-gray-700">Document Preview</div>
+            {!isPdf && row.fileUrl && !imgFailed && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.max(50, z - 25))}
+                  disabled={zoom <= 50}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOutOutlined className="text-sm" />
+                </button>
+                <span className="text-xs text-gray-500 w-12 text-center tabular-nums">{zoom}%</span>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.min(300, z + 25))}
+                  disabled={zoom >= 300}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
+                  aria-label="Zoom in"
+                >
+                  <ZoomInOutlined className="text-sm" />
+                </button>
+                <div className="w-px h-5 bg-gray-200 mx-1" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setZoom(100);
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  className="flex h-8 items-center gap-1.5 px-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-600"
+                >
+                  <UndoOutlined className="text-xs" /> Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(300)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                  aria-label="Fill view"
+                >
+                  <ExpandOutlined className="text-sm" />
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white h-80 overflow-auto p-3">
-            {row.fileUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={row.fileUrl}
-                alt={row.documentType}
-                style={{ width: `${zoom}%` }}
-                className="max-w-none object-contain transition-[width]"
-              />
-            ) : (
+          <div
+            className={`relative flex-1 min-h-[420px] overflow-hidden ${
+              zoom > 100 ? (dragging ? "cursor-grabbing" : "cursor-grab") : ""
+            }`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+          >
+            {!row.fileUrl ? (
               <div className="h-full flex items-center justify-center">
-                <span className="text-xs text-gray-400">No file uploaded</span>
+                <span className="text-sm text-gray-400">No file uploaded</span>
+              </div>
+            ) : isPdf ? (
+              <iframe title={row.documentType} src={row.fileUrl} className="w-full h-full border-0" />
+            ) : imgFailed ? (
+              <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-8">
+                <span className="text-sm text-gray-500">
+                  This file couldn&apos;t be previewed here - it may have expired or isn&apos;t an image/PDF.
+                </span>
+                <Button icon={<ExportOutlined />} href={row.fileUrl} target="_blank">
+                  Open in new tab instead
+                </Button>
+              </div>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center select-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={row.fileUrl}
+                  alt={row.documentType}
+                  draggable={false}
+                  onError={() => setImgFailed(true)}
+                  style={{
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+                    transformOrigin: "center center",
+                  }}
+                  className="max-w-[90%] max-h-[90%] object-contain transition-transform duration-150 ease-out shadow-sm rounded"
+                />
               </div>
             )}
           </div>

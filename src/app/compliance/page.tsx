@@ -6,7 +6,7 @@ import { getUser } from "@/src/features/onboarding/api";
 
 // Compliance / regulator partner signup entry point. Mirrors "/" (the Miner
 // entry point) but presets role="partner" so a compliance partner never
-// sees the Miner-vs-Compliance chooser — that screen (RoleSelection) is
+// sees the Miner-vs-Compliance chooser - that screen (RoleSelection) is
 // hidden for now; see src/app/page.tsx for how to restore it if a shared
 // chooser is wanted again.
 export default function CompliancePage() {

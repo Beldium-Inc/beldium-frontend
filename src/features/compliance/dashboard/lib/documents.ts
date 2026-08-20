@@ -221,6 +221,33 @@ export function getMinerDetailDocuments(
 }
 
 
+/**
+ * Force-downloads a file instead of opening it in a new tab/viewer.
+ *
+ * A plain `<a download href={crossOriginUrl}>` does NOT reliably force a
+ * download — the `download` attribute is only honored by browsers for
+ * same-origin URLs. Our document URLs are presigned S3/Backblaze links
+ * (cross-origin), so browsers were just navigating to/opening the file
+ * instead of downloading it. Fetching the file as a blob and downloading
+ * that local blob URL works regardless of origin.
+ */
+export async function downloadFile(url: string, filename: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download file (${response.status})`);
+  }
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error && "response" in error) {
     const candidate = error as {

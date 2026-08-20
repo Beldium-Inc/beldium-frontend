@@ -89,7 +89,7 @@ export default function AdminPartnerDirectoryView() {
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <ReviewInfoTile icon={<SafetyCertificateOutlined />} label="Accreditation Status" value={openedPartner.accreditation_status} />
-            <ReviewInfoTile icon={<EnvironmentOutlined />} label="Regions Covered" value={openedPartner.regions_covered.join(", ") || "—"} />
+            <ReviewInfoTile icon={<EnvironmentOutlined />} label="Regions Covered" value={openedPartner.regions_covered.join(", ") || "-"} />
             <ReviewInfoTile icon={<UsergroupAddOutlined />} label="Active Assignments" value={String(openedPartner.active_assignments_count)} />
             <ReviewInfoTile icon={<ApartmentOutlined />} label="Category" value={openedPartner.organization_type_display} />
           </div>
@@ -166,7 +166,7 @@ export default function AdminPartnerDirectoryView() {
                       <StatusBadgePill badge={{ label: row.organization_type_display, tone: "cyan" }} />
                     </td>
                     <td className="border-b border-[#edf1f7] px-5 py-6">{row.accreditation_status}</td>
-                    <td className="border-b border-[#edf1f7] px-5 py-6">{row.regions_covered.join(", ") || "—"}</td>
+                    <td className="border-b border-[#edf1f7] px-5 py-6">{row.regions_covered.join(", ") || "-"}</td>
                     <td className="border-b border-[#edf1f7] px-5 py-6">
                       <span className="inline-flex items-center gap-2">
                         <span className={classNames("h-2.5 w-2.5 rounded-full", partnerAvailabilityDot[row.availability_status])} />

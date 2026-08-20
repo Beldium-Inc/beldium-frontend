@@ -7,7 +7,7 @@ import { Onboard } from "./Onboard";
 import { StepOne } from "./steps/StepOne";
 import { VerifySuccess } from "./steps/VerifySuccess";
 
-// Renders steps 2+. Step 1 (the role chooser) is currently hidden — Miner
+// Renders steps 2+. Step 1 (the role chooser) is currently hidden - Miner
 // and Compliance each have their own entry route ("/" and "/compliance")
 // that preset `data.role` and jump straight to step 2, so "back" from here
 // needs to return to whichever entry route matches the current role rather

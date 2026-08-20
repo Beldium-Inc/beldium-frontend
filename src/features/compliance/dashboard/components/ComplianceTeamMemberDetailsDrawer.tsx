@@ -19,7 +19,7 @@ import {
 import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
 
 function formatDateTime(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return "-";
   return new Date(value).toLocaleString("en-US", {
     month: "short",
     day: "numeric",

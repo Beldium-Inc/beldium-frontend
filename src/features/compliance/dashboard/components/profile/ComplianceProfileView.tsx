@@ -204,7 +204,7 @@ export default function ComplianceProfileView({
                 <span className="text-[26px] text-[#8a92a1]">{user.name ? user.name.charAt(0).toUpperCase() : "?"}</span>
               )}
             </div>
-            <div className="mt-4 text-[20px] font-semibold tracking-[-0.02em] text-[#2a2f39]">{user.name || "—"}</div>
+            <div className="mt-4 text-[20px] font-semibold tracking-[-0.02em] text-[#2a2f39]">{user.name || "-"}</div>
             <div className="mt-0.5 text-[13px] text-[#8a92a1]">{user.role}</div>
           </div>
 

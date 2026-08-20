@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getUser } from "@/src/features/onboarding/api";
 
 // Miner-only entry point. The Miner-vs-Compliance role chooser
-// (RoleSelection) is hidden for now — Miner and Compliance now have fully
+// (RoleSelection) is hidden for now - Miner and Compliance now have fully
 // separate entry points ("/" for Miner, "/compliance" for Compliance) so a
 // miner never sees the option to create a compliance account. See the
 // commented-out block at the bottom of this file to restore the chooser.
@@ -64,7 +64,7 @@ export default function Home() {
 }
 
 /*
- * Role-selection screen — commented out, not deleted. Restore by:
+ * Role-selection screen - commented out, not deleted. Restore by:
  *   1. Reverting this file to render <RoleSelection onNext={...} /> when
  *      step <= 1 (as it did before), instead of presetting role="miner"
  *      and redirecting straight to /register.

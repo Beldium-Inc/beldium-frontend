@@ -692,6 +692,7 @@ export type UpdateComplianceProfilePayload = Partial<{
   primary_office_address: string;
   require_two_factor_authentication: boolean;
   session_timeout_minutes: number;
+  is_available: boolean;
 }>;
 
 export async function updateComplianceProfile(
@@ -708,7 +709,7 @@ export type UpdateUserPayload = Partial<{
 }>;
 
 export async function updateUser(userId: string, payload: UpdateUserPayload) {
-  const { data } = await authApi.patch(`/user/${userId}/`, payload);
+  const { data } = await authApi.patch(`/user/${userId}`, payload);
   return data;
 }
 

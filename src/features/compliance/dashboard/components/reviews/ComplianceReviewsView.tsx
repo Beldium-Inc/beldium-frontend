@@ -1025,7 +1025,7 @@ export default function ComplianceReviewsView({
                           </td>
                           <td
                             className="px-4 py-3 font-medium text-[#2661d8]"
-                            title="Illustrative — no industry/sector field exists on reviews yet"
+                            title="Illustrative - no industry/sector field exists on reviews yet"
                           >
                             Mining
                           </td>
@@ -1055,7 +1055,7 @@ export default function ComplianceReviewsView({
                           </td>
                           <td
                             className="px-4 py-3 text-[12px] text-[#a0a7b5]"
-                            title="Illustrative — no due-date field exists on reviews yet"
+                            title="Illustrative - no due-date field exists on reviews yet"
                           >
                             14 Jan 2026
                           </td>
@@ -1109,7 +1109,7 @@ export default function ComplianceReviewsView({
                     </span>
                     <span
                       className="rounded-full bg-[#e8f0fe] px-3 py-1 text-[13px] font-medium text-[#2661d8]"
-                      title="Illustrative — no industry/sector field exists on the backend yet"
+                      title="Illustrative - no industry/sector field exists on the backend yet"
                     >
                       Mining
                     </span>
@@ -1193,7 +1193,7 @@ export default function ComplianceReviewsView({
                         ].map((item) => (
                           <div
                             key={item.label}
-                            title={item.placeholder ? "Illustrative — no matching field exists on the backend yet" : undefined}
+                            title={item.placeholder ? "Illustrative - no matching field exists on the backend yet" : undefined}
                           >
                             <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">{item.label}</div>
                             <div className="mt-1.5 text-[15px] text-[#1f2430]">{item.value}</div>
@@ -1241,7 +1241,7 @@ export default function ComplianceReviewsView({
                               {verifiedDocumentsCount} / {documentRecords.length || "-"}
                             </div>
                           </div>
-                          <div title="Illustrative — no verification-rules field exists on the backend yet">
+                          <div title="Illustrative - no verification-rules field exists on the backend yet">
                             <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Verification Rules</div>
                             <div className="mt-1.5 text-[15px] text-[#1f2430]">25,000 MT / yr</div>
                           </div>
@@ -1354,7 +1354,7 @@ export default function ComplianceReviewsView({
 
                           <div
                             className="mt-5 flex items-center justify-between"
-                            title="Illustrative — no conditions/covenant tracking exists on the backend yet"
+                            title="Illustrative - no conditions/covenant tracking exists on the backend yet"
                           >
                             <span className="text-[13px] font-semibold text-[#2a2f39]">Outstanding Conditions</span>
                             <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#f4f6f9] px-1.5 text-[11px] font-semibold text-[#5d6675]">
@@ -1363,7 +1363,7 @@ export default function ComplianceReviewsView({
                           </div>
                           <div
                             className="mt-2.5 space-y-2"
-                            title="Illustrative — no conditions/covenant tracking exists on the backend yet"
+                            title="Illustrative - no conditions/covenant tracking exists on the backend yet"
                           >
                             {[
                               { text: "Replace expired insurance Certificate", due: "Due in 28 days" },
@@ -1389,7 +1389,7 @@ export default function ComplianceReviewsView({
                       <div className="mt-3 space-y-2.5 text-[13px]">
                         <div
                           className="flex items-center justify-between"
-                          title="Illustrative — no due-date field exists on reviews yet"
+                          title="Illustrative - no due-date field exists on reviews yet"
                         >
                           <span className="text-[#8a92a1]">Due Date</span>
                           <span className="font-medium text-[#2a2f39]">14 Jan 2026</span>
@@ -1402,7 +1402,7 @@ export default function ComplianceReviewsView({
                         </div>
                         <div
                           className="flex items-center justify-between"
-                          title="Priority mirrors this case's risk level — there is no separate priority field yet"
+                          title="Priority mirrors this case's risk level - there is no separate priority field yet"
                         >
                           <span className="text-[#8a92a1]">Priority</span>
                           <span className="font-medium text-[#2a2f39]">{selectedRow.riskLevel.label}</span>
@@ -1548,7 +1548,7 @@ export default function ComplianceReviewsView({
                             <div>
                               <div
                                 className="text-[10px] uppercase tracking-wide text-[#a0a7b5]"
-                                title="Illustrative — no issue-date field exists on the backend yet"
+                                title="Illustrative - no issue-date field exists on the backend yet"
                               >
                                 Issue Date
                               </div>
@@ -1571,7 +1571,7 @@ export default function ComplianceReviewsView({
                             <div>
                               <div
                                 className="text-[10px] uppercase tracking-wide text-[#a0a7b5]"
-                                title="Illustrative — the backend does not run automated document validation yet"
+                                title="Illustrative - the backend does not run automated document validation yet"
                               >
                                 Validation Checks
                               </div>
@@ -1810,7 +1810,7 @@ export default function ComplianceReviewsView({
               ) : activeTab === "export-compliance" ? (
                 <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-8 text-center text-[14px] leading-6 text-[#7b8392]">
                   Export compliance tracking (export licenses, shipment manifests, customs declarations) isn&apos;t
-                  wired up on the backend yet — this tab will populate once those records exist.
+                  wired up on the backend yet - this tab will populate once those records exist.
                 </div>
               ) : activeTab === "documents" ? (
                 <div className="space-y-4">
@@ -1977,12 +1977,12 @@ export default function ComplianceReviewsView({
                   <button
                     type="button"
                     onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
-                    className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
+                    className="inline-flex h-11 !mt-2 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
                     style={primaryActionStyle}
                   >
                     Post Note
                   </button>
-                  <div className="rounded-[18px] border border-[#e8ecf4] bg-[#fafbfd] p-5 text-[14px] leading-6 text-[#5d6675]">
+                  <div className="rounded-[18px] border border-[#e8ecf4] bg-[#fafbfd] p-5 mt-7 text-[14px] leading-6 text-[#5d6675]">
                     No internal notes captured for this review yet.
                   </div>
                 </div>

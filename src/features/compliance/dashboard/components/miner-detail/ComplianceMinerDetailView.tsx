@@ -25,7 +25,7 @@ import {
   formatReviewStatusText,
 } from "@/src/features/compliance/dashboard/lib/format";
 import { getMinerDetailSummary } from "@/src/features/compliance/dashboard/lib/mappers";
-import { getMinerDetailDocuments } from "@/src/features/compliance/dashboard/lib/documents";
+import { downloadFile, getApiErrorMessage, getMinerDetailDocuments } from "@/src/features/compliance/dashboard/lib/documents";
 import { classNames, primaryActionStyle } from "@/src/features/compliance/dashboard/lib/style";
 import { showToast } from "@/src/store/toast.store";
 import {
@@ -53,7 +53,7 @@ type MinerSafetyRecord = { status: string; severity: string; incident_date: stri
 type MinerProductionRecord = { record_date: string; mineral_type: string; quantity: string };
 
 /**
- * Real, backend-driven checklist — replaces the previous hardcoded mock array.
+ * Real, backend-driven checklist - replaces the previous hardcoded mock array.
  * Each item is derived from actual records on the miner detail payload, so an
  * empty/pending state here means the miner genuinely has no data on file yet,
  * not that the check hasn't been wired up.
@@ -95,7 +95,7 @@ export function buildOperationalChecklist(minerDetail?: ComplianceMinerDetailRes
     {
       title: "Mining Permit",
       detail: licenses.length
-        ? `${licenses.length} license${licenses.length === 1 ? "" : "s"} on file — ${licenseStatus === "verified" ? "at least one verified" : licenseStatus === "flagged" ? "issues found on review" : "pending verification"}.`
+        ? `${licenses.length} license${licenses.length === 1 ? "" : "s"} on file - ${licenseStatus === "verified" ? "at least one verified" : licenseStatus === "flagged" ? "issues found on review" : "pending verification"}.`
         : "No license on file for this miner yet.",
       status: licenses.length ? licenseStatus : "pending",
     },
@@ -109,7 +109,7 @@ export function buildOperationalChecklist(minerDetail?: ComplianceMinerDetailRes
     {
       title: "Site Inspections",
       detail: latestInspection
-        ? `Latest inspection scheduled ${latestInspection.scheduled_date} — ${latestInspection.outcome ? latestInspection.outcome.replace(/_/g, " ") : latestInspection.status}.`
+        ? `Latest inspection scheduled ${latestInspection.scheduled_date} - ${latestInspection.outcome ? latestInspection.outcome.replace(/_/g, " ") : latestInspection.status}.`
         : "No site inspection has been scheduled or logged yet.",
       status: inspections.length ? inspectionStatus : "pending",
     },
@@ -171,11 +171,39 @@ type MinerSiteRecord = {
   longitude: string | null;
 };
 
+function DocumentDownloadButton({ url, filename }: { url: string; filename: string }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleClick = async () => {
+    if (downloading) return;
+    try {
+      setDownloading(true);
+      await downloadFile(url, filename);
+    } catch (error) {
+      showToast(getApiErrorMessage(error, "Couldn't download this file."), "error");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={downloading}
+      className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[#5d6675] disabled:opacity-60"
+      aria-label={`Download ${filename}`}
+    >
+      <DownloadOutlined />
+    </button>
+  );
+}
+
 function SiteDetailField({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
       <div className="text-[#8a92a1]">{label}</div>
-      <div className="mt-0.5 font-medium capitalize text-[#2a2f39]">{value || "—"}</div>
+      <div className="mt-0.5 font-medium capitalize text-[#2a2f39]">{value || "-"}</div>
     </div>
   );
 }
@@ -478,7 +506,7 @@ export default function ComplianceMinerDetailView({
           ) : activeTab === "export-compliance" ? (
             <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-8 text-center text-[14px] leading-6 text-[#7b8392]">
               Export compliance tracking (export licenses, shipment manifests, customs declarations) isn&apos;t
-              wired up on the backend yet — this tab will populate once those records exist. It is intentionally
+              wired up on the backend yet - this tab will populate once those records exist. It is intentionally
               left empty rather than showing placeholder data.
             </div>
           ) : activeTab === "documents" ? (
@@ -508,9 +536,7 @@ export default function ComplianceMinerDetailView({
                             <a href={document.viewUrl} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[#5d6675]">
                               <EyeOutlined />
                             </a>
-                            <a href={document.downloadUrl} target="_blank" rel="noreferrer" download={document.name} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e8ecf4] text-[#5d6675]">
-                              <DownloadOutlined />
-                            </a>
+                            <DocumentDownloadButton url={document.downloadUrl} filename={document.name} />
                           </div>
                         </td>
                       </tr>

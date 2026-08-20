@@ -142,7 +142,7 @@ export default function SitesPage() {
         </div>
       ),
     },
-    { title: "Mineral", dataIndex: "mineral_type", key: "mineral_type", render: (v: string) => v || "—" },
+    { title: "Mineral", dataIndex: "mineral_type", key: "mineral_type", render: (v: string) => v || "-" },
     {
       title: "Location",
       key: "location",
@@ -150,7 +150,7 @@ export default function SitesPage() {
         <span className="text-gray-600">
           {[row.local_government_area, row.state_of_operation, row.country]
             .filter(Boolean)
-            .join(", ") || "—"}
+            .join(", ") || "-"}
         </span>
       ),
     },
@@ -203,7 +203,7 @@ export default function SitesPage() {
         <StatCard
           icon={<BarChartOutlined />}
           label="Avg. Compliance"
-          value={stats.avgScore !== null ? `${stats.avgScore}%` : "—"}
+          value={stats.avgScore !== null ? `${stats.avgScore}%` : "-"}
           tone="bg-amber-50 text-amber-600"
         />
       </div>
@@ -397,7 +397,7 @@ function InfoField({
     <div className={span2 ? "col-span-2" : undefined}>
       <div className="text-xs text-gray-400">{label}</div>
       <div className={`text-sm font-medium text-gray-900 mt-0.5 ${capitalize ? "capitalize" : ""}`}>
-        {value ? value.toString().replace(/_/g, " ") : "—"}
+        {value ? value.toString().replace(/_/g, " ") : "-"}
       </div>
     </div>
   );

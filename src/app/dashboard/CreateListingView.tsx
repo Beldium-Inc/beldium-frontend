@@ -35,7 +35,7 @@ const SAMPLE_TYPES = [
 const LISTING_DRAFT_STORAGE_KEY = "beldium:create-listing-draft:v1";
 // File inputs (antd UploadFile[]) hold in-memory Blob/File references that
 // can't round-trip through JSON/localStorage, so drafts only cover the rest
-// of the form — files must be re-attached after restoring a draft.
+// of the form - files must be re-attached after restoring a draft.
 const LISTING_DRAFT_FILE_FIELDS = ["media", "assay_report_file", "lab_report_file"] as const;
 const LISTING_DRAFT_DATE_FIELDS = ["collection_date", "lab_testing_date"] as const;
 

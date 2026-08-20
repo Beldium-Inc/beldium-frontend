@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
   CloseOutlined,
   InfoCircleOutlined,
@@ -11,7 +12,7 @@ import {
   FolderOpenOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons";
-import type { ComplianceReviewDetail } from "@/src/features/compliance/dashboard/api";
+import { getComplianceMinerDetail, type ComplianceReviewDetail } from "@/src/features/compliance/dashboard/api";
 import type {
   ComplianceReviewSelection,
   ReviewActionType,
@@ -26,6 +27,7 @@ import {
   formatReviewScore,
   formatReviewDateTime,
 } from "@/src/features/compliance/dashboard/lib/format";
+import { getMinerDetailDocuments } from "@/src/features/compliance/dashboard/lib/documents";
 import { StatusBadgePill } from "@/src/features/compliance/dashboard/components/shared/DashboardMetricCard";
 import {
   ReviewInfoTile,
@@ -51,7 +53,7 @@ export default function ComplianceReviewDrawer({
 }) {
   const status = detail?.status ?? "pending";
   // The backend's review state machine only ever has status "pending" while
-  // a review is unclaimed (claim() is what moves it to "claimed") — so
+  // a review is unclaimed (claim() is what moves it to "claimed") - so
   // "pending" alone is sufficient to know a claim is required, and doesn't
   // depend on `selection.claimRequired`, which was never actually set when
   // opening a review from the task pool/pipeline table. That gap meant every
@@ -70,6 +72,13 @@ export default function ComplianceReviewDrawer({
   const waitLabel = selection.createdAt
     ? formatWaitTime(selection.createdAt, now).label
     : null;
+
+  const minerDetailQ = useQuery({
+    queryKey: ["reviewDrawerMinerDetail", selection.minerId],
+    queryFn: () => getComplianceMinerDetail(selection.minerId!),
+    enabled: Boolean(selection.minerId),
+  });
+  const documents = getMinerDetailDocuments(minerDetailQ.data);
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
@@ -212,25 +221,28 @@ export default function ComplianceReviewDrawer({
                     Document Checklist
                   </div>
                   <span className="rounded-full bg-[#f4f7fb] px-3 py-1 text-[12px] font-medium text-[#7b8392]">
-                    3 Files
+                    {minerDetailQ.isLoading ? "…" : `${documents.length} File${documents.length === 1 ? "" : "s"}`}
                   </span>
                 </div>
                 <div className="space-y-3">
-                  <ReviewDocumentRow
-                    name="Environmental_Impact.pdf"
-                    type="pdf"
-                    locked={status === "pending"}
-                  />
-                  <ReviewDocumentRow
-                    name="Mining_License.png"
-                    type="image"
-                    locked={status === "pending"}
-                  />
-                  <ReviewDocumentRow
-                    name="Community_Engagement.pdf"
-                    type="pdf"
-                    locked={status === "pending"}
-                  />
+                  {minerDetailQ.isLoading ? (
+                    <div className="h-16 animate-pulse rounded-[18px] bg-[#f3f6fb]" />
+                  ) : documents.length > 0 ? (
+                    documents.map((document) => (
+                      <ReviewDocumentRow
+                        key={document.id}
+                        name={document.name}
+                        type={document.type}
+                        locked={requiresClaim}
+                        viewUrl={document.viewUrl}
+                        downloadUrl={document.downloadUrl}
+                      />
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-4 py-5 text-center text-[13px] text-[#8a92a1]">
+                      This miner hasn&apos;t uploaded any documents yet.
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

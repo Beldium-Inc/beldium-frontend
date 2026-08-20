@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   FilePdfOutlined,
   FileImageOutlined,
@@ -7,9 +7,12 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   DownloadOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import type { ReviewDocumentKind } from "@/src/features/compliance/dashboard/types";
 import { classNames } from "@/src/features/compliance/dashboard/lib/style";
+import { downloadFile, getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
+import { showToast } from "@/src/store/toast.store";
 
 export function ReviewInfoTile({
   icon,
@@ -52,6 +55,19 @@ export function ReviewDocumentRow({
         : FileSearchOutlined;
   const canOpen = !locked && Boolean(viewUrl);
   const canDownload = !locked && Boolean(downloadUrl);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!canDownload || !downloadUrl || downloading) return;
+    try {
+      setDownloading(true);
+      await downloadFile(downloadUrl, name);
+    } catch (error) {
+      showToast(getApiErrorMessage(error, "Couldn't download this file."), "error");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[#e8ecf4] bg-white px-4 py-4">
@@ -113,22 +129,19 @@ export function ReviewDocumentRow({
           
         </a>
 
-        <a
-          href={canDownload ? downloadUrl : undefined}
-          target={canDownload ? "_blank" : undefined}
-          rel={canDownload ? "noreferrer" : undefined}
-          download={canDownload ? name : undefined}
-          aria-disabled={!canDownload}
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={!canDownload || downloading}
           className={classNames(
             "inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border px-4 text-[13px] font-medium transition-colors",
             canDownload
               ? "border-[#dce3ef] bg-white text-[#2b3140] hover:bg-[#f8fbff]"
-              : "pointer-events-none border-[#eef2f7] bg-[#f7f9fc] text-[#a0a7b5]",
+              : "cursor-not-allowed border-[#eef2f7] bg-[#f7f9fc] text-[#a0a7b5]",
           )}
         >
-          <DownloadOutlined />
-          
-        </a>
+          {downloading ? <LoadingOutlined /> : <DownloadOutlined />}
+        </button>
       </div>
     </div>
   );

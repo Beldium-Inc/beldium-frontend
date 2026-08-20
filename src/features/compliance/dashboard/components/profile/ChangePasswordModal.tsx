@@ -2,10 +2,42 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import { showToast } from "@/src/store/toast.store";
 import { changePassword } from "@/src/features/compliance/dashboard/api";
 import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
+
+function PasswordInput({
+  value,
+  onChange,
+  autoComplete,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative mt-1.5">
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        className="h-11 w-full rounded-[10px] border border-[#dfe4ec] bg-white px-3 pr-10 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute right-0 top-0 flex h-11 w-10 items-center justify-center text-[15px] text-[#8a92a1] hover:text-[#2f3541]"
+        aria-label={visible ? "Hide password" : "Show password"}
+        tabIndex={-1}
+      >
+        {visible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+      </button>
+    </div>
+  );
+}
 
 export default function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [oldPassword, setOldPassword] = useState("");
@@ -44,31 +76,16 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         <div className="space-y-4 px-6 py-5">
           <div>
             <label className="text-[13px] font-medium text-[#2f3541]">Current password</label>
-            <input
-              type="password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-[10px] border border-[#dfe4ec] bg-white px-3 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
-            />
+            <PasswordInput value={oldPassword} onChange={setOldPassword} autoComplete="current-password" />
           </div>
           <div>
             <label className="text-[13px] font-medium text-[#2f3541]">New password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-[10px] border border-[#dfe4ec] bg-white px-3 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
-            />
+            <PasswordInput value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
             <p className="mt-1 text-[12px] text-[#8a92a1]">At least 8 characters.</p>
           </div>
           <div>
             <label className="text-[13px] font-medium text-[#2f3541]">Confirm new password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-[10px] border border-[#dfe4ec] bg-white px-3 text-[13px] text-[#2d3441] outline-none focus:border-[#101e3d]"
-            />
+            <PasswordInput value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
             {confirmPassword.length > 0 && !passwordsMatch ? (
               <p className="mt-1 text-[12px] text-[#ef2f32]">Passwords do not match.</p>
             ) : null}

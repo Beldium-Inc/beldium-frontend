@@ -49,7 +49,7 @@ export default function MinerDashboardPage() {
   const pending = overview?.pending_actions;
   const items = queueQ.data?.data?.results || [];
   // Compliance audit status is reviewed by a compliance officer after documents
-  // are uploaded — not something re-visiting the onboarding wizard can "finish"
+  // are uploaded - not something re-visiting the onboarding wizard can "finish"
   // (and the wizard redirects straight back to /dashboard once onboarding is
   // already complete, regardless of any ?step= param). Send miners to the
   // actual Compliance page where they can upload/track required documents.

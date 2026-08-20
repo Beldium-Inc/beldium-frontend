@@ -38,7 +38,7 @@ const STEPS: { key: Tab; label: string }[] = [
   { key: "review", label: "Review" },
 ];
 
-// The backend stores coordinates as DECIMAL(9,6) — 3 digits before the point,
+// The backend stores coordinates as DECIMAL(9,6) - 3 digits before the point,
 // 6 after. Raw map clicks / GPS reads come back with far more precision than
 // that, so every point needs rounding at the moment it enters state, not just
 // at display time, or the save request 400s on "no more than 9 digits".
@@ -121,7 +121,7 @@ export function MineLocationPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // The side panel is a persisted scrollable node across tab switches — React
+  // The side panel is a persisted scrollable node across tab switches - React
   // doesn't reset its scroll position on its own, so without this, switching
   // from a taller tab (e.g. a long boundary point list) to a shorter one
   // (Review) leaves the panel scrolled down, showing blank space above a
@@ -175,7 +175,7 @@ export function MineLocationPicker({
       // Read the current tab from a ref, not a `setTab(current => ...)` side
       // channel: that pattern ran setPin/setBoundary as a side effect inside
       // a state *updater*, which React 18 Strict Mode deliberately invokes
-      // twice in development to catch exactly this kind of impurity — the
+      // twice in development to catch exactly this kind of impurity - the
       // visible symptom was every boundary click registering two points.
       if (tabRef.current === "pin") {
         setPin(point);
@@ -260,9 +260,9 @@ export function MineLocationPicker({
 
   const DENIED_HELP =
     "Location access was denied. Once a site is blocked, the browser won't show the permission prompt " +
-    "again on request — reset it yourself: click the lock/site-info icon next to the address bar → " +
+    "again on request - reset it yourself: click the lock/site-info icon next to the address bar → " +
     "Permissions (or Site settings) → Location → Allow, then reload this page. If this map is embedded " +
-    "inside another page/frame, GPS may be blocked entirely for that embed — open the site directly in " +
+    "inside another page/frame, GPS may be blocked entirely for that embed - open the site directly in " +
     "its own tab instead.";
 
   const handleUseGps = async () => {
@@ -278,7 +278,7 @@ export function MineLocationPicker({
 
     // Check permission state up front: once it's "denied", calling
     // getCurrentPosition again will NOT re-show the browser's allow/deny
-    // prompt (browsers do this deliberately, to stop sites from nagging) —
+    // prompt (browsers do this deliberately, to stop sites from nagging) -
     // so detect that case and go straight to the reset instructions instead
     // of making the user click the button just to see the same dead end.
     if (navigator.permissions?.query) {
@@ -289,7 +289,7 @@ export function MineLocationPicker({
           return;
         }
       } catch {
-        // Permissions API not supported for this query in this browser — fall through and just try.
+        // Permissions API not supported for this query in this browser - fall through and just try.
       }
     }
 
@@ -384,7 +384,7 @@ export function MineLocationPicker({
           {!GEOAPIFY_KEY && (
             <div className="absolute inset-0 bg-gray-100/95 flex items-center justify-center text-center p-6">
               <p className="text-sm text-gray-500">
-                Map tiles unavailable — set NEXT_PUBLIC_GEOAPIFY_API_KEY to enable satellite/street tiles.
+                Map tiles unavailable - set NEXT_PUBLIC_GEOAPIFY_API_KEY to enable satellite/street tiles.
                 Pin placement and boundary tracking still work by clicking the map area.
               </p>
             </div>

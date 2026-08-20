@@ -97,6 +97,7 @@ type ComplianceProfileData = {
   organization_name?: string | null;
   country_of_operation?: string | null;
   sector_coverage?: string[] | null;
+  is_available?: boolean;
 };
 
 export default function ComplianceInstitutionProfileView() {
@@ -159,7 +160,7 @@ export default function ComplianceInstitutionProfileView() {
 
         <div className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-[10px] border border-[#dce3ef] bg-white px-3 py-2 text-[13px] text-[#7a8291]">
           <span className="font-medium text-[#5b6472]">
-            Role: {profile?.organization_name ? "Compliance Officer" : "—"}
+            Role: {profile?.organization_name ? "Compliance Officer" : "-"}
           </span>
           <span className="text-[#c0c5cf]">•</span>
           <span>You are acting under this institution</span>
@@ -182,20 +183,36 @@ export default function ComplianceInstitutionProfileView() {
             </div>
           </div>
 
-          {accountVerified && (
-            <div className="flex flex-col items-start gap-2 xl:items-end">
+          <div className="flex flex-col items-start gap-2 xl:items-end">
+            {accountVerified && (
               <ComplianceInstitutionBadge
                 icon={<CheckCircleOutlined />}
                 label="Verified Institution"
               />
-            </div>
-          )}
+            )}
+            <span
+              className={classNames(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold",
+                profile?.is_available ?? true
+                  ? "bg-[#ecfaf0] text-[#1ea43b]"
+                  : "bg-[#f4f7fb] text-[#7a8291]"
+              )}
+            >
+              <span
+                className={classNames(
+                  "h-1.5 w-1.5 rounded-full",
+                  profile?.is_available ?? true ? "bg-[#1ea43b]" : "bg-[#9aa2b0]"
+                )}
+              />
+              {profile?.is_available ?? true ? "Online" : "Offline"}
+            </span>
+          </div>
         </div>
       </section>
 
       {/*
         License renewal banner and the old "Verification & Integrity" panel
-        (last verified / next review / audit status) are removed — there is
+        (last verified / next review / audit status) are removed - there is
         no license or audit-tracking model behind ComplianceProfile yet, so
         rather than show fabricated dates, these sections are hidden until
         that data actually exists on the backend.
@@ -243,7 +260,7 @@ export default function ComplianceInstitutionProfileView() {
                     className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_140px] items-center border-t border-[#edf1f7] px-4 py-3 text-[13px] text-[#4b5260]"
                   >
                     <span>{member.full_name}</span>
-                    <span>{member.role_detail?.name || "—"}</span>
+                    <span>{member.role_detail?.name || "-"}</span>
                     <span>
                       <ComplianceTeamStatus label={member.status} />
                     </span>
@@ -280,7 +297,7 @@ export default function ComplianceInstitutionProfileView() {
                 <ComplianceOverviewCard
                   key={item.title}
                   title={item.title}
-                  value={item.value !== undefined ? String(item.value) : "—"}
+                  value={item.value !== undefined ? String(item.value) : "-"}
                   footnote={item.footnote}
                   footnoteClassName={item.footnoteClassName}
                 />

@@ -50,7 +50,7 @@ export default function ArchiveActions({
     }
   }, [orderId, orderCode, updateState]);
 
-  // Printing the current page is a real, local browser action — no backend
+  // Printing the current page is a real, local browser action - no backend
   // needed, so this one stays live (no fake loading/success theater).
   const handlePrintSummary = useCallback(() => {
     window.print();

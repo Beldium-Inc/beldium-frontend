@@ -18,7 +18,7 @@ import { getComplianceTeamMembers, type ComplianceTeamMember } from "@/src/featu
 import { showToast } from "@/src/store/toast.store";
 
 function formatRelativeOrDate(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return "-";
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
   const diffMins = Math.round(diffMs / 60000);
