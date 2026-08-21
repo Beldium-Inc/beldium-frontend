@@ -524,6 +524,7 @@ export default function ComplianceDashboardPage() {
     role: currentUserData?.profile?.role || "Compliance Officer",
     email: currentUserData?.email || "",
     avatarSrc: currentUserData?.profile_picture || null,
+    isVerified: Boolean(currentUserData?.account_verified),
   };
   const profileUser = {
     ...topBarUser,

@@ -28,6 +28,7 @@ export type DashboardTopBarUser = {
   role: string;
   email: string;
   avatarSrc: string | null;
+  isVerified?: boolean;
 };
 
 type ComplianceProfileAvailability = {
@@ -111,6 +112,7 @@ const FALLBACK_USER: DashboardTopBarUser = {
   role: "",
   email: "",
   avatarSrc: null,
+  isVerified: false,
 };
 
 export default function DashboardTopBar({
@@ -183,19 +185,19 @@ export default function DashboardTopBar({
             <MenuOutlined />
           </button>
 
-          <div className="flex shrink-0 items-center gap-2 font-bungee xl:hidden">
+          <div className="flex shrink-0 items-center gap-2 xl:hidden">
             <Image
               src="/assets/images/logo.png"
               alt="Beldium"
               width={24}
               height={24}
             />
-            <span className="hidden text-lg text-primary sm:inline">Beldium</span>
+            <span className="hidden text-lg font-semibold text-primary sm:inline">BELDIUM</span>
           </div>
 
           <div className="hidden items-center gap-3 xl:flex">
             <span className="text-[14px] font-medium text-[#5c6270]">Compliance Portal</span>
-            {user.email ? (
+            {user.isVerified ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[12px] font-medium text-green-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                 Verified Compliance Partner
