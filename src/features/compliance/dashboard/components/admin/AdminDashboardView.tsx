@@ -31,8 +31,8 @@ export function AdminMetricsSection({ metrics }: { metrics: DashboardMetric[] })
   ];
 
   return (
-    <section className="rounded-[20px] border border-[#e8ecf4] bg-white/75 p-4 shadow-[0_16px_40px_-32px_rgba(16,30,61,0.35)]">
-      <div className="grid gap-3 2xl:grid-cols-4 xl:grid-cols-2">
+    <section className="rounded-[20px] border border-[#e8ecf4] bg-white/75 p-5 shadow-[0_16px_40px_-32px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2 sm:gap-5">
         {metrics.map((metric, index) => {
           const iconData = metricIcons[index];
 
@@ -64,8 +64,8 @@ export function AdminPipelineSection({
   onOpenReview?: (reviewId: string) => void;
 }) {
   return (
-    <section className="rounded-[20px] border border-[#e8ecf4] bg-white p-4 shadow-[0_16px_40px_-32px_rgba(16,30,61,0.35)] sm:p-5">
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <section className="rounded-[20px] border border-[#e8ecf4] bg-white p-5 shadow-[0_16px_40px_-32px_rgba(16,30,61,0.35)] sm:p-6">
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[#2c313c]">
             Miner Pipeline

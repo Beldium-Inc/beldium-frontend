@@ -4,12 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Drawer, Tooltip } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  CloseOutlined,
-  LogoutOutlined,
-  DoubleLeftOutlined,
-  DoubleRightOutlined,
-} from "@ant-design/icons";
+import { CloseOutlined, LogoutOutlined } from "@ant-design/icons";
 import type { DashboardPersona, ComplianceView, NavItem } from "@/src/features/compliance/dashboard/types";
 import { classNames } from "@/src/features/compliance/dashboard/lib/style";
 import { getAdminNavItems, getComplianceNavItems } from "@/src/features/compliance/dashboard/components/layout/nav";
@@ -57,15 +52,7 @@ function SidebarNavItem({ item, collapsed }: { item: NavItem; collapsed?: boolea
   return inner;
 }
 
-function SidebarLogo({
-  collapsed,
-  showToggle,
-  onToggle,
-}: {
-  collapsed?: boolean;
-  showToggle?: boolean;
-  onToggle?: () => void;
-}) {
+function SidebarLogo({ collapsed }: { collapsed?: boolean }) {
   return (
     <div
       className={classNames(
@@ -76,19 +63,6 @@ function SidebarLogo({
       <Image src="/assets/images/logo.png" alt="Beldium" width={30} height={30} />
       {!collapsed && (
         <span className="text-2xl font-semibold text-primary">BELDIUM</span>
-      )}
-      {showToggle && (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={classNames(
-            "flex h-8 w-8 items-center justify-center rounded-full bg-[#f9fafc] text-[#2a3142] transition-colors hover:bg-white",
-            collapsed ? "mt-2" : "ml-auto",
-          )}
-        >
-          {collapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
-        </button>
       )}
     </div>
   );
@@ -150,7 +124,7 @@ export default function DashboardSidebar({
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }) {
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { sidebarCollapsed } = useUIStore();
   const navItems =
     persona === "admin"
       ? getAdminNavItems(complianceView)
@@ -164,7 +138,7 @@ export default function DashboardSidebar({
           sidebarCollapsed ? "w-20" : "w-[280px]",
         )}
       >
-        <SidebarLogo collapsed={sidebarCollapsed} showToggle onToggle={toggleSidebar} />
+        <SidebarLogo collapsed={sidebarCollapsed} />
         <SidebarNav navItems={navItems} collapsed={sidebarCollapsed} />
       </aside>
 

@@ -12,7 +12,10 @@ import {
   UserOutlined,
   ApartmentOutlined,
   LogoutOutlined,
+  DoubleLeftOutlined,
+  DoubleRightOutlined,
 } from "@ant-design/icons";
+import { useUIStore } from "@/src/store/ui/ui.store";
 import type {
   DashboardPersona,
   ComplianceView,
@@ -131,6 +134,7 @@ export default function DashboardTopBar({
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const queryClient = useQueryClient();
+  const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const roleLabel = persona === "admin" ? "Admin" : user.role;
   const isSettingsSurface =
     complianceView === "settings" ||
@@ -176,6 +180,14 @@ export default function DashboardTopBar({
     <header className="relative z-40 border-b border-[#e9edf5] bg-white/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 xl:px-8 xl:py-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eceef4] bg-[#f9fafc] text-[#2a3142] transition-colors hover:bg-white xl:flex"
+          >
+            {sidebarCollapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
+          </button>
           <button
             type="button"
             onClick={onOpenMobileNav}

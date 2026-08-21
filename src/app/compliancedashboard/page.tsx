@@ -559,8 +559,8 @@ export default function ComplianceDashboardPage() {
             user={topBarUser}
           />
 
-          <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 xl:px-8">
-            <div className="mx-auto max-w-[1600px] space-y-6">
+          <main className="flex-1 overflow-y-auto px-5 py-8 sm:px-8 xl:px-10">
+            <div className="mx-auto max-w-[1600px] space-y-8">
               {sectorMeta && !sectorMeta.available ? (
                 <div className="rounded-[20px] border border-[#e8ecf4] bg-white px-8 py-16 text-center">
                   <h2 className="text-[22px] font-semibold text-[#1f2430]">
