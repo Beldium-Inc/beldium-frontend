@@ -4,6 +4,10 @@ import Link from "next/link";
 import { Skeleton } from "antd";
 import type { MarketplaceStats } from "@/src/features/marketplace/public-api";
 
+// Drop the hero photo at public/assets/images/marketplace-hero.jpg (or
+// marketplace-hero.png / .webp - update the extension below to match).
+const HERO_IMAGE = "/assets/images/marketplace-hero.jpg";
+
 export default function MarketplaceHero({
   stats,
   isLoading,
@@ -12,13 +16,16 @@ export default function MarketplaceHero({
   isLoading: boolean;
 }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-[#2b2b28] min-h-[220px] md:min-h-[260px]">
+    <div
+      className="relative rounded-2xl overflow-hidden bg-[#2b2b28] bg-cover bg-center min-h-[220px] md:min-h-[260px]"
+      style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+    >
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
 
       <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 px-6 md:px-10 py-8 md:py-10">
         <div className="max-w-xl">
-          <h1 className="text-2xl md:text-4xl font-serif text-white leading-tight">
-            Buy &amp; Sell with Confidence <span className="italic">on Beldium</span>
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-white leading-tight">
+            Buy &amp; Sell with Confidence on Beldium
           </h1>
           <p className="text-white/80 mt-3 text-sm md:text-base">
             Source verified minerals from trusted suppliers or connect your own

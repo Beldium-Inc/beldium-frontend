@@ -36,7 +36,7 @@ export default function MarketplaceCategorySidebar({
                   onClick={() => onSelect(selected === c.mineral_type ? null : c.mineral_type)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
                     selected === c.mineral_type
-                      ? "bg-[#101E3D] text-white"
+                      ? "bg-[#101E3D] !text-white"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >

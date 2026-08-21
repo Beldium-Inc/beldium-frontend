@@ -23,22 +23,18 @@ export type ListingRow = {
 
 export type ListingsTableResponse = {
   status: string;
-  data: {
-    status: string;
-    message: string;
-    data: {
-      next: string | null;
-      previous: string | null;
-      count: number;
-      total_pages: number;
-      page_number: number;
-      per_page: number;
-      from: number;
-      to: number;
-      results: ListingRow[];
-    };
-  };
   message: string | null;
+  data: {
+    next: string | null;
+    previous: string | null;
+    count: number;
+    total_pages: number;
+    page_number: number;
+    per_page: number;
+    from: number;
+    to: number;
+    results: ListingRow[];
+  };
 };
 
 export async function getListingCards() {
@@ -53,13 +49,15 @@ export async function getListingsTable(params: {
   sort?: string | null;
   q?: string | null;
 }) {
+  // Backend (miners/views.py ListingViewSet) filters/searches/orders via
+  // location_delivery__mine_state / search / ordering - not state / q / sort.
   const res = await authApi.get<ListingsTableResponse>("/listings/table/", {
     params: {
       page: params.page ?? 1,
       status: params.status ?? undefined,
-      state: params.state ?? undefined,
-      sort: params.sort ?? undefined,
-      q: params.q ?? undefined,
+      location_delivery__mine_state: params.state ?? undefined,
+      ordering: params.sort === "oldest" ? "created_at" : params.sort === "recent" ? "-created_at" : undefined,
+      search: params.q ?? undefined,
     },
   });
   return res.data;

@@ -40,7 +40,7 @@ export default function MarketplaceListingCard({ listing }: { listing: PublicLis
           {listing.quantity_available.toLocaleString()} MT Available
         </p>
         <p className="text-sm text-gray-500 flex items-center gap-1">
-          <span aria-hidden>📍</span> {listing.mine_state}
+          <span aria-hidden></span> {listing.mine_state}
         </p>
 
         {listing.is_verified && (
@@ -55,7 +55,7 @@ export default function MarketplaceListingCard({ listing }: { listing: PublicLis
 
         <Link
           href={`/marketplace/listings/${listing.slug}`}
-          className="mt-3 w-full text-center bg-[#101E3D] text-white text-sm font-medium py-2.5 rounded-lg hover:bg-[#0c1730]"
+          className="mt-3 w-full text-center bg-[#101E3D] !text-white text-sm font-medium py-2.5 rounded-lg hover:bg-[#0c1730]"
         >
           Buy now
         </Link>

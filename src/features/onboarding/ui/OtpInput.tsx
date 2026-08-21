@@ -33,7 +33,7 @@ export function OtpInput({
   };
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-1.5 sm:gap-3">
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
@@ -44,7 +44,7 @@ export function OtpInput({
           inputMode="numeric"
           maxLength={1}
           autoFocus={autoFocus && i === 0}
-          className="h-16 w-16 rounded-lg border border-gray-300 text-center text-xl focus:outline-none focus:border-gray-500"
+          className="h-10 w-10 sm:h-16 sm:w-16 rounded-lg border border-gray-300 text-center text-base sm:text-xl focus:outline-none focus:border-gray-500"
         />
       ))}
     </div>

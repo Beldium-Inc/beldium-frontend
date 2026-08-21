@@ -33,9 +33,9 @@ export default function ListingView() {
     queryFn: () => getListingsTable({ page, status, state, sort, q }),
   });
 
-  const results = tableData?.data?.data?.results || [];
+  const results = tableData?.data?.results || [];
   const paginationConfig: TablePaginationConfig = useMemo(() => {
-    const meta = tableData?.data?.data;
+    const meta = tableData?.data;
     return {
       current: meta?.page_number || page,
       pageSize: meta?.per_page || 10,

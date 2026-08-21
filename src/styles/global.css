@@ -10,6 +10,19 @@
   --colorWarning: #FBBF24;
   --light-secondary: #D3E4FE;
   --font-sans: var(--font-poppins);
+
+  /* shadcn-style tokens, used by the marketing-site Header/Footer ported
+     into the marketplace (bg-background, text-foreground, bg-primary/
+     text-primary-foreground, border-border, text-muted-foreground,
+     bg-accent). Values chosen to match this app's existing navy/light-blue
+     brand palette above, not a separate theme. */
+  --background: #ffffff;
+  --foreground: var(--text);
+  --primary-foreground: #ffffff;
+  --secondary-foreground: var(--primary);
+  --border: #E9ECF2;
+  --muted-foreground: #6B7280;
+  --accent: #F3F4F6;
 }
 
 @theme inline {
@@ -21,6 +34,14 @@
   --color-error: var(--colorError);
   --color-warning: var(--colorWarning);
   --font-bungee: var(--font-bungee);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-border: var(--border);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
 }
 
 html {
