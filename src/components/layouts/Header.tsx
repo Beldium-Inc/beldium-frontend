@@ -42,7 +42,19 @@ export default function Header() {
             onClick={openMobileSidebar}
           />
         </div>
-        
+
+        {/* Desktop Toggle - collapse/expand the sidebar */}
+        <div className="hidden lg:flex items-center">
+          <Button
+            type="text"
+            shape="circle"
+            icon={sidebarCollapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="bg-gray-50"
+          />
+        </div>
+
         <div className="flex items-center ml-4 gap-3">
           <span className="text-gray-600 font-medium hidden sm:inline-block">Miner Portal</span>
           {isLoading ? (

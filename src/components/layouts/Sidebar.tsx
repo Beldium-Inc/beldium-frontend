@@ -26,29 +26,15 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
       )}
     >
       {/* Logo */}
-      <div className="h-20 px-6 flex items-end font-bungee border-none pb-5 mb-6 text-2xl">
-        {sidebarCollapsed ? (
-          <>
-            <Image
-              src="/assets/images/logo.png"
-              height={30}
-              width={30}
-              alt="logo"
-            />
-            {" Beldium"}
-          </>
-        ) : (
-          <>
-            <Image
-              src="/assets/images/logo.png"
-              height={30}
-              width={30}
-              alt="logo"
-              className="mr-2"
-            />
-            <span className="text-primary">{" Beldium"}</span>
-          </>
-        )}
+      <div className="h-20 px-6 flex items-end border-none pb-5 mb-6 text-2xl font-semibold">
+        <Image
+          src="/assets/images/logo.png"
+          height={30}
+          width={30}
+          alt="logo"
+          className={sidebarCollapsed ? "" : "mr-2"}
+        />
+        {!sidebarCollapsed && <span className="text-primary">BELDIUM</span>}
       </div>
 
       {/* Nav */}
