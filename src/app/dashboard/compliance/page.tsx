@@ -48,6 +48,17 @@ function statusFromBackend(raw: string, expiry: string | null): Row["status"] {
   return "pending_review";
 }
 
+// Rank so, when a required type has more than one upload, the most
+// "complete" one wins the single row shown for it - approved beats
+// pending beats expired/action-required.
+const STATUS_RANK: Record<Row["status"], number> = {
+  approved: 3,
+  completed: 3,
+  pending_review: 2,
+  expired: 1,
+  action_required: 0,
+};
+
 function buildRows(licenses: MinerLicense[], documents: MinerDocument[]): Row[] {
   const fromLicenses: Row[] = licenses.map((l) => ({
     key: l.id,
@@ -72,17 +83,20 @@ function buildRows(licenses: MinerLicense[], documents: MinerDocument[]): Row[] 
     fileUrl: d.file,
   }));
 
-  const rows = [...fromLicenses, ...fromDocuments];
+  // Only the fixed set of document types the compliance requirement list
+  // actually asks for - drop anything else the miner has on file (junk
+  // test uploads, one-off document types, duplicates of the same type).
+  const candidates = [...fromLicenses, ...fromDocuments].filter((r) =>
+    REQUIRED_DOCUMENT_TYPES.some((type) => type.toLowerCase() === r.documentType.toLowerCase()),
+  );
 
-  // Fill in any of the standard required types that have no matching row yet.
-  for (const type of REQUIRED_DOCUMENT_TYPES) {
-    const has = rows.some((r) => r.documentType.toLowerCase() === type.toLowerCase());
-    if (!has) {
-      rows.push({ key: `missing-${type}`, documentType: type, uploaded: null, expiry: null, status: "action_required", fileUrl: null });
+  return REQUIRED_DOCUMENT_TYPES.map((type) => {
+    const matches = candidates.filter((r) => r.documentType.toLowerCase() === type.toLowerCase());
+    if (matches.length === 0) {
+      return { key: `missing-${type}`, documentType: type, uploaded: null, expiry: null, status: "action_required", fileUrl: null };
     }
-  }
-
-  return rows;
+    return matches.reduce((best, r) => (STATUS_RANK[r.status] > STATUS_RANK[best.status] ? r : best));
+  });
 }
 
 const STATUS_STYLES: Record<Row["status"], string> = {

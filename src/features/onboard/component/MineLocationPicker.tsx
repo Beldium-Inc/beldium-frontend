@@ -14,14 +14,20 @@ import {
 import mapboxgl, { Map as MapboxMap, Marker } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
-const STYLE_URL = GEOAPIFY_KEY
-  ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${GEOAPIFY_KEY}`
-  : null;
+// Prefer Mapbox's own hosted styles when a real token is present; fall back
+// to the Geoapify style (which needs only a placeholder token), then to a
+// flat background if neither key is configured.
+const STYLE_URL = MAPBOX_TOKEN
+  ? "mapbox://styles/mapbox/streets-v12"
+  : GEOAPIFY_KEY
+    ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${GEOAPIFY_KEY}`
+    : null;
 
 // mapbox-gl requires a truthy accessToken even when the style/tiles come from
 // a third-party source (Geoapify) rather than Mapbox's own hosted tiles.
-mapboxgl.accessToken = "no-token-needed-using-geoapify-style";
+mapboxgl.accessToken = MAPBOX_TOKEN || "no-token-needed-using-geoapify-style";
 
 export type MineLocationResult = {
   pin: { lat: number; lng: number } | null;
@@ -381,10 +387,10 @@ export function MineLocationPicker({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-0">
         <div className="relative overflow-hidden h-[280px] lg:h-[640px] bg-gray-100">
           <div ref={setMapContainer} className="w-full h-full" />
-          {!GEOAPIFY_KEY && (
+          {!STYLE_URL && (
             <div className="absolute inset-0 bg-gray-100/95 flex items-center justify-center text-center p-6">
               <p className="text-sm text-gray-500">
-                Map tiles unavailable - set NEXT_PUBLIC_GEOAPIFY_API_KEY to enable satellite/street tiles.
+                Map tiles unavailable - set NEXT_PUBLIC_MAPBOX_TOKEN (or NEXT_PUBLIC_GEOAPIFY_API_KEY) to enable satellite/street tiles.
                 Pin placement and boundary tracking still work by clicking the map area.
               </p>
             </div>

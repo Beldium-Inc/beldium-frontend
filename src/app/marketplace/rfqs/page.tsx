@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Input, Table, Tag, Empty, Button } from "antd";
+import { Input, Table, Empty, Button } from "antd";
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import RequireMarketplaceAuth from "@/src/features/marketplace/auth/RequireMarketplaceAuth";
@@ -12,19 +12,17 @@ import MarketplaceTopBar from "@/src/features/marketplace/components/Marketplace
 import MarketplaceHeader from "@/src/features/marketplace/components/MarketplaceHeader";
 import MarketplaceFooter from "@/src/features/marketplace/components/MarketplaceFooter";
 import { getBuyerRfqs, RfqRow } from "@/src/features/marketplace/rfqs/rfqs-api";
+import { formatNaira, mockAmountFor, mockOffersFor, mockStatusFor, MOCK_STATUS_STYLES } from "@/src/features/marketplace/rfqs/mock-offers";
 
-const STATUS_COLOR: Record<string, string> = {
-  draft: "default",
-  pending_routing: "gold",
-  routed: "blue",
-  in_progress: "blue",
-  compliance_failed: "red",
-  funded: "green",
-  fulfilled: "green",
-  archived: "default",
-  initiated: "gold",
-  no_match: "red",
-};
+function StatusPill({ rfqId }: { rfqId: string }) {
+  const status = mockStatusFor(rfqId);
+  const style = MOCK_STATUS_STYLES[status];
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${style.className}`}>
+      {style.label}
+    </span>
+  );
+}
 
 function RfqsContent() {
   const router = useRouter();
@@ -46,27 +44,34 @@ function RfqsContent() {
   }, [data, search]);
 
   const columns: ColumnsType<RfqRow> = [
-    { title: "RFQ ID", dataIndex: "rfq_code", key: "rfq_code", render: (v: string) => v || "—" },
     { title: "Mineral", dataIndex: "mineral_type", key: "mineral_type" },
     {
-      title: "Quantity (MT)",
+      title: "Quantity (DMT)",
       dataIndex: "total_weight",
       key: "total_weight",
       render: (v: string) => Number(v).toLocaleString(),
     },
-    { title: "Incoterm", dataIndex: "incoterm", key: "incoterm" },
-    { title: "Destination", dataIndex: "destination", key: "destination" },
+    { title: "RFQ's ID", dataIndex: "rfq_code", key: "rfq_code", render: (v: string) => v || "—" },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (v: string) => <Tag color={STATUS_COLOR[v] ?? "default"}>{v.replace(/_/g, " ")}</Tag>,
+      title: "Amount",
+      key: "amount",
+      render: (_, record) => formatNaira(mockAmountFor(record).total),
     },
     {
-      title: "Response deadline",
+      title: "Offers",
+      key: "offers",
+      render: (_, record) => mockOffersFor(record).length,
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, record) => <StatusPill rfqId={record.id} />,
+    },
+    {
+      title: "Expiry date",
       dataIndex: "response_deadline",
       key: "response_deadline",
-      render: (v: string | null) => (v ? new Date(v).toLocaleDateString() : "—"),
+      render: (v: string | null) => (v ? new Date(v).toLocaleDateString("en-CA") : "—"),
     },
   ];
 
@@ -78,22 +83,27 @@ function RfqsContent() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 flex-1 w-full">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">RFQ&apos;s</h1>
-            <p className="text-sm text-gray-500">Track the quote requests you&apos;ve sent to suppliers</p>
+            <h1 className="text-2xl font-bold text-gray-900">My request&apos;s (RFQ&apos;s)</h1>
+            <p className="text-sm text-gray-500">Manage and track your activity history requests for quotation</p>
           </div>
-          <Button
-            icon={<ReloadOutlined spin={isFetching} />}
-            onClick={() => refetch()}
-            className="!rounded-full"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              icon={<ReloadOutlined spin={isFetching} />}
+              onClick={() => refetch()}
+              className="!rounded-full"
+            />
+            <Link href="/marketplace">
+              <Button type="primary">Request RFQ</Button>
+            </Link>
+          </div>
         </div>
 
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          prefix={<SearchOutlined className="text-gray-400" />}
-          placeholder="Search by mineral or RFQ ID..."
-          className="max-w-sm mb-4 rounded-full"
+          // prefix={<SearchOutlined className="text-gray-600" />}
+          placeholder="Search miner, case ID, alert type..."
+          className="max-w-sm !pl-10 !mb-4 !rounded-xl"
         />
 
         <div className="bg-white border border-[#E9ECF2] rounded-xl overflow-hidden">

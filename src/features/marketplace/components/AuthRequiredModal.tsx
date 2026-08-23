@@ -39,7 +39,7 @@ export default function AuthRequiredModal({
         <Button
           block
           size="large"
-          className="mt-2"
+          className="!mt-2"
           onClick={() => router.push(`/marketplace/register?redirect=${encodeURIComponent(redirectTo)}`)}
         >
           Create account

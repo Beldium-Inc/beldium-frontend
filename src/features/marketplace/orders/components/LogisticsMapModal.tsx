@@ -6,14 +6,20 @@ import mapboxgl, { Map as MapboxMap } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MockOrder } from "../mock-data";
 
-// Reuses the same Mapbox-GL-over-Geoapify-tiles setup already keyed in this
-// project for the mine-location picker (features/onboard/component/
-// MineLocationPicker.tsx) - not a new map integration/dependency.
+// Reuses the same Mapbox-GL setup already keyed in this project for the
+// mine-location picker (features/onboard/component/MineLocationPicker.tsx) -
+// not a new map integration/dependency.
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
-const STYLE_URL = GEOAPIFY_KEY
-  ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${GEOAPIFY_KEY}`
-  : null;
-mapboxgl.accessToken = "no-token-needed-using-geoapify-style";
+// Prefer Mapbox's own hosted styles when a real token is present; fall back
+// to the Geoapify style (which needs only a placeholder token), then to a
+// flat background if neither key is configured.
+const STYLE_URL = MAPBOX_TOKEN
+  ? "mapbox://styles/mapbox/streets-v12"
+  : GEOAPIFY_KEY
+    ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${GEOAPIFY_KEY}`
+    : null;
+mapboxgl.accessToken = MAPBOX_TOKEN || "no-token-needed-using-geoapify-style";
 
 export default function LogisticsMapModal({
   open,
@@ -91,9 +97,9 @@ export default function LogisticsMapModal({
   return (
     <Modal open={open} onCancel={onClose} footer={null} width={860} title="Map" destroyOnClose>
       <div ref={setMapContainer} className="w-full h-[500px] rounded-lg overflow-hidden bg-gray-100" />
-      {!GEOAPIFY_KEY && (
+      {!STYLE_URL && (
         <p className="text-xs text-gray-400 mt-2">
-          Map tiles unavailable - set NEXT_PUBLIC_GEOAPIFY_API_KEY to enable satellite/street tiles.
+          Map tiles unavailable - set NEXT_PUBLIC_MAPBOX_TOKEN (or NEXT_PUBLIC_GEOAPIFY_API_KEY) to enable satellite/street tiles.
         </p>
       )}
     </Modal>

@@ -59,7 +59,7 @@ function OrdersContent() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 flex-1 w-full">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My orders</h1>
+            <h1 className="text-2xl !font-bold text-gray-900">My orders</h1>
             <p className="text-sm text-gray-500">Track and manage your recent mineral purchases</p>
           </div>
           <Button
@@ -72,9 +72,9 @@ function OrdersContent() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          prefix={<SearchOutlined className="text-gray-400" />}
-          placeholder="Search miner, order ID..."
-          className="max-w-sm mb-4 rounded-full"
+          // prefix={<SearchOutlined className="text-gray-600" />}
+          placeholder="Search miner, case ID, alert type..."
+          className="max-w-sm !pl-10 !mb-4 !rounded-xl"
         />
 
         <div className="bg-white border border-[#E9ECF2] rounded-xl overflow-hidden">

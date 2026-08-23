@@ -95,6 +95,7 @@ export default function ListingDetailPage() {
     { label: "Location defined", done: Boolean(listing.location_delivery?.mine_state) },
     { label: "Pricing method selected", done: Boolean(listing.pricing?.pricing_method) },
     { label: "Payment terms defined", done: Boolean(listing.commercial_terms?.payment_term) },
+    { label: "Primary image uploaded", done: Boolean(listing.media?.some((m) => m.is_primary)) },
   ];
   const completedCount = checklist.filter((c) => c.done).length;
   const readyToPublish = completedCount === checklist.length;
@@ -288,7 +289,7 @@ export default function ListingDetailPage() {
                   style={{ width: `${(completedCount / checklist.length) * 100}%` }}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="!space-y-2">
                 <Button
                   type="primary"
                   block
@@ -308,7 +309,7 @@ export default function ListingDetailPage() {
           )}
 
           {!isDraft && (
-            <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-3">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 !space-y-3">
               <h3 className="text-sm font-semibold text-gray-900 mb-1">Actions</h3>
               <Button block onClick={() => router.push(`/dashboard?view=create_listing&edit=${id}`)}>
                 Edit Listing

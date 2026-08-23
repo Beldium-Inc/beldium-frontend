@@ -10,12 +10,60 @@ import {
   SearchOutlined,
   UserOutlined,
   CheckCircleFilled,
+  ClockCircleFilled,
+  SyncOutlined,
+  ExclamationCircleFilled,
+  CloseCircleFilled,
   MessageOutlined
 } from "@ant-design/icons";
 import { useUIStore } from "@/src/store/ui/ui.store";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getUser } from "@/src/features/onboarding/api";
+
+// Mirrors compliance.choices.Status on the backend - the miner's real
+// compliance review status, not the coarse account_verified boolean. A miner
+// with no review yet (new signup) is served "pending" by the API.
+const COMPLIANCE_STATUS_STYLES: Record<
+  string,
+  { label: string; className: string; icon: React.ReactNode }
+> = {
+  approved: {
+    label: "Verified Miner",
+    className: "bg-green-50 border-green-200 text-green-700",
+    icon: <CheckCircleFilled className="text-green-600" />,
+  },
+  pending: {
+    label: "Pending Verification",
+    className: "bg-gray-50 border-gray-200 text-gray-600",
+    icon: <ClockCircleFilled className="text-gray-500" />,
+  },
+  claimed: {
+    label: "Under Review",
+    className: "bg-blue-50 border-blue-200 text-blue-700",
+    icon: <SyncOutlined className="text-blue-600" />,
+  },
+  under_review: {
+    label: "Under Review",
+    className: "bg-blue-50 border-blue-200 text-blue-700",
+    icon: <SyncOutlined className="text-blue-600" />,
+  },
+  requires_info: {
+    label: "Action Required",
+    className: "bg-orange-50 border-orange-200 text-orange-700",
+    icon: <ExclamationCircleFilled className="text-orange-600" />,
+  },
+  red_flagged: {
+    label: "Flagged",
+    className: "bg-red-50 border-red-200 text-red-700",
+    icon: <CloseCircleFilled className="text-red-600" />,
+  },
+  rejected: {
+    label: "Rejected",
+    className: "bg-red-50 border-red-200 text-red-700",
+    icon: <CloseCircleFilled className="text-red-600" />,
+  },
+};
 
 export default function Header() {
   const { openMobileSidebar, sidebarCollapsed, toggleSidebar } = useUIStore();
@@ -26,7 +74,7 @@ export default function Header() {
   });
 
   const user = data?.data;
-  const isVerified = user?.account_verified;
+  const complianceStatus = COMPLIANCE_STATUS_STYLES[user?.profile?.compliance_status] || null;
   const minerId = user?.profile?.miner_code ? `Miner ID: ${user.profile.miner_code}` : "";
   const userName = user?.company_name || user?.email?.split('@')[0] || "Miner";
 
@@ -60,10 +108,12 @@ export default function Header() {
           {isLoading ? (
             <Skeleton.Button active size="small" style={{ width: 100 }} />
           ) : (
-            isVerified && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 border border-green-200 rounded-full text-green-700 text-xs font-medium">
-                <CheckCircleFilled className="text-green-600" />
-                Verified Miner
+            complianceStatus && (
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded-full text-xs font-medium ${complianceStatus.className}`}
+              >
+                {complianceStatus.icon}
+                {complianceStatus.label}
               </div>
             )
           )}

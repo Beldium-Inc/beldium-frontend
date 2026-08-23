@@ -161,7 +161,7 @@ export type ListingDetail = {
     sample_available: boolean;
     additional_notes: string;
   };
-  media: Array<{ id: string; file: string }>;
+  media: Array<{ id: string; file: string; is_primary: boolean }>;
 };
 
 export type ListingDetailResponse = {
