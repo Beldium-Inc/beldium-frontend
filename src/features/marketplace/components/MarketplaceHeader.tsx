@@ -15,6 +15,7 @@ import {
 } from "@ant-design/icons";
 import { Menu, X } from "lucide-react";
 import { useMarketplaceAuth, logoutMarketplaceUser } from "@/src/features/marketplace/auth/use-marketplace-auth";
+import { showToast } from "@/src/store/toast.store";
 
 const AUTH_NAV = [
   { label: "Marketplace", href: "/marketplace" },
@@ -64,12 +65,13 @@ export default function MarketplaceHeader({
 
   const userMenu = (
     <div className="flex flex-col w-44 py-1">
-      <Link
-        href="/dashboard/settings"
-        className="px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+      <button
+        type="button"
+        onClick={() => showToast("Marketplace account settings aren't built yet.", "error")}
+        className="px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 text-left"
       >
         Settings
-      </Link>
+      </button>
       <button
         type="button"
         onClick={handleLogout}

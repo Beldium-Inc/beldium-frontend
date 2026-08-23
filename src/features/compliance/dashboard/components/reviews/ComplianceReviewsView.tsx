@@ -28,6 +28,7 @@ import {
   TeamOutlined,
   ExclamationCircleOutlined,
   PlusOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import type { AdminReviewRow } from "@/src/features/compliance/dashboard/types";
 import { classNames, primaryActionStyle, statusStyles } from "@/src/features/compliance/dashboard/lib/style";
@@ -47,8 +48,10 @@ import {
 } from "@/src/features/compliance/dashboard/components/reviews/constants";
 import {
   type CaseChecklistItem,
+  type MinerSiteRecord,
   buildOperationalChecklist,
   caseChecklistStatusMeta,
+  SiteDetailField,
 } from "@/src/features/compliance/dashboard/components/miner-detail/ComplianceMinerDetailView";
 
 type MinerLicenseRecord = {
@@ -720,6 +723,7 @@ export default function ComplianceReviewsView({
   const minerDetail = minerDetailQ.data?.data as MinerDetailData | undefined;
   const miner = minerDetail?.miner ?? null;
   const licenses = minerDetail?.licenses ?? [];
+  const minerSites = ((minerDetail as { sites?: MinerSiteRecord[] } | undefined)?.sites) ?? [];
   const documentRecords = minerDetail?.documents ?? [];
   const esgReviews = minerDetail?.esg_reviews ?? [];
   const activityLogs = minerDetail?.activity_logs ?? [];
@@ -1415,6 +1419,40 @@ export default function ComplianceReviewsView({
                     </div>
                   </div>
                 </div>
+              ) : activeTab === "sites" ? (
+                <div className="space-y-4">
+                  {minerSites.length > 0 ? (
+                    minerSites.map((site) => (
+                      <div key={site.id} className="rounded-[18px] border border-[#e8ecf4] bg-white p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <EnvironmentOutlined className="text-[#8a92a1]" />
+                            <span className="text-[15px] font-semibold text-[#2a2f39]">{site.name}</span>
+                          </div>
+                          <span className="rounded-full border border-[#dce3ef] bg-[#fafbfd] px-3 py-1 text-[12px] font-medium capitalize text-[#5d6675]">
+                            {(site.status || "").replace(/_/g, " ") || "Unknown"}
+                          </span>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-4 text-[13px] sm:grid-cols-4">
+                          <SiteDetailField label="Mineral Type" value={site.mineral_type} />
+                          <SiteDetailField label="Mining Method" value={site.mining_method} />
+                          <SiteDetailField
+                            label="Location"
+                            value={[site.local_government_area, site.state_of_operation, site.country].filter(Boolean).join(", ")}
+                          />
+                          <SiteDetailField
+                            label="Coordinates"
+                            value={site.latitude && site.longitude ? `${site.latitude}, ${site.longitude}` : null}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+                      {minerDetailQ.isLoading ? "Loading sites..." : "No mining sites were returned by the miner detail endpoint for this miner yet."}
+                    </div>
+                  )}
+                </div>
               ) : activeTab === "licensing" ? (
                 <div className="space-y-5">
                   <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
@@ -1901,7 +1939,7 @@ export default function ComplianceReviewsView({
                                   onClick={() =>
                                     verifyDocumentMutation.mutate({
                                       documentId: doc.id,
-                                      status: isVerifiedStatus(doc.status) ? "Unverified" : "Verified",
+                                      status: isVerifiedStatus(doc.status) ? "pending" : "verified",
                                     })
                                   }
                                   className="inline-flex h-8 items-center rounded-full border border-[#e8ecf4] px-3 text-[12px] text-[#5d6675] hover:bg-[#f7f9fc]"
@@ -1951,7 +1989,7 @@ export default function ComplianceReviewsView({
                                       onClick={() =>
                                         verifyDocumentMutation.mutate({
                                           documentId: doc.id,
-                                          status: isVerifiedStatus(doc.status) ? "Unverified" : "Verified",
+                                          status: isVerifiedStatus(doc.status) ? "pending" : "verified",
                                         })
                                       }
                                       className="inline-flex h-8 items-center rounded-full border border-[#e8ecf4] px-3 text-[12px] text-[#5d6675] hover:bg-[#f7f9fc]"

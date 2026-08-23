@@ -158,7 +158,7 @@ export function CaseChecklistCard({ item }: { item: CaseChecklistItem }) {
   );
 }
 
-type MinerSiteRecord = {
+export type MinerSiteRecord = {
   id: string;
   name: string;
   status: string;
@@ -199,7 +199,7 @@ function DocumentDownloadButton({ url, filename }: { url: string; filename: stri
   );
 }
 
-function SiteDetailField({ label, value }: { label: string; value: string | null | undefined }) {
+export function SiteDetailField({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
       <div className="text-[#8a92a1]">{label}</div>

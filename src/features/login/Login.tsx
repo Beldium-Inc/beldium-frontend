@@ -60,11 +60,16 @@ export function Login() {
         const role = userRes?.data?.role; // "Miner" | "Compliance"
         const isComplianceRole = role === "Compliance";
         const onComplianceHost = isComplianceHost(window.location.hostname);
+        // Any *.localhost / plain localhost dev host - the compliance.beldium.com
+        // vs app.beldium.com split doesn't exist locally, so enforcing it here
+        // would just bounce every local login to the production compliance app.
+        const isLocalDevHost = window.location.hostname === "localhost" || window.location.hostname.endsWith(".localhost");
 
-        // Keep the two portals strictly separated: a miner account can't
-        // land inside the compliance app and vice versa, regardless of
-        // which subdomain they happened to submit the login form on.
-        if (onComplianceHost !== isComplianceRole) {
+        // Keep the two portals strictly separated in production: a miner
+        // account can't land inside the compliance app and vice versa,
+        // regardless of which subdomain they happened to submit the login
+        // form on. Not enforced on local dev hosts (see isLocalDevHost above).
+        if (!isLocalDevHost && onComplianceHost !== isComplianceRole) {
           sessionStorage.removeItem("accessToken");
           sessionStorage.removeItem("refreshToken");
           sessionStorage.removeItem("tokenExpiration");

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Table, Skeleton, Drawer, Empty, Card, Button } from "antd";
+import { Table, Skeleton, Drawer, Empty, Card, Button, Modal, Form, Input, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   EnvironmentOutlined,
@@ -16,11 +16,15 @@ import {
   WarningOutlined,
   CompassOutlined,
   EditOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import {
   getMiningSites,
   getMiningSiteSourceProfile,
   updateMiningSiteCoordinates,
+  getMiningOrganisations,
+  createMiningSite,
+  createMiningOrganisation,
   MiningSite,
 } from "@/src/features/miner/sites/api";
 import { MineLocationPicker, MineLocationResult } from "@/src/features/onboard/component/MineLocationPicker";
@@ -62,11 +66,18 @@ function avatarColor(seed: string) {
   return SITE_AVATAR_COLORS[hash % SITE_AVATAR_COLORS.length];
 }
 
+const MINING_METHOD_OPTIONS = [
+  { value: "open_pit", label: "Open Pit" },
+  { value: "shaft_or_underground", label: "Shaft / Underground" },
+  { value: "exploration", label: "Exploration" },
+];
+
 export default function SitesPage() {
   const queryClient = useQueryClient();
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
+  const [addSiteOpen, setAddSiteOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["mining-sites"],
@@ -189,11 +200,16 @@ export default function SitesPage() {
 
   return (
     <div className="px-4 md:px-0">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Mining Sites</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Every site under your mining organisation(s), with location, status, and compliance score.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Mining Sites</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Every site under your mining organisation(s), with location, status, and compliance score.
+          </p>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddSiteOpen(true)}>
+          Add Site
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -215,7 +231,11 @@ export default function SitesPage() {
           </div>
         ) : sites.length === 0 ? (
           <div className="p-10">
-            <Empty description="No mining sites yet" />
+            <Empty description="No mining sites yet">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddSiteOpen(true)}>
+                Add your first site
+              </Button>
+            </Empty>
           </div>
         ) : (
           <Table
@@ -330,7 +350,173 @@ export default function SitesPage() {
         onClose={() => setMapOpen(false)}
         onSubmit={handleSaveLocation}
       />
+
+      <AddSiteModal open={addSiteOpen} onClose={() => setAddSiteOpen(false)} />
     </div>
+  );
+}
+
+function AddSiteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
+  const [siteMapOpen, setSiteMapOpen] = useState(false);
+  const [location, setLocation] = useState<MineLocationResult | null>(null);
+
+  const { data: orgsData, isLoading: orgsLoading } = useQuery({
+    queryKey: ["mining-organisations"],
+    queryFn: getMiningOrganisations,
+    enabled: open,
+  });
+
+  const organisations = orgsData?.data?.results ?? [];
+  const hasOrganisations = organisations.length > 0;
+
+  const handleClose = () => {
+    form.resetFields();
+    setLocation(null);
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+
+      let organisationId = values.organisation as string | undefined;
+
+      // A brand-new miner with zero organisations can't attach a site to
+      // anything yet - create their first organisation inline instead of
+      // forcing a separate trip through some other settings screen.
+      if (!hasOrganisations) {
+        const orgRes = await createMiningOrganisation({ name: values.organisationName });
+        organisationId = orgRes?.data?.id;
+      }
+
+      if (!organisationId) {
+        throw new Error("Select or create an organisation for this site.");
+      }
+
+      await createMiningSite({
+        organisation: organisationId,
+        name: values.name,
+        country: values.country || undefined,
+        state_of_operation: values.state_of_operation || undefined,
+        local_government_area: values.local_government_area || undefined,
+        mineral_type: values.mineral_type || undefined,
+        mining_method: values.mining_method || undefined,
+        depth_range: values.depth_range || undefined,
+        ...(location?.pin ? { latitude: location.pin.lat, longitude: location.pin.lng } : {}),
+      });
+
+      showToast("Site added successfully", "success");
+      queryClient.invalidateQueries({ queryKey: ["mining-sites"] });
+      queryClient.invalidateQueries({ queryKey: ["mining-organisations"] });
+      handleClose();
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errorFields" in error) return; // antd form validation error
+      const e = error as { response?: { data?: { message?: string } }; message?: string };
+      showToast(e?.response?.data?.message || e?.message || "Failed to add site", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="Add Mining Site"
+      open={open}
+      onCancel={handleClose}
+      onOk={handleSubmit}
+      confirmLoading={submitting}
+      okText="Add Site"
+      destroyOnHidden
+    >
+      <Form form={form} layout="vertical" className="mt-4" disabled={orgsLoading}>
+        <Form.Item name="name" label="Site Name" rules={[{ required: true, message: "Enter a site name" }]}>
+          <Input placeholder="e.g. Kaduna Quarry" />
+        </Form.Item>
+
+        {hasOrganisations ? (
+          <Form.Item
+            name="organisation"
+            label="Organisation"
+            rules={[{ required: true, message: "Select an organisation" }]}
+            initialValue={organisations.length === 1 ? organisations[0].id : undefined}
+          >
+            <Select
+              placeholder="Select organisation"
+              options={organisations.map((o) => ({ value: o.id, label: o.name }))}
+              loading={orgsLoading}
+            />
+          </Form.Item>
+        ) : (
+          <Form.Item
+            name="organisationName"
+            label="Organisation Name"
+            tooltip="You don't have a mining organisation yet - this creates your first one."
+            rules={[{ required: true, message: "Enter an organisation name" }]}
+          >
+            <Input placeholder="e.g. Beldium Minerals Ltd" />
+          </Form.Item>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <Form.Item name="mineral_type" label="Mineral Type">
+            <Input placeholder="e.g. Gold" />
+          </Form.Item>
+          <Form.Item name="mining_method" label="Mining Method">
+            <Select placeholder="Select method" options={MINING_METHOD_OPTIONS} allowClear />
+          </Form.Item>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Form.Item name="country" label="Country">
+            <Input placeholder="e.g. Nigeria" />
+          </Form.Item>
+          <Form.Item name="state_of_operation" label="State">
+            <Input placeholder="e.g. Kaduna" />
+          </Form.Item>
+        </div>
+
+        <Form.Item name="local_government_area" label="Local Government Area">
+          <Input placeholder="e.g. Chikun" />
+        </Form.Item>
+
+        <Form.Item name="depth_range" label="Depth Range">
+          <Input placeholder="e.g. 0-50m" />
+        </Form.Item>
+
+        <Form.Item label="Location">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3">
+            {location?.pin ? (
+              <div className="flex items-center gap-2 text-sm text-gray-900">
+                <EnvironmentOutlined className="text-blue-600" />
+                {location.pin.lat.toFixed(6)}°, {location.pin.lng.toFixed(6)}°
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <EnvironmentOutlined />
+                No location set
+              </div>
+            )}
+            <Button size="small" icon={<EnvironmentOutlined />} onClick={() => setSiteMapOpen(true)}>
+              {location?.pin ? "Edit" : "Set on map"}
+            </Button>
+          </div>
+        </Form.Item>
+      </Form>
+
+      <MineLocationPicker
+        open={siteMapOpen}
+        initial={location}
+        onClose={() => setSiteMapOpen(false)}
+        onSubmit={async (result) => {
+          setLocation(result);
+          setSiteMapOpen(false);
+        }}
+      />
+    </Modal>
   );
 }
 

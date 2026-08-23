@@ -35,10 +35,15 @@ export function useMarketplaceAuth() {
   });
 
   const user = data?.data;
+  // Same sessionStorage token keys as the miner portal and compliance
+  // dashboard (see comment above) - a signed-in Miner or Compliance account
+  // can carry a perfectly valid token in here just by navigating to
+  // /marketplace/*, so this has to check role, not just "is there a user".
+  const isBuyer = user?.role === "Buyer";
   const isLoading = !checked || (hasSession && queryLoading);
 
   return {
-    isAuthenticated: checked && hasSession && !!user,
+    isAuthenticated: checked && hasSession && isBuyer,
     isLoading,
     user,
   };

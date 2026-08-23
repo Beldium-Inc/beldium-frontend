@@ -4,7 +4,7 @@ import React from "react";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <RequireAuth>
+    <RequireAuth allowedRoles={["Miner"]}>
       <DashboardLayout>{children}</DashboardLayout>
     </RequireAuth>
   );

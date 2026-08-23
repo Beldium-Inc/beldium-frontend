@@ -71,6 +71,35 @@ export const createMiningSite = async (payload: CreateMiningSitePayload) => {
   return res.data;
 };
 
+export type MiningOrganisation = {
+  id: string;
+  name: string;
+  registration_number: string | null;
+  country: string | null;
+};
+
+export type MiningOrganisationListResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    next: string | null;
+    previous: string | null;
+    count: number;
+    results: MiningOrganisation[];
+  };
+};
+
+export type CreateMiningOrganisationPayload = {
+  name: string;
+  registration_number?: string;
+  country?: string;
+};
+
+export const createMiningOrganisation = async (payload: CreateMiningOrganisationPayload) => {
+  const res = await authApi.post("/mining-organisations/", payload);
+  return res.data;
+};
+
 export const updateMiningSiteCoordinates = async (
   siteId: string,
   coords: { latitude: number; longitude: number }
@@ -82,7 +111,7 @@ export const updateMiningSiteCoordinates = async (
   return res.data;
 };
 
-export const getMiningOrganisations = async () => {
+export const getMiningOrganisations = async (): Promise<MiningOrganisationListResponse> => {
   const res = await authApi.get("/mining-organisations/");
   return res.data;
 };
