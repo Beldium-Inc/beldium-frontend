@@ -161,11 +161,11 @@ export default function WalletPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Wallet</h1>
           <p className="text-sm md:text-base text-gray-500">View your transaction history and payment status.</p>
         </div>
-        <div className="flex gap-3">
-          <Button type="primary" icon={<DownloadOutlined />} loading={downloadingStatement} onClick={handleStatement}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button className="w-full sm:w-auto" type="primary" icon={<DownloadOutlined />} loading={downloadingStatement} onClick={handleStatement}>
             Download Statement
           </Button>
-          <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>
+          <Button className="w-full sm:w-auto" icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>
             Export Transactions
           </Button>
         </div>
@@ -253,6 +253,7 @@ export default function WalletPage() {
               rowKey="id"
               columns={columns}
               dataSource={rows}
+              scroll={{ x: "max-content" }}
               pagination={{
                 current: data?.data?.page_number || page,
                 pageSize: data?.data?.per_page || 10,

@@ -21,7 +21,9 @@ import type {
   ComplianceQueueRow,
   ComplianceActiveTaskCard,
   ComplianceReviewSelection,
+  EscalationWatchlistRow,
 } from "@/src/features/compliance/dashboard/types";
+import type { ComplianceEscalationRecord } from "@/src/features/compliance/dashboard/api";
 import type {
   ComplianceAlert,
   DashboardMetric,
@@ -265,6 +267,22 @@ export function buildSelectionFromAlert(
     minerName: alert.minerName,
     createdAt: alert.createdAt,
   };
+}
+
+export function mapEscalationWatchlist(
+  results: ComplianceEscalationRecord[],
+): EscalationWatchlistRow[] {
+  return results.map((item) => ({
+    id: item.id,
+    reviewId: item.review ?? null,
+    // The escalations serializer only exposes the miner's raw UUID today,
+    // not a miner code/company name - show a short id until backend joins it.
+    minerId: item.miner ? item.miner.slice(0, 8).toUpperCase() : "Unassigned",
+    company: item.primary_reason ?? "Escalation",
+    level: item.level ?? "Standard",
+    note: item.analyst_notes ?? "Awaiting reviewer decision.",
+    escalatedAt: item.escalated_at,
+  }));
 }
 
 export function getWorkflowStatus(response: ComplianceWorkflowResponse | null | undefined) {

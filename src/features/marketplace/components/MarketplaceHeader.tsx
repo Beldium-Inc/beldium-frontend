@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,7 +19,6 @@ import { showToast } from "@/src/store/toast.store";
 
 const AUTH_NAV = [
   { label: "Marketplace", href: "/marketplace" },
-  { label: "Order's", href: "/marketplace/orders" },
   { label: "RFQ's", href: "/marketplace/rfqs" },
   { label: "Saved", href: "/marketplace/saved" },
 ];
@@ -28,7 +27,7 @@ const AUTH_NAV = [
 // bg-background/80 backdrop-blur-xl fixed bar, circle logo, border-b
 // border-border/50) - the nav-links block in that source is replaced here
 // with the marketplace's own search bar + account menu when signed out, or
-// the buyer nav (Marketplace/Order's/RFQ's/Saved) + avatar menu when signed in.
+// the buyer nav (Marketplace/RFQ's/Saved) + avatar menu when signed in.
 export default function MarketplaceHeader({
   search,
   onSearch,
@@ -41,6 +40,15 @@ export default function MarketplaceHeader({
   const { isAuthenticated, user } = useMarketplaceAuth();
   const [value, setValue] = useState(search);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Without this the page behind the fixed overlay stays scrollable, so a
+  // touch-scroll on the menu can drag the underlying page instead.
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   const guestMenu = (
     <div className="flex flex-col gap-2 w-40 py-1">
@@ -211,7 +219,11 @@ export default function MarketplaceHeader({
       </nav>
 
       {mobileOpen && (
-        <div className="md:hidden bg-background border-t border-border max-h-[calc(100vh-4.5rem)] overflow-y-auto">
+        // Fixed full-height overlay, not an in-flow block - a block sized
+        // to its own (short) content left the actual page visible in the
+        // gap below the links and above the viewport bottom, since it
+        // never covered anything past its own content height.
+        <div className="md:hidden fixed inset-x-0 top-[4.5rem] bottom-0 z-40 bg-background border-t border-border overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-4 space-y-3">
             {isAuthenticated ? (
               <>

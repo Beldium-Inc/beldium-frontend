@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   SearchOutlined,
@@ -35,10 +35,12 @@ import { classNames, primaryActionStyle, statusStyles } from "@/src/features/com
 import { showToast } from "@/src/store/toast.store";
 import {
   getComplianceMinerDetail,
+  getComplianceMiningSiteSourceProfile,
   verifyMinerLicense,
   verifyMinerDocument,
   submitComplianceReviewWorkflow,
   createComplianceSupportRequest,
+  type MineralSourceProfileResponse,
 } from "@/src/features/compliance/dashboard/api";
 import RequestComplianceDocumentModal from "@/src/features/compliance/dashboard/components/reviews/RequestComplianceDocumentModal";
 import { getApiErrorMessage } from "@/src/features/compliance/dashboard/lib/documents";
@@ -105,6 +107,16 @@ type MinerProfileRecord = {
   license_number?: string | null;
   issuing_authority?: string | null;
   estimated_monthly_output?: string | null;
+  registration_number?: string | null;
+  industry_sector?: string | null;
+  government_issue_document_type?: string | null;
+  government_issue_document?: string | null;
+  license_issue_date?: string | null;
+  license_certificate?: string | null;
+  environmental_documentation?: string | null;
+  environmental_consultant?: string | null;
+  environmental_compliance_document?: string | null;
+  has_safety_measures?: boolean | null;
 };
 
 type MinerDetailData = {
@@ -662,6 +674,297 @@ function RowActionsMenu({
   );
 }
 
+function SiteEmptyState({ label }: { label: string }) {
+  return (
+    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+      {label}
+    </div>
+  );
+}
+
+function SiteFieldsCard({ title, fields }: { title: string; fields: { label: string; value: string | null | undefined }[] }) {
+  return (
+    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
+      <div className="text-[15px] font-semibold text-[#1f2430]">{title}</div>
+      <div className="mt-4 grid grid-cols-2 gap-4 text-[13px] sm:grid-cols-3">
+        {fields.map((f) => (
+          <SiteDetailField key={f.label} label={f.label} value={f.value} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SiteRecordsTable<T extends { id: string }>({
+  rows,
+  emptyLabel,
+  columns,
+}: {
+  rows: T[];
+  emptyLabel: string;
+  columns: { label: string; render: (row: T) => ReactNode }[];
+}) {
+  if (!rows.length) return <SiteEmptyState label={emptyLabel} />;
+  return (
+    <div className="overflow-x-auto rounded-[18px] border border-[#eef1f6] bg-white">
+      <table className="w-full min-w-[520px] text-left text-[13px]">
+        <thead className="bg-[#fafbfd] text-[#8a92a1]">
+          <tr>
+            {columns.map((c) => (
+              <th key={c.label} className="whitespace-nowrap px-4 py-3 font-medium">
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id} className="border-t border-[#eef1f6]">
+              {columns.map((c) => (
+                <td key={c.label} className="px-4 py-3 text-[#2a2f39]">
+                  {c.render(row) ?? "-"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SiteSubTabPanel({
+  tab,
+  miner,
+  selectedSite,
+  siteProfile,
+  licenses,
+  esgReviews,
+}: {
+  tab: Exclude<CaseReviewTab, "documents">;
+  miner: {
+    registration_number?: string | null;
+    government_issue_document_type?: string | null;
+    business_role?: string | null;
+    industry_sector?: string | null;
+    license_number?: string | null;
+    issuing_authority?: string | null;
+    license_issue_date?: string | null;
+    environmental_documentation?: string | null;
+    environmental_consultant?: string | null;
+    has_safety_measures?: boolean | null;
+  } | null;
+  selectedSite: MinerSiteRecord | null;
+  siteProfile: MineralSourceProfileResponse["data"] | undefined;
+  licenses: {
+    id: string;
+    license_type?: string | null;
+    license_number?: string | null;
+    issuing_authority?: string | null;
+    expiry_date?: string | null;
+    verification_status?: string | null;
+  }[];
+  esgReviews: { id: string; category?: string | null; status?: string | null; notes?: string | null }[];
+}) {
+  if (tab === "corporate") {
+    return (
+      <SiteFieldsCard
+        title="Corporate registration"
+        fields={[
+          { label: "Registration Number", value: miner?.registration_number },
+          { label: "Business Role", value: miner?.business_role },
+          { label: "Industry Sector", value: miner?.industry_sector },
+          { label: "ID Document Type", value: miner?.government_issue_document_type },
+        ]}
+      />
+    );
+  }
+
+  if (tab === "licence") {
+    return (
+      <div className="space-y-3">
+        <div className="text-[13px] text-[#7b8392]">
+          Licences are held at the miner account level and are not yet linked to individual sites.
+        </div>
+        <SiteRecordsTable
+          rows={licenses}
+          emptyLabel="No licences on file for this miner yet."
+          columns={[
+            { label: "Type", render: (l) => l.license_type },
+            { label: "Number", render: (l) => l.license_number },
+            { label: "Issuing Authority", render: (l) => l.issuing_authority },
+            { label: "Expiry", render: (l) => formatDate(l.expiry_date) },
+            {
+              label: "Status",
+              render: (l) => (
+                <span className={classNames("rounded-full px-2.5 py-1 text-[11px] font-medium capitalize", licensingToneClass(l.verification_status))}>
+                  {(l.verification_status || "pending").replace(/_/g, " ")}
+                </span>
+              ),
+            },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "site_gps") {
+    const site = siteProfile ?? selectedSite;
+    return (
+      <SiteFieldsCard
+        title="Site & GPS"
+        fields={[
+          { label: "Mineral Type", value: site?.mineral_type },
+          { label: "Mining Method", value: site?.mining_method },
+          { label: "Depth Range", value: (siteProfile as { depth_range?: string | null } | undefined)?.depth_range },
+          {
+            label: "Location",
+            value: [site?.local_government_area, site?.state_of_operation, site?.country].filter(Boolean).join(", "),
+          },
+          {
+            label: "Coordinates",
+            value: site?.latitude && site?.longitude ? `${site.latitude}, ${site.longitude}` : null,
+          },
+          { label: "Operational Status", value: siteProfile?.operational_status },
+        ]}
+      />
+    );
+  }
+
+  if (tab === "ownership") {
+    return (
+      <SiteRecordsTable
+        rows={siteProfile?.ownership_records ?? []}
+        emptyLabel="No ownership records submitted for this site yet."
+        columns={[
+          { label: "Type", render: (o) => o.ownership_type },
+          { label: "Holder", render: (o) => o.holder_name },
+          { label: "Agreement Ref", render: (o) => o.agreement_reference },
+          { label: "Start", render: (o) => formatDate(o.start_date) },
+          { label: "End", render: (o) => formatDate(o.end_date) },
+        ]}
+      />
+    );
+  }
+
+  if (tab === "environmental") {
+    const environmentalReviews = esgReviews.filter((e) => (e.category || "").toLowerCase() === "environmental");
+    return (
+      <div className="space-y-4">
+        <SiteFieldsCard
+          title="Environmental documentation"
+          fields={[
+            { label: "Environmental Documentation", value: miner?.environmental_documentation },
+            { label: "Environmental Consultant", value: miner?.environmental_consultant },
+          ]}
+        />
+        <SiteRecordsTable
+          rows={environmentalReviews}
+          emptyLabel="No environmental/ESG review recorded yet."
+          columns={[
+            { label: "Category", render: (e) => esgCategoryLabel(e.category) },
+            {
+              label: "Status",
+              render: (e) => (
+                <span className="rounded-full border border-[#dce3ef] bg-[#fafbfd] px-2.5 py-1 text-[11px] font-medium capitalize text-[#5d6675]">
+                  {esgStatusMeta(e.status).label}
+                </span>
+              ),
+            },
+            { label: "Notes", render: (e) => e.notes },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "safety") {
+    return (
+      <div className="space-y-4">
+        <SiteFieldsCard
+          title="Safety programme"
+          fields={[{ label: "Formal Safety Measures On File", value: miner?.has_safety_measures ? "Yes" : "Not confirmed" }]}
+        />
+        <SiteRecordsTable
+          rows={siteProfile?.safety_records ?? []}
+          emptyLabel="No safety incidents recorded for this site."
+          columns={[
+            { label: "Incident Date", render: (s) => formatDate(s.incident_date) },
+            { label: "Severity", render: (s) => s.severity },
+            { label: "Status", render: (s) => s.status },
+            { label: "Description", render: (s) => s.description },
+            { label: "Resolved", render: (s) => formatDate(s.resolved_at) },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "equipment") {
+    return (
+      <SiteRecordsTable
+        rows={siteProfile?.equipment ?? []}
+        emptyLabel="No plant or equipment registered for this site yet."
+        columns={[
+          { label: "Name", render: (e) => e.name },
+          { label: "Type", render: (e) => e.equipment_type },
+          { label: "Capacity", render: (e) => e.capacity },
+          { label: "Status", render: (e) => e.status },
+          { label: "Last Serviced", render: (e) => formatDate(e.last_serviced_at) },
+        ]}
+      />
+    );
+  }
+
+  if (tab === "production") {
+    return (
+      <SiteRecordsTable
+        rows={siteProfile?.production_records ?? []}
+        emptyLabel="No production records logged for this site yet."
+        columns={[
+          { label: "Date", render: (p) => formatDate(p.record_date) },
+          { label: "Mineral", render: (p) => p.mineral_type },
+          { label: "Quantity", render: (p) => (p.quantity ? `${p.quantity} ${p.unit || ""}`.trim() : null) },
+          { label: "Extraction Method", render: (p) => p.extraction_method },
+          { label: "Notes", render: (p) => p.notes },
+        ]}
+      />
+    );
+  }
+
+  if (tab === "sampling") {
+    return (
+      <SiteRecordsTable
+        rows={siteProfile?.samples ?? []}
+        emptyLabel="No samples or lab results submitted for this site yet."
+        columns={[
+          { label: "Sample Ref", render: (s) => s.sample_reference },
+          { label: "Sampling Date", render: (s) => formatDate(s.sampling_date) },
+          { label: "Method", render: (s) => s.sampling_method },
+          { label: "Laboratory", render: (s) => s.laboratory_result?.laboratory_name },
+          { label: "Grade", render: (s) => (s.laboratory_result?.grade_percentage ? `${s.laboratory_result.grade_percentage}%` : null) },
+          { label: "Result Summary", render: (s) => s.laboratory_result?.result_summary },
+        ]}
+      />
+    );
+  }
+
+  // inspection
+  return (
+    <SiteRecordsTable
+      rows={siteProfile?.inspections ?? []}
+      emptyLabel="No site inspections logged yet."
+      columns={[
+        { label: "Scheduled", render: (i) => formatDate(i.scheduled_date) },
+        { label: "Visited", render: (i) => formatDate(i.visited_at) },
+        { label: "Status", render: (i) => i.status },
+        { label: "Outcome", render: (i) => (i.outcome ? i.outcome.replace(/_/g, " ") : null) },
+        { label: "Findings", render: (i) => i.findings },
+      ]}
+    />
+  );
+}
+
 export default function ComplianceReviewsView({
   rows,
 }: {
@@ -675,11 +978,12 @@ export default function ComplianceReviewsView({
   const [statusFilter, setStatusFilter] = useState("all");
   const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
   const [caseIntelOpen, setCaseIntelOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<CaseReviewTab>("overview");
+  const [activeTab, setActiveTab] = useState<CaseReviewTab>("corporate");
   const [docSearch, setDocSearch] = useState("");
   const [docViewMode, setDocViewMode] = useState<"list" | "grid">("list");
   const [licenseStatusFilter, setLicenseStatusFilter] = useState<"all" | "verified" | "issues_found" | "rejected">("all");
   const [esgStatusFilter, setEsgStatusFilter] = useState<"all" | "approved" | "in_progress" | "not_initiated">("all");
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const riskOptions = Array.from(new Set(rows.map((r) => r.riskLevel.label))).sort();
@@ -705,9 +1009,10 @@ export default function ComplianceReviewsView({
 
   const handleSelect = (row: AdminReviewRow) => {
     setSelectedRow(row);
-    setActiveTab("overview");
+    setActiveTab("corporate");
     setScreen("detail");
     setOpenMenuRowId(null);
+    setSelectedSiteId(null);
   };
 
   const handleBackToList = () => {
@@ -727,6 +1032,20 @@ export default function ComplianceReviewsView({
   const documentRecords = minerDetail?.documents ?? [];
   const esgReviews = minerDetail?.esg_reviews ?? [];
   const activityLogs = minerDetail?.activity_logs ?? [];
+
+  useEffect(() => {
+    if (!selectedSiteId && minerSites.length > 0) {
+      setSelectedSiteId(minerSites[0].id);
+    }
+  }, [selectedSiteId, minerSites]);
+
+  const siteProfileQ = useQuery({
+    queryKey: ["complianceSiteSourceProfile", selectedSiteId],
+    queryFn: () => getComplianceMiningSiteSourceProfile(selectedSiteId!),
+    enabled: Boolean(selectedSiteId),
+  });
+  const siteProfile = siteProfileQ.data?.data;
+  const selectedSite = minerSites.find((s) => s.id === selectedSiteId) ?? null;
 
   const verifyLicenseMutation = useMutation({
     mutationFn: verifyMinerLicense,
@@ -1101,14 +1420,14 @@ export default function ComplianceReviewsView({
           </button>
 
           <div className="rounded-[20px] border border-[#e8ecf4] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-4 px-7 py-6">
-              <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1d2b4f] to-[#3f6fd8] text-[17px] font-semibold !text-white">
+            <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-7 sm:py-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1d2b4f] to-[#3f6fd8] text-[15px] font-semibold !text-white sm:h-14 sm:w-14 sm:text-[17px]">
                   {getInitials(selectedRow.company, selectedRow.company.slice(0, 2).toUpperCase())}
                 </span>
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="text-[26px] font-semibold tracking-[-0.02em] text-[#1f2430]">
+                    <span className="text-[19px] font-semibold tracking-[-0.02em] text-[#1f2430] sm:text-[26px]">
                       {selectedRow.company}
                     </span>
                     <span
@@ -1147,27 +1466,27 @@ export default function ComplianceReviewsView({
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5">
-                <button type="button" onClick={handleExport} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <button type="button" onClick={handleExport} className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-3 text-[13px] font-medium text-[#2b3140] hover:bg-[#f7f9fc] sm:h-11 sm:px-4 sm:text-[14px]">
                   Export <DownloadOutlined />
                 </button>
-                <button type="button" onClick={() => handleShare()} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                <button type="button" onClick={() => handleShare()} className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-3 text-[13px] font-medium text-[#2b3140] hover:bg-[#f7f9fc] sm:h-11 sm:px-4 sm:text-[14px]">
                   Share <ShareAltOutlined />
                 </button>
-                <button type="button" onClick={handlePrint} className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-4 text-[14px] font-medium text-[#2b3140] hover:bg-[#f7f9fc]">
+                <button type="button" onClick={handlePrint} className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#e5e9f1] bg-white px-3 text-[13px] font-medium text-[#2b3140] hover:bg-[#f7f9fc] sm:h-11 sm:px-4 sm:text-[14px]">
                   Print <PrinterOutlined />
                 </button>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-0 overflow-x-auto border-t border-[#edf1f7] px-7">
+            <div className="flex gap-0 overflow-x-auto border-t border-[#edf1f7] px-4 sm:px-7">
               {CASE_REVIEW_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={classNames("whitespace-nowrap border-b-2 px-5 py-4 text-[15px] transition-colors",
+                  className={classNames("whitespace-nowrap border-b-2 px-3 py-3 text-[13px] transition-colors sm:px-5 sm:py-4 sm:text-[15px]",
                     activeTab === tab.key
                       ? "border-[#1f2430] font-semibold text-[#1f2430]"
                       : "border-transparent font-normal text-[#8a92a1] hover:text-[#2a2f39]"
@@ -1180,677 +1499,35 @@ export default function ComplianceReviewsView({
 
             {/* Body */}
             <div className="p-5">
-              {activeTab === "overview" ? (
-                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <div className="grid gap-5 2xl:grid-cols-2">
-                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Case Summary</div>
-                      <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                        {[
-                          { label: "Company Name", value: selectedRow.company },
-                          { label: "State", value: miner?.state_of_operation || "Not set" },
-                          { label: "Registration Number", value: "RC/2018/045678", placeholder: true },
-                          { label: "Assigned Institution", value: "NGMC", placeholder: true },
-                          { label: "Industry", value: "Mining", placeholder: true },
-                          { label: "Reviewer", value: selectedRow.reviewer },
-                          { label: "Operational Capacity", value: miner?.estimated_monthly_output || "Not set" },
-                        ].map((item) => (
-                          <div
-                            key={item.label}
-                            title={item.placeholder ? "Illustrative - no matching field exists on the backend yet" : undefined}
-                          >
-                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">{item.label}</div>
-                            <div className="mt-1.5 text-[15px] text-[#1f2430]">{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Compliance Overview</div>
-                      <div className="mt-6 flex flex-wrap items-center gap-8">
-                        <ScoreRing
-                          value={selectedRow.complianceScore}
-                          size={170}
-                          strokeWidth={18}
-                          color="#18b829"
-                          trackColor="#e4e7ec"
-                          caption="Compliance score"
-                        />
-                        <div className="flex-1 space-y-5">
-                          <div>
-                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Risk Level</div>
-                            <span
-                              className={classNames(
-                                "mt-1.5 inline-flex rounded-full px-3 py-1 text-[13px] font-medium",
-                                selectedRow.riskLevel.tone === "red"
-                                  ? "bg-[#ffeaec] text-[#ef2f32]"
-                                  : selectedRow.riskLevel.tone === "amber"
-                                    ? "bg-[#fff4df] text-[#df8b19]"
-                                    : selectedRow.riskLevel.tone === "green"
-                                      ? "bg-[#e9faef] text-[#1ea43b]"
-                                      : "bg-[#f1f3f7] text-[#6b7280]",
-                              )}
-                            >
-                              {selectedRow.riskLevel.label}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Open Issues</div>
-                            <div className="mt-1.5 text-[15px] text-[#1f2430]">{openIssuesCount}</div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Documents Verified</div>
-                            <div className="mt-1.5 text-[15px] text-[#1f2430]">
-                              {verifiedDocumentsCount} / {documentRecords.length || "-"}
-                            </div>
-                          </div>
-                          <div title="Illustrative - no verification-rules field exists on the backend yet">
-                            <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Verification Rules</div>
-                            <div className="mt-1.5 text-[15px] text-[#1f2430]">25,000 MT / yr</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Review Details</div>
-                      <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                        <div>
-                          <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Started On</div>
-                          <div className="mt-1.5 text-[15px] text-[#1f2430]">{formatDate(selectedRow.createdAt)}</div>
-                        </div>
-                        <div>
-                          <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Last Updated</div>
-                          <div className="mt-1.5 text-[15px] text-[#1f2430]">{selectedRow.lastActionDate}</div>
-                        </div>
-                      </div>
-                      <div className="mt-8">
-                        <div className="text-[11px] uppercase tracking-[0.06em] text-[#a0a7b5]">Estimated Completion</div>
-                        <div className="mt-2 flex items-center gap-3">
-                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#e8ecf2]">
-                            <div className="h-full rounded-full bg-[#18b829]" style={{ width: `${estimatedCompletion}%` }} />
-                          </div>
-                          <span className="text-[15px] font-medium text-[#1f2430]">{estimatedCompletion}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                      <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Latest Activity</div>
-                      <div className="mt-5 space-y-4">
-                        {activityLogs.length > 0 ? (
-                          activityLogs.slice(0, 3).map((entry) => (
-                            <div key={entry.id} className="flex items-start justify-between gap-4">
-                              <div className="flex min-w-0 items-start gap-2.5">
-                                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#2661d8]" />
-                                <span className="text-[14px] leading-5 text-[#3f4654]">
-                                  {entry.performed_by || "System"} {(entry.action || "").toLowerCase()}
-                                </span>
-                              </div>
-                              <span className="shrink-0 whitespace-nowrap text-[12px] text-[#a0a7b5]">
-                                {formatDateTime(entry.created_at)}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-[14px] text-[#8a92a1]">
-                            {minerDetailQ.isLoading ? "Loading activity..." : "No activity has been logged for this case yet."}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("timeline")}
-                        className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#2661d8] hover:underline"
-                      >
-                        View full timeline <RightOutlined className="text-[10px]" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <button
-                        type="button"
-                        onClick={() => setCaseIntelOpen((prev) => !prev)}
-                        className="flex w-full items-center justify-between"
-                      >
-                        <span className="text-[14px] font-semibold text-[#2a2f39]">Case Intelligence</span>
-                        <div className="flex items-center gap-2">
-                          <span className={classNames(
-                            "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold",
-                            caseAlerts.length > 0 ? "bg-[#fff0f1] text-[#ef2f32]" : "bg-[#ecfaf0] text-[#1ea43b]",
-                          )}>
-                            {caseAlerts.length}
-                          </span>
-                          <DownOutlined className={classNames("text-[10px] text-[#a0a6b3] transition-transform", caseIntelOpen ? "rotate-180" : "")} />
-                        </div>
-                      </button>
-                      <div className="mt-1 text-[11px] text-[#a0a7b5]">Key alerts</div>
-
-                      {caseIntelOpen ? (
-                        <div className="mt-4 space-y-2.5">
-                          {caseAlerts.length > 0 ? (
-                            caseAlerts.map((alert) => (
-                              <div
-                                key={alert.id}
-                                className={classNames(
-                                  "flex items-start gap-2 rounded-[12px] border px-3 py-2.5 text-[12px]",
-                                  alert.tone === "red"
-                                    ? "border-[#f7d6d7] bg-[#fff5f5] text-[#8a2a2c]"
-                                    : "border-[#f6e3bf] bg-[#fffaf0] text-[#7a5308]",
-                                )}
-                              >
-                                {alert.tone === "red" ? (
-                                  <ExclamationCircleOutlined className="mt-0.5 text-[#ef2f32]" />
-                                ) : (
-                                  <WarningOutlined className="mt-0.5 text-[#df8b19]" />
-                                )}
-                                <span>{alert.text}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="rounded-[12px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-3 py-3 text-[12px] text-[#8a92a1]">
-                              {minerDetailQ.isLoading ? "Loading case intelligence..." : "No alerts for this case right now."}
-                            </div>
-                          )}
-
-                          <div
-                            className="mt-5 flex items-center justify-between"
-                            title="Illustrative - no conditions/covenant tracking exists on the backend yet"
-                          >
-                            <span className="text-[13px] font-semibold text-[#2a2f39]">Outstanding Conditions</span>
-                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#f4f6f9] px-1.5 text-[11px] font-semibold text-[#5d6675]">
-                              2
-                            </span>
-                          </div>
-                          <div
-                            className="mt-2.5 space-y-2"
-                            title="Illustrative - no conditions/covenant tracking exists on the backend yet"
-                          >
-                            {[
-                              { text: "Replace expired insurance Certificate", due: "Due in 28 days" },
-                              { text: "Submit updated Waste Management Plan", due: "Due in 28 days" },
-                            ].map((item) => (
-                              <div
-                                key={item.text}
-                                className="flex items-center justify-between rounded-[12px] border border-[#e8ecf4] bg-white px-3 py-2.5 text-[12px]"
-                              >
-                                <span className="text-[#5d6675]">{item.text}</span>
-                                <span className="flex items-center gap-1 text-[11px] text-[#a0a7b5]">
-                                  <CalendarOutlined /> {item.due}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-[16px] border border-[#e8ecf4] bg-white p-5">
-                      <div className="text-[14px] font-semibold text-[#2a2f39]">Case Quick Info</div>
-                      <div className="mt-3 space-y-2.5 text-[13px]">
-                        <div
-                          className="flex items-center justify-between"
-                          title="Illustrative - no due-date field exists on reviews yet"
-                        >
-                          <span className="text-[#8a92a1]">Due Date</span>
-                          <span className="font-medium text-[#2a2f39]">14 Jan 2026</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#8a92a1]">Days Open</span>
-                          <span className="font-medium text-[#2a2f39]">
-                            {daysOpen !== null ? `${daysOpen} day${daysOpen === 1 ? "" : "s"}` : "Not set"}
-                          </span>
-                        </div>
-                        <div
-                          className="flex items-center justify-between"
-                          title="Priority mirrors this case's risk level - there is no separate priority field yet"
-                        >
-                          <span className="text-[#8a92a1]">Priority</span>
-                          <span className="font-medium text-[#2a2f39]">{selectedRow.riskLevel.label}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#8a92a1]">Last Updated</span>
-                          <span className="font-medium text-[#2a2f39]">{selectedRow.lastActionDate}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : activeTab === "sites" ? (
-                <div className="space-y-4">
-                  {minerSites.length > 0 ? (
-                    minerSites.map((site) => (
-                      <div key={site.id} className="rounded-[18px] border border-[#e8ecf4] bg-white p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <EnvironmentOutlined className="text-[#8a92a1]" />
-                            <span className="text-[15px] font-semibold text-[#2a2f39]">{site.name}</span>
-                          </div>
-                          <span className="rounded-full border border-[#dce3ef] bg-[#fafbfd] px-3 py-1 text-[12px] font-medium capitalize text-[#5d6675]">
-                            {(site.status || "").replace(/_/g, " ") || "Unknown"}
-                          </span>
-                        </div>
-                        <div className="mt-4 grid grid-cols-2 gap-4 text-[13px] sm:grid-cols-4">
-                          <SiteDetailField label="Mineral Type" value={site.mineral_type} />
-                          <SiteDetailField label="Mining Method" value={site.mining_method} />
-                          <SiteDetailField
-                            label="Location"
-                            value={[site.local_government_area, site.state_of_operation, site.country].filter(Boolean).join(", ")}
-                          />
-                          <SiteDetailField
-                            label="Coordinates"
-                            value={site.latitude && site.longitude ? `${site.latitude}, ${site.longitude}` : null}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
-                      {minerDetailQ.isLoading ? "Loading sites..." : "No mining sites were returned by the miner detail endpoint for this miner yet."}
-                    </div>
-                  )}
-                </div>
-              ) : activeTab === "licensing" ? (
-                <div className="space-y-5">
-                  <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                    <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Licensing Review Summary</div>
-                    <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
-                      <SummaryTile
-                        label="Overall Status"
-                        value={
-                          licenses.length === 0
-                            ? "No licenses"
-                            : verifiedLicensesCount === licenses.length
-                              ? "Complete"
-                              : "In Progress"
-                        }
-                        valueClassName="text-[#df8b19]"
-                      />
-                      <SummaryTile
-                        label="License Verified"
-                        value={`${verifiedLicensesCount} / ${licenses.length || "-"}`}
-                      />
-                      <SummaryTile
-                        label="Requires Review"
-                        value={String(
-                          licenses.filter((l) => ["pending", "issues_found"].includes((l.verification_status ?? "").toLowerCase())).length,
-                        )}
-                      />
-                      <SummaryTile
-                        label="Rejected"
-                        value={String(licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "rejected").length)}
-                        valueClassName="text-[#ef2f32]"
-                      />
-                      <SummaryTile
-                        label="Overall Licensing Score"
-                        value={`${licensingProgress}%`}
-                        valueClassName="text-[#1ea43b]"
-                      />
-                    </div>
-                  </div>
-
-                  {licenses.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[
-                        { key: "all" as const, label: "All", count: licenses.length },
-                        {
-                          key: "verified" as const,
-                          label: "Verified",
-                          count: licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "verified").length,
-                        },
-                        {
-                          key: "issues_found" as const,
-                          label: "Needs clarification",
-                          count: licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "issues_found").length,
-                        },
-                        {
-                          key: "rejected" as const,
-                          label: "Rejected",
-                          count: licenses.filter((l) => (l.verification_status ?? "").toLowerCase() === "rejected").length,
-                        },
-                      ].map((tab) => (
-                        <button
-                          key={tab.key}
-                          type="button"
-                          onClick={() => setLicenseStatusFilter(tab.key)}
-                          className={classNames(
-                            "rounded-[8px] border px-3 py-1.5 text-[12px] font-medium",
-                            licenseStatusFilter === tab.key
-                              ? "border-[#c7d4ee] bg-[#eef2fb] text-[#14244a]"
-                              : "border-[#e8ecf4] bg-white text-[#5d6675] hover:bg-[#f7f9fc]",
-                          )}
-                        >
-                          {tab.label} ({tab.count})
-                        </button>
-                      ))}
-                    </div>
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[13px] text-[#8a92a1]">
+                  <EnvironmentOutlined />
+                  <span className="font-semibold text-[#2a2f39]">
+                    {selectedSite?.name || siteProfile?.name || (minerDetailQ.isLoading ? "Loading site..." : "No site on file")}
+                  </span>
+                  {selectedSite ? (
+                    <span className="rounded-full border border-[#dce3ef] bg-[#fafbfd] px-3 py-1 text-[12px] font-medium capitalize text-[#5d6675]">
+                      {(siteProfile?.status || selectedSite.status || "").replace(/_/g, " ") || "Active"}
+                    </span>
                   ) : null}
-
-                  {licenses.length > 0 ? (
-                    licenses
-                      .filter((doc) =>
-                        licenseStatusFilter === "all"
-                          ? true
-                          : (doc.verification_status ?? "").toLowerCase() === licenseStatusFilter,
-                      )
-                      .map((doc) => {
-                      const status = (doc.verification_status ?? "pending").toLowerCase();
-                      const days = daysUntil(doc.expiry_date);
-                      const validity = licenseValidityStatus(days);
-                      const borderColor =
-                        status === "rejected"
-                          ? "#ef2f32"
-                          : status === "issues_found"
-                            ? "#df8b19"
-                            : status === "verified"
-                              ? "#1ea43b"
-                              : "#dbe2ee";
-
-                      return (
-                        <div
-                          key={doc.id}
-                          className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white"
-                          style={{ borderLeft: `4px solid ${borderColor}` }}
-                        >
-                          <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="flex items-start gap-3">
-                              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[16px] text-[#5e6777]">
-                                <FileTextOutlined />
-                              </span>
-                              <div>
-                                <div className="text-[15px] font-semibold text-[#2a2f39]">{doc.license_type || "License"}</div>
-                                <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">License No.</div>
-                                <div className="text-[12px] text-[#5d6675]">{doc.license_number || "N/A"}</div>
-                                <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">Issuing Authority</div>
-                                <div className="text-[12px] text-[#5d6675]">{doc.issuing_authority || "N/A"}</div>
-                                <div className="mt-3">
-                                  {doc.document ? (
-                                    <a
-                                      href={doc.document}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#cfe0fb] bg-[#eef4ff] px-3 py-1.5 text-[12px] font-medium text-[#2661d8] hover:bg-[#e2ecfe]"
-                                    >
-                                      <EyeOutlined /> View Document
-                                    </a>
-                                  ) : (
-                                    <span className="text-[12px] text-[#a0a7b5]">No document on file</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div
-                                className="text-[10px] uppercase tracking-wide text-[#a0a7b5]"
-                                title="Illustrative - no issue-date field exists on the backend yet"
-                              >
-                                Issue Date
-                              </div>
-                              <div className="text-[12px] text-[#5d6675]">12 Jan 2024</div>
-                              <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">Expiry Date</div>
-                              <div className="text-[12px] text-[#5d6675]">
-                                {formatDate(doc.expiry_date)}
-                                {days !== null ? (
-                                  <span className={classNames("ml-1", days < 0 ? "text-[#ef2f32]" : "text-[#df8b19]")}>
-                                    ({relativeExpiryLabel(days)})
-                                  </span>
-                                ) : null}
-                              </div>
-                              <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">Status</div>
-                              <span className={classNames("mt-0.5 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold", statusStyles[validity.tone].container)}>
-                                {validity.label}
-                              </span>
-                            </div>
-
-                            <div>
-                              <div
-                                className="text-[10px] uppercase tracking-wide text-[#a0a7b5]"
-                                title="Illustrative - the backend does not run automated document validation yet"
-                              >
-                                Validation Checks
-                              </div>
-                              <div className="mt-1.5 space-y-1">
-                                <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                  <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> File is readable
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                  <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Government format detected
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                  <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Signature verified
-                                </div>
-                                {days !== null ? (
-                                  <div className={classNames("flex items-center gap-1.5 text-[12px]", days < 0 ? "text-[#ef2f32]" : "text-[#df8b19]")}>
-                                    <WarningOutlined className="text-[11px]" />
-                                    {days < 0 ? relativeExpiryLabel(days) : `Expires ${relativeExpiryLabel(days)}`}
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-
-                            <div className="min-w-[190px]">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] uppercase tracking-wide text-[#a0a7b5]">Reviewer Assessment</span>
-                                <span className={classNames("rounded-full px-2 py-0.5 text-[10px] font-semibold", licensingToneClass(status))}>
-                                  {status === "issues_found" ? "Needs clarification" : status.charAt(0).toUpperCase() + status.slice(1)}
-                                </span>
-                              </div>
-                              <div className="mt-2 space-y-1.5">
-                                {[
-                                  { value: "verified", label: "Verified" },
-                                  { value: "issues_found", label: "Needs Clarification" },
-                                  { value: "rejected", label: "Rejected" },
-                                ].map((option) => (
-                                  <label key={option.value} className="flex items-center gap-2 text-[12px] text-[#5d6675]">
-                                    <input
-                                      type="radio"
-                                      name={`license-assessment-${doc.id}`}
-                                      checked={status === option.value}
-                                      disabled={verifyLicenseMutation.isPending}
-                                      onChange={() =>
-                                        verifyLicenseMutation.mutate({
-                                          licenseId: doc.id,
-                                          verification_status: option.value,
-                                        })
-                                      }
-                                      className="h-3.5 w-3.5 accent-[#14244a]"
-                                    />
-                                    {option.label}
-                                  </label>
-                                ))}
-                              </div>
-                              <div className="mt-3 text-[11px] text-[#a0a7b5]">
-                                {doc.verified_by ? (
-                                  <>
-                                    <span className="font-medium text-[#5d6675]">Reviewed by</span> {doc.verified_by}
-                                    <br />
-                                    {formatDateTime(doc.verified_at)}
-                                  </>
-                                ) : (
-                                  "Not yet reviewed"
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
-                      {minerDetailQ.isLoading ? "Loading licenses..." : "No licenses were returned by the miner detail endpoint for this case yet."}
-                    </div>
-                  )}
                 </div>
-              ) : activeTab === "environmental-esg" ? (
-                <div className="space-y-5">
-                  <div className="rounded-[18px] border border-[#eef1f6] bg-white p-6">
-                    <div className="text-[20px] font-semibold tracking-[-0.01em] text-[#1f2430]">Environmental &amp; ESG Summary</div>
-                    <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
-                      <SummaryTile
-                        label="Overall Status"
-                        value={
-                          esgReviews.length === 0
-                            ? "No reviews"
-                            : esgReviews.every((r) => (r.status ?? "").toLowerCase() === "approved")
-                              ? "Complete"
-                              : "In Progress"
-                        }
-                        valueClassName="text-[#df8b19]"
-                      />
-                      <SummaryTile
-                        label="Compliant check"
-                        value={`${esgReviews.filter((r) => (r.status ?? "").toLowerCase() === "approved").length} / ${esgReviews.length || "-"}`}
-                      />
-                      <SummaryTile
-                        label="Requires Review"
-                        value={String(esgReviews.filter((r) => (r.status ?? "").toLowerCase() === "in_progress").length)}
-                      />
-                      <SummaryTile
-                        label="Not Initiated"
-                        value={String(esgReviews.filter((r) => (r.status ?? "not_initiated").toLowerCase() === "not_initiated").length)}
-                        valueClassName="text-[#5d6675]"
-                      />
-                      <SummaryTile label="Overall Score" value={`${esgProgress}%`} valueClassName="text-[#1ea43b]" />
-                    </div>
-                  </div>
 
-                  {esgReviews.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[
-                        { key: "all" as const, label: "All", count: esgReviews.length },
-                        ...ESG_STATUS_OPTIONS.map((option) => ({
-                          key: option.value as "all" | "approved" | "in_progress" | "not_initiated",
-                          label: option.label,
-                          count: esgReviews.filter((r) => (r.status ?? "not_initiated").toLowerCase() === option.value).length,
-                        })),
-                      ].map((tab) => (
-                        <button
-                          key={tab.key}
-                          type="button"
-                          onClick={() => setEsgStatusFilter(tab.key)}
-                          className={classNames(
-                            "rounded-[8px] border px-3 py-1.5 text-[12px] font-medium",
-                            esgStatusFilter === tab.key
-                              ? "border-[#c7d4ee] bg-[#eef2fb] text-[#14244a]"
-                              : "border-[#e8ecf4] bg-white text-[#5d6675] hover:bg-[#f7f9fc]",
-                          )}
-                        >
-                          {tab.label} ({tab.count})
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                {minerSites.length > 1 ? (
+                  <select
+                    value={selectedSiteId ?? ""}
+                    onChange={(e) => setSelectedSiteId(e.target.value || null)}
+                    className="h-9 rounded-[10px] border border-[#dce3ef] bg-white px-3 text-[13px] text-[#2a2f39] outline-none"
+                  >
+                    {minerSites.map((site) => (
+                      <option key={site.id} value={site.id}>
+                        {site.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
 
-                  {esgReviews.length > 0 ? (
-                    esgReviews
-                      .filter((review) =>
-                        esgStatusFilter === "all" ? true : (review.status ?? "not_initiated").toLowerCase() === esgStatusFilter,
-                      )
-                      .map((review) => {
-                        const meta = esgStatusMeta(review.status);
-                        const borderColor =
-                          meta.value === "approved" ? "#1ea43b" : meta.value === "in_progress" ? "#df8b19" : "#dbe2ee";
-
-                        return (
-                          <div
-                            key={review.id}
-                            className="overflow-hidden rounded-[16px] border border-[#e8ecf4] bg-white"
-                            style={{ borderLeft: `4px solid ${borderColor}` }}
-                          >
-                            <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-start lg:justify-between">
-                              <div className="flex items-start gap-3">
-                                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f7fb] text-[16px] text-[#5e6777]">
-                                  <FileTextOutlined />
-                                </span>
-                                <div>
-                                  <div className="text-[15px] font-semibold text-[#2a2f39]">{esgCategoryLabel(review.category)}</div>
-                                  <div className="mt-2 text-[10px] uppercase tracking-wide text-[#a0a7b5]">Status</div>
-                                  <span className={classNames("mt-0.5 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold", statusStyles[meta.tone].container)}>
-                                    {meta.label}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div>
-                                <div className="text-[10px] uppercase tracking-wide text-[#a0a7b5]">Validation Checks</div>
-                                <div className="mt-1.5 space-y-1">
-                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> File is readable
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Government format detected
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-[12px] text-[#5d6675]">
-                                    <CheckCircleOutlined className="text-[11px] text-[#1ea43b]" /> Signature verified
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="min-w-[210px]">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] uppercase tracking-wide text-[#a0a7b5]">Reviewer Assessment</span>
-                                  <span className={classNames("rounded-full px-2 py-0.5 text-[10px] font-semibold", statusStyles[meta.tone].container)}>
-                                    {meta.label}
-                                  </span>
-                                </div>
-                                <div className="mt-2 space-y-1.5">
-                                  {ESG_STATUS_OPTIONS.map((option) => (
-                                    <label key={option.value} className="flex items-center gap-2 text-[12px] text-[#5d6675]">
-                                      <input
-                                        type="radio"
-                                        name={`esg-assessment-${review.id}`}
-                                        checked={meta.value === option.value}
-                                        disabled
-                                        readOnly
-                                        className="h-3.5 w-3.5 accent-[#14244a]"
-                                      />
-                                      {option.label}
-                                    </label>
-                                  ))}
-                                </div>
-                                <div className="mt-2 text-[11px] text-[#a0a7b5]">
-                                  ESG status updates aren&apos;t connected to the backend yet.
-                                </div>
-                                <div className="mt-3 text-[11px] text-[#a0a7b5]">
-                                  {review.reviewed_by ? (
-                                    <>
-                                      <span className="font-medium text-[#5d6675]">Reviewed by</span> {review.reviewed_by}
-                                      <br />
-                                      {formatDateTime(review.updated_at)}
-                                    </>
-                                  ) : (
-                                    "Not yet reviewed"
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
-                      {minerDetailQ.isLoading ? "Loading ESG reviews..." : "No ESG reviews were returned by the miner detail endpoint for this case yet."}
-                    </div>
-                  )}
-                </div>
-              ) : activeTab === "operational" ? (
-                <ChecklistReviewTab
-                  title="Operational Review"
-                  scoreLabel="Operational Score"
-                  requirementColumnLabel="Operational Requirement"
-                  categoryLabel="Operational"
-                  items={buildOperationalChecklist(minerDetailQ.data)}
-                />
-              ) : activeTab === "export-compliance" ? (
-                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-8 text-center text-[14px] leading-6 text-[#7b8392]">
-                  Export compliance tracking (export licenses, shipment manifests, customs declarations) isn&apos;t
-                  wired up on the backend yet - this tab will populate once those records exist.
-                </div>
-              ) : activeTab === "documents" ? (
+              {activeTab === "documents" ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="relative w-full max-w-[320px]">
@@ -2006,71 +1683,23 @@ export default function ComplianceReviewsView({
                     );
                   })()}
                 </div>
-              ) : activeTab === "internal-notes" ? (
-                <div className="space-y-4">
-                  <textarea
-                    placeholder="Add an internal note..."
-                    className="h-32 w-full resize-none rounded-[16px] border border-[#dce3ef] bg-white px-4 py-3 text-[14px] text-[#2a2f39] outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => showToast("Notes aren't connected to the backend yet.", "error")}
-                    className="inline-flex h-11 !mt-2 items-center justify-center rounded-[12px] bg-[#14244a] px-5 text-[14px] font-semibold !text-white"
-                    style={primaryActionStyle}
-                  >
-                    Post Note
-                  </button>
-                  <div className="rounded-[18px] border border-[#e8ecf4] bg-[#fafbfd] p-5 mt-7 text-[14px] leading-6 text-[#5d6675]">
-                    No internal notes captured for this review yet.
-                  </div>
+              ) : !selectedSiteId ? (
+                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+                  {minerDetailQ.isLoading ? "Loading sites..." : "No mining sites were returned by the miner detail endpoint for this miner yet."}
                 </div>
-              ) : activeTab === "audit-history" ? (
-                <div className="space-y-4">
-                  {activityLogs.length > 0 ? (
-                    activityLogs.map((entry) => (
-                      <div key={entry.id} className="flex gap-3 rounded-[18px] border border-[#e8ecf4] bg-white px-5 py-4">
-                        <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f3f6fb] text-[#52607a]">
-                          <HistoryOutlined />
-                        </span>
-                        <div>
-                          <div className="text-[14px] font-semibold text-[#2a2f39]">
-                            {entry.performed_by || "System"} {(entry.action || "").toLowerCase()}
-                          </div>
-                          <div className="mt-1 text-[12px] text-[#a0a7b5]">{formatDateTime(entry.created_at)}</div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
-                      {minerDetailQ.isLoading ? "Loading audit history..." : "No activity has been logged for this case yet."}
-                    </div>
-                  )}
+              ) : siteProfileQ.isLoading ? (
+                <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] leading-6 text-[#7b8392]">
+                  Loading site record...
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {activityLogs.length > 0 ? (
-                    activityLogs
-                      .slice()
-                      .reverse()
-                      .map((entry) => (
-                        <div key={entry.id} className="flex gap-3 rounded-[18px] border border-[#e8ecf4] bg-white px-5 py-4">
-                          <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f3f6fb] text-[#52607a]">
-                            <HistoryOutlined />
-                          </span>
-                          <div>
-                            <div className="text-[14px] font-semibold text-[#2a2f39]">
-                              {entry.performed_by || "System"} {(entry.action || "").toLowerCase()}
-                            </div>
-                            <div className="mt-1 text-[12px] text-[#a0a7b5]">{formatDateTime(entry.created_at)}</div>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-5 py-6 text-[14px] text-[#7b8392]">
-                      Timeline activity will appear here once the review progresses.
-                    </div>
-                  )}
-                </div>
+                <SiteSubTabPanel
+                  tab={activeTab}
+                  miner={miner}
+                  selectedSite={selectedSite}
+                  siteProfile={siteProfile}
+                  licenses={licenses}
+                  esgReviews={esgReviews}
+                />
               )}
             </div>
 

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button, Skeleton, Empty } from "antd";
+import { Button, Skeleton, Empty, Modal, InputNumber } from "antd";
 import { CheckCircleFilled } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { OpenQueueItem, acceptRequest, declineRequest } from "../../dashboard/api";
+import { OpenQueueItem, declineRequest, submitQuote } from "../../dashboard/api";
 import { showToast } from "@/src/store/toast.store";
 
 type Props = {
@@ -12,25 +12,47 @@ type Props = {
 
 export default function NewRequestsList({ items, loading }: Props) {
   const queryClient = useQueryClient();
-  const [actingOn, setActingOn] = useState<{ id: string; action: "accept" | "decline" } | null>(null);
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [quoteItem, setQuoteItem] = useState<OpenQueueItem | null>(null);
+  const [quotedPrice, setQuotedPrice] = useState<number | null>(null);
+  const [quotedQuantity, setQuotedQuantity] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleAction = async (id: string, action: "accept" | "decline") => {
+  const handleDecline = async (id: string) => {
     try {
-      setActingOn({ id, action });
-      if (action === "accept") {
-        await acceptRequest(id);
-        showToast("Request accepted", "success");
-      } else {
-        await declineRequest(id);
-        showToast("Request declined", "success");
-      }
+      setDecliningId(id);
+      await declineRequest(id);
+      showToast("Request declined", "success");
       queryClient.invalidateQueries({ queryKey: ["newRequests"] });
       queryClient.invalidateQueries({ queryKey: ["ordersOverview"] });
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      showToast(e?.response?.data?.message || `Failed to ${action} request`, "error");
+      showToast(e?.response?.data?.message || "Failed to decline request", "error");
     } finally {
-      setActingOn(null);
+      setDecliningId(null);
+    }
+  };
+
+  const openQuoteModal = (item: OpenQueueItem) => {
+    setQuoteItem(item);
+    setQuotedPrice(null);
+    setQuotedQuantity(Number(item.quantity) || null);
+  };
+
+  const handleSubmitQuote = async () => {
+    if (!quoteItem || !quotedPrice || !quotedQuantity) return;
+    try {
+      setSubmitting(true);
+      await submitQuote(quoteItem.id, { quoted_price: quotedPrice, quoted_quantity: quotedQuantity });
+      showToast("Quote sent to buyer", "success");
+      queryClient.invalidateQueries({ queryKey: ["newRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["ordersOverview"] });
+      setQuoteItem(null);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast(e?.response?.data?.message || "Failed to submit quote", "error");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -54,6 +76,54 @@ export default function NewRequestsList({ items, loading }: Props) {
 
   return (
     <div className="space-y-4">
+      <Modal
+        title="Send your quote"
+        open={!!quoteItem}
+        onCancel={() => setQuoteItem(null)}
+        footer={null}
+        destroyOnHidden
+      >
+        {quoteItem && (
+          <div className="flex flex-col gap-4 pt-2">
+            <p className="text-sm text-gray-500">
+              {quoteItem.buyer_name} wants {quoteItem.quantity} MT of {quoteItem.mineral_type}. Quote the volume
+              you can actually supply and your price - you can offer less than the full amount.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-800 mb-1.5">Volume you can supply (MT)</label>
+              <InputNumber
+                size="large"
+                className="!w-full"
+                min={0}
+                max={Number(quoteItem.quantity) || undefined}
+                value={quotedQuantity}
+                onChange={(v) => setQuotedQuantity(v)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-800 mb-1.5">Your price (₦ per unit)</label>
+              <InputNumber
+                size="large"
+                className="!w-full"
+                min={0}
+                value={quotedPrice}
+                onChange={(v) => setQuotedPrice(v)}
+              />
+            </div>
+            <Button
+              type="primary"
+              block
+              size="large"
+              loading={submitting}
+              disabled={!quotedPrice || !quotedQuantity}
+              onClick={handleSubmitQuote}
+            >
+              Send quote
+            </Button>
+          </div>
+        )}
+      </Modal>
+
       {items.map((item) => (
         <div key={item.id} className="bg-white rounded-xl p-4 md:p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -100,20 +170,19 @@ export default function NewRequestsList({ items, loading }: Props) {
                   type="text"
                   danger
                   className="font-medium text-xs sm:text-sm"
-                  loading={actingOn?.id === item.id && actingOn.action === "decline"}
-                  disabled={!!actingOn && actingOn.id !== item.id}
-                  onClick={() => handleAction(item.id, "decline")}
+                  loading={decliningId === item.id}
+                  disabled={!!decliningId && decliningId !== item.id}
+                  onClick={() => handleDecline(item.id)}
                 >
                   Decline
                 </Button>
                 <Button
                   type="primary"
                   className="bg-[#1e293b] hover:!bg-[#0f172a] border-none px-4 sm:px-6 text-xs sm:text-sm"
-                  loading={actingOn?.id === item.id && actingOn.action === "accept"}
-                  disabled={!!actingOn && actingOn.id !== item.id}
-                  onClick={() => handleAction(item.id, "accept")}
+                  disabled={!!decliningId}
+                  onClick={() => openQuoteModal(item)}
                 >
-                  Review request
+                  Send quote
                 </Button>
             </div>
           </div>

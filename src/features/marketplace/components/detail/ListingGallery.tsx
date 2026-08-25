@@ -4,9 +4,11 @@ import { useState } from "react";
 import type { PublicListingDetail } from "@/src/features/marketplace/public-api";
 
 export default function ListingGallery({ listing }: { listing: PublicListingDetail }) {
-  // `gallery` isn't on PublicListingSerializer yet (see public-api.ts) - falls
-  // back to the single `image` field, then to an empty state.
-  const images = listing.gallery?.length ? listing.gallery : listing.image ? [listing.image] : [];
+  const images = listing.gallery_images?.length
+    ? listing.gallery_images
+    : listing.image
+      ? [listing.image]
+      : [];
   const [active, setActive] = useState(0);
 
   return (

@@ -7,10 +7,10 @@ export default function SellerCard({ listing }: { listing: PublicListingDetail }
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
-            {listing.seller_avatar ? (
+            {listing.seller.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={listing.seller_avatar}
+                src={listing.seller.avatar}
                 alt=""
                 className="w-full h-full object-cover rounded-lg"
               />
@@ -20,8 +20,8 @@ export default function SellerCard({ listing }: { listing: PublicListingDetail }
           </div>
           <div>
             <div className="flex items-center gap-1.5 font-medium text-gray-900 text-sm">
-              {listing.seller_name ?? listing.miner_company_name}
-              {(listing.seller_verified ?? listing.is_verified) && (
+              {listing.seller.company_name ?? listing.miner_company_name}
+              {listing.seller.is_verified && (
                 <CheckCircleFilled className="text-blue-500 text-xs" />
               )}
             </div>

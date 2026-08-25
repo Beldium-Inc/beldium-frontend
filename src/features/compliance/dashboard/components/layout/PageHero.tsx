@@ -47,7 +47,7 @@ export default function PageHero({
                       : isAdminRegulatoryReadinessView
                         ? "Regulatory Readiness"
                         : persona === "compliance"
-                          ? "Open Task Pool"
+                          ? "Your workspace"
                           : "Dashboard"}
           </h1>
           <p className="mt-1.5 max-w-[720px] text-[13px] text-[#7a8291]">
@@ -65,12 +65,12 @@ export default function PageHero({
                         ? "Track, retain, and export compliance activity for legal and regulatory accountability."
                         : persona === "admin"
                         ? "Track miner onboarding, reviewer assignments, and regulatory readiness from a single command center."
-                        : "Stay on top of open claims, active reviews, and compliance quality without leaving the queue."}
+                        : "Everything assigned to you: open claims, active reviews, and compliance quality, in one place."}
           </p>
         </div>
       </div>
 
-      <Link
+      {/* <Link
         href={
           showBackAction
             ? `/compliancedashboard?persona=${persona}`
@@ -91,7 +91,7 @@ export default function PageHero({
             <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#ff4726]" />
           </>
         )}
-      </Link>
+      </Link> */}
     </div>
   );
 }

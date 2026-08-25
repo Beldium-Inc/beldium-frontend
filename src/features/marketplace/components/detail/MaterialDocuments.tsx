@@ -3,7 +3,7 @@ import type { PublicListingDetail } from "@/src/features/marketplace/public-api"
 
 export default function MaterialDocuments({ listing }: { listing: PublicListingDetail }) {
   const docs = [
-    { label: "Assay reports", url: listing.assay_report_url },
+    { label: "Assay reports", url: listing.assay_report },
     { label: "Certificate of analysis (COA)", url: listing.coa_document_url },
     { label: "Export documentation", url: listing.export_docs_url },
   ];

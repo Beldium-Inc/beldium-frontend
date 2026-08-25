@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { PublicListingDetail } from "@/src/features/marketplace/public-api";
 import { useMarketplaceAuth } from "@/src/features/marketplace/auth/use-marketplace-auth";
 import AuthRequiredModal from "@/src/features/marketplace/components/AuthRequiredModal";
-import { createMockOrderFromListing } from "@/src/features/marketplace/orders/mock-data";
 
 const CURRENCY_SYMBOL: Record<string, string> = { NGN: "₦", USD: "$" };
 
@@ -16,26 +15,20 @@ export default function PricingCard({ listing }: { listing: PublicListingDetail 
 
   const symbol = CURRENCY_SYMBOL[listing.currency] ?? `${listing.currency} `;
   const price = Number(listing.asking_price_per_mt).toLocaleString();
-  const quoteHref = `/marketplace/listings/${listing.slug}/request-quote`;
+  const quoteParams = new URLSearchParams({
+    mineral_type: listing.mineral_type,
+    grade_spec: listing.grade ? `${listing.grade}%` : "",
+    total_weight: String(listing.quantity_available),
+    destination: listing.mine_state,
+  });
+  const quoteHref = `/marketplace/rfqs/new?${quoteParams.toString()}`;
 
-  // No real checkout/RFQ endpoint exists yet (see the message sent to the
-  // backend team - item 5). Creates a mock order client-side so the buyer
-  // still lands on a working, fully-built order detail page - swap this
-  // for a real order/RFQ creation call once that endpoint ships.
-  const handlePurchaseIntent = () => {
+  const handleRequestQuote = () => {
     if (!isAuthenticated) {
       setAuthModalOpen(true);
       return;
     }
-    const order = createMockOrderFromListing({
-      mineralType: listing.mineral_type,
-      supplierName: listing.miner_company_name,
-      quantityAvailable: listing.quantity_available,
-      askingPricePerMt: listing.asking_price_per_mt,
-      currency: listing.currency,
-      mineState: listing.mine_state,
-    });
-    router.push(`/marketplace/orders/${order.id}`);
+    router.push(quoteHref);
   };
 
   return (
@@ -67,17 +60,10 @@ export default function PricingCard({ listing }: { listing: PublicListingDetail 
       <div className="flex flex-col sm:flex-row gap-2 mt-4">
         <button
           type="button"
-          onClick={handlePurchaseIntent}
+          onClick={handleRequestQuote}
           className="flex-1 bg-[#101E3D] !text-white text-sm font-medium py-2.5 rounded-lg hover:bg-[#0c1730]"
         >
-          Buy now
-        </button>
-        <button
-          type="button"
-          onClick={handlePurchaseIntent}
-          className="flex-1 text-center border border-[#101E3D] text-[#101E3D] text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50"
-        >
-          Request quote
+          Request for quote
         </button>
       </div>
 

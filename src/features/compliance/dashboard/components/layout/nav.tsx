@@ -39,11 +39,6 @@ export function getComplianceNavItems(view: ComplianceView): NavItem[] {
     {
       label: "Dashboard",
       icon: <AppstoreOutlined />,
-      href: "/compliancedashboard?persona=admin",
-    },
-    {
-      label: "Open Task Pool",
-      icon: <FolderOpenOutlined />,
       href: "/compliancedashboard?persona=compliance",
       active: view === "dashboard",
     },

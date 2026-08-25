@@ -100,7 +100,7 @@ export default function MarketplaceOtpVerify() {
           Verify
         </Button>
 
-        <p className="text-sm text-gray-500 mt-3">
+        <p className="text-sm text-gray-500 !mt-3">
           Didn&apos;t receive the code?{" "}
           {secondsLeft > 0 ? (
             <span className="text-gray-400">({secondsLeft}sec)</span>

@@ -15,7 +15,10 @@ function formatPrice(listing: PublicListing) {
 
 export default function MarketplaceListingCard({ listing }: { listing: PublicListing }) {
   return (
-    <div className="bg-white border border-[#E9ECF2] rounded-xl overflow-hidden flex flex-col">
+    <Link
+      href={`/marketplace/listings/${listing.slug}`}
+      className="bg-white border border-[#E9ECF2] rounded-xl overflow-hidden flex flex-col cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+    >
       <div className="relative aspect-[4/3] bg-gray-100">
         {listing.image ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote S3 host isn't in next.config.ts remotePatterns
@@ -52,14 +55,7 @@ export default function MarketplaceListingCard({ listing }: { listing: PublicLis
         <div className="mt-2 font-bold text-gray-900">
           {formatPrice(listing)} <span className="font-normal text-sm text-gray-500">/ MT</span>
         </div>
-
-        <Link
-          href={`/marketplace/listings/${listing.slug}`}
-          className="mt-3 w-full text-center bg-[#101E3D] !text-white text-sm font-medium py-2.5 rounded-lg hover:bg-[#0c1730]"
-        >
-          Buy now
-        </Link>
       </div>
-    </div>
+    </Link>
   );
 }

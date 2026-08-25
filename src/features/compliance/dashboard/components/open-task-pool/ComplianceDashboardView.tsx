@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   UsergroupAddOutlined,
   ClockCircleOutlined,
@@ -13,7 +14,13 @@ import type {
   ComplianceQueueRow,
   ComplianceActiveTaskCard,
   AdminReviewRow,
+  EscalationWatchlistRow,
+  TrendPoint,
+  OrganisationComplianceRow,
+  ApplicationInFlightRow,
+  ExpiringLicenceRow,
 } from "@/src/features/compliance/dashboard/types";
+import type { ComplianceSummaryMetric } from "@/src/features/compliance/dashboard/api";
 import { classNames, primaryActionStyle } from "@/src/features/compliance/dashboard/lib/style";
 import {
   DashboardMetricCard,
@@ -21,7 +28,290 @@ import {
   StatusBadgePill,
   ScoreMeter,
   LinearProgress,
+  DonutChart,
+  TrendLineChart,
+  SimpleBarChart,
+  type DonutSegment,
 } from "@/src/features/compliance/dashboard/components/shared/DashboardMetricCard";
+
+function EmptyPanel({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-[14px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-4 py-6 text-center text-[13px] text-[#8a92a1]">
+      {children}
+    </div>
+  );
+}
+
+export function ComplianceTrendSection({ points }: { points: TrendPoint[] }) {
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Portfolio compliance trend</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Average score across your active caseload, by month.</p>
+      <div className="mt-6">
+        {points.length >= 2 ? (
+          <TrendLineChart points={points} />
+        ) : (
+          <EmptyPanel>Trend history isn&apos;t available yet. This builds up once score history starts being recorded.</EmptyPanel>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ComplianceOrganisationBreakdownSection({ rows }: { rows: OrganisationComplianceRow[] }) {
+  const toneColor = { green: "#1ea43b", amber: "#e0a800", red: "#ef2f32" } as const;
+
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Organisation compliance</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Average score by mining organisation.</p>
+      <div className="mt-6">
+        {rows.length > 0 ? (
+          <SimpleBarChart bars={rows.map((r) => ({ label: r.name, value: r.score, color: toneColor[r.riskTone] }))} />
+        ) : (
+          <EmptyPanel>Organisation-level scoring isn&apos;t available yet.</EmptyPanel>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ComplianceApplicationsInFlightSection({ rows }: { rows: ApplicationInFlightRow[] }) {
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Applications in flight</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Intake pipeline with SLA position.</p>
+      <div className="mt-5">
+        {rows.length > 0 ? (
+          <div className="overflow-hidden rounded-[14px] border border-[#e5e9f1]">
+            <table className="w-full border-separate border-spacing-0 text-left text-[14px]">
+              <thead>
+                <tr className="bg-[#fbfcfe] text-[13px] font-medium text-[#353b47]">
+                  <th className="border-b border-[#e5e9f1] px-4 py-3">Reference</th>
+                  <th className="border-b border-[#e5e9f1] px-4 py-3">Type</th>
+                  <th className="border-b border-[#e5e9f1] px-4 py-3">Status</th>
+                  <th className="border-b border-[#e5e9f1] px-4 py-3">SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id} className="text-[#4b5260]">
+                    <td className="border-b border-[#edf1f7] px-4 py-3">{row.reference}</td>
+                    <td className="border-b border-[#edf1f7] px-4 py-3">{row.type}</td>
+                    <td className="border-b border-[#edf1f7] px-4 py-3">
+                      <StatusBadgePill badge={row.status} />
+                    </td>
+                    <td className="border-b border-[#edf1f7] px-4 py-3">
+                      {row.dueInDays == null ? "No due date" : `${row.dueInDays}d left`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyPanel>No applications in the intake pipeline yet.</EmptyPanel>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ComplianceExpiringLicencesSection({ rows }: { rows: ExpiringLicenceRow[] }) {
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Expiring & expired licences</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Renewal watchlist.</p>
+      <div className="mt-5 space-y-3">
+        {rows.length > 0 ? (
+          rows.map((row) => (
+            <div key={row.id} className="flex items-center justify-between rounded-[12px] border border-[#edf1f7] px-4 py-3">
+              <div>
+                <div className="text-[14px] font-medium text-[#2f3541]">{row.licenceNumber}</div>
+                <div className="text-[12px] text-[#8a92a1]">{row.minerCode}</div>
+              </div>
+              <StatusBadgePill
+                badge={
+                  row.daysUntilExpiry < 0
+                    ? { label: "Expired", tone: "red" }
+                    : { label: "Expiring", tone: "amber" }
+                }
+              />
+            </div>
+          ))
+        ) : (
+          <EmptyPanel>No licences are expiring soon.</EmptyPanel>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ComplianceEscalationWatchlistSection({
+  rows,
+  onOpenReview,
+}: {
+  rows: EscalationWatchlistRow[];
+  onOpenReview: (reviewId: string) => void;
+}) {
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Awaiting your decision</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Corrective actions and escalations submitted by operators.</p>
+      <div className="mt-5 space-y-3">
+        {rows.length > 0 ? (
+          rows.map((row) => (
+            <div key={row.id} className="rounded-[12px] border border-[#edf1f7] px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[14px] font-medium text-[#2f3541]">{row.minerId}</span>
+                <StatusBadgePill badge={{ label: row.level, tone: "amber" }} />
+              </div>
+              <div className="mt-1 text-[13px] text-[#7f8796]">{row.company}</div>
+              <div className="mt-1 text-[13px] text-[#4b5260]">{row.note}</div>
+              {row.reviewId ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenReview(row.reviewId!)}
+                  className="!mt-3 inline-flex h-9 items-center rounded-[10px] border border-[#dfe3eb] bg-white px-3 text-[13px] font-medium text-[#404655] hover:bg-[#f9fafc]"
+                >
+                  Review submission
+                </button>
+              ) : null}
+            </div>
+          ))
+        ) : (
+          <EmptyPanel>Nothing awaiting your decision right now.</EmptyPanel>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ComplianceOperationalStatsSection({
+  breachesOpen,
+  documentsPending,
+  inspectionsNext30Days,
+}: {
+  breachesOpen: number | null;
+  documentsPending: number | null;
+  inspectionsNext30Days: number | null;
+}) {
+  const tiles = [
+    { label: "Environmental breaches open", value: breachesOpen },
+    { label: "Documents pending verification", value: documentsPending },
+    { label: "Inspections next 30 days", value: inspectionsNext30Days },
+  ];
+
+  return (
+    <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+      {tiles.map((tile) => (
+        <div key={tile.label} className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+          {tile.value != null ? (
+            <div className="text-[28px] font-semibold text-[#272b33]">{tile.value}</div>
+          ) : (
+            <div className="text-[13px] font-medium text-[#b3b9c4]">No data yet</div>
+          )}
+          <div className="mt-1 text-[13px] text-[#7f8796]">{tile.label}</div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export function ComplianceRiskDistributionSection({ rows }: { rows: AdminReviewRow[] }) {
+  const counts = rows.reduce(
+    (acc, row) => {
+      const tone = row.riskLevel.tone;
+      if (tone === "green") acc.low += 1;
+      else if (tone === "red") acc.high += 1;
+      else acc.medium += 1;
+      return acc;
+    },
+    { low: 0, medium: 0, high: 0 },
+  );
+
+  const segments: DonutSegment[] = [
+    { label: "Low risk", value: counts.low, color: "#1ea43b" },
+    { label: "Medium risk", value: counts.medium, color: "#e0a800" },
+    { label: "High risk", value: counts.high, color: "#ef2f32" },
+  ];
+
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Risk distribution</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Live count of assigned cases by current risk band.</p>
+
+      {rows.length === 0 ? (
+        <div className="mt-6 rounded-[14px] border border-dashed border-[#dce3ef] bg-[#fafbfd] px-4 py-6 text-center text-[13px] text-[#8a92a1]">
+          No cases assigned yet.
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
+          <DonutChart segments={segments} />
+          <div className="flex flex-col gap-3">
+            {segments.map((segment) => (
+              <div key={segment.label} className="flex items-center justify-between gap-8 text-[13px]">
+                <span className="flex items-center gap-2 text-[#4b5260]">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color }} />
+                  {segment.label}
+                </span>
+                <span className="font-semibold text-[#202534]">{segment.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function ComplianceScoreTrendSection({ qualityScore }: { qualityScore: ComplianceSummaryMetric }) {
+  const value = Math.max(0, Math.min(100, Math.round(qualityScore.value)));
+  const changeText =
+    qualityScore.change_percent != null
+      ? `${qualityScore.change_direction === "down" ? "-" : "+"}${Math.abs(qualityScore.change_percent)}% vs last period`
+      : "No prior period to compare yet";
+
+  return (
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+      <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#2c313c]">Portfolio compliance score</h2>
+      <p className="mt-1 text-[13px] text-[#7f8796]">Weighted quality score across your active caseload.</p>
+
+      <div className="mt-6 flex items-center gap-5">
+        <div className="relative h-[110px] w-[110px] shrink-0">
+          <svg width={110} height={110} viewBox="0 0 110 110" className="-rotate-90">
+            <circle cx={55} cy={55} r={44} fill="none" stroke="#eef1f6" strokeWidth={12} />
+            <circle
+              cx={55}
+              cy={55}
+              r={44}
+              fill="none"
+              stroke={value >= 80 ? "#1ea43b" : value >= 50 ? "#e0a800" : "#ef2f32"}
+              strokeWidth={12}
+              strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 44}
+              strokeDashoffset={2 * Math.PI * 44 * (1 - value / 100)}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[22px] font-semibold text-[#202534]">{value}%</span>
+          </div>
+        </div>
+        <div>
+          <div
+            className={classNames(
+              "text-[13px] font-medium",
+              qualityScore.change_direction === "down" ? "text-[#ef2f32]" : "text-[#1ea43b]",
+            )}
+          >
+            {changeText}
+          </div>
+          <div className="mt-2 text-[12px] text-[#9aa1af]">Sourced live from the compliance dashboard summary.</div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function ComplianceAlertSection({
   alert,
@@ -39,7 +329,7 @@ export function ComplianceAlertSection({
   const canDismiss = Boolean(alert.reviewId);
 
   return (
-    <section className="rounded-[16px] border border-[#e6ebf4] bg-white p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-5">
+    <section className="min-w-0 rounded-[16px] border border-[#e6ebf4] bg-white p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="h-14 w-1 rounded-full bg-gradient-to-b from-[#ff6a3d] to-[#ff3d19]" />
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#eef8ff] text-[20px] text-[#4b8fe8]">
@@ -104,8 +394,8 @@ export function ComplianceMetricsSection({ metrics }: { metrics: DashboardMetric
   ];
 
   return (
-    <section className="rounded-[16px] border border-[#e8ecf4] bg-white/75 p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
-      <div className="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2">
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white/75 p-4 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {metrics.map((metric, index) => {
           const iconData = metricIcons[index];
 
@@ -146,7 +436,7 @@ export function ComplianceQueueSection({
   showViewFullQueue: boolean;
 }) {
   return (
-    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
@@ -252,7 +542,7 @@ export function ComplianceReviewsSection({
   onOpenReview?: (reviewId: string) => void;
 }) {
   return (
-    <section className="rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
+    <section className="min-w-0 rounded-[16px] border border-[#e8ecf4] bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,30,61,0.12)] sm:p-6">
       <div className="mb-6">
         <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
           Review List
@@ -330,7 +620,7 @@ export function ComplianceActiveCasesSection({
 }) {
   if (cards.length === 0) {
     return (
-      <section className="space-y-4">
+      <section className="min-w-0 space-y-4">
         <div>
           <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
             My Active Queue
@@ -348,7 +638,7 @@ export function ComplianceActiveCasesSection({
   }
 
   return (
-    <section className="space-y-4">
+    <section className="min-w-0 space-y-4">
       <div>
         <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#2c313c]">
           My Active Queue
@@ -421,6 +711,14 @@ export default function ComplianceDashboardView({
   onOpenAlertReview,
   onDismissAlert,
   onOpenActiveTask,
+  reviewRows,
+  qualityScore,
+  trendPoints,
+  organisationRows,
+  applicationRows,
+  expiringLicenceRows,
+  escalationRows,
+  operationalStats,
 }: {
   alert: ComplianceAlert;
   alertDismissed: boolean;
@@ -433,10 +731,18 @@ export default function ComplianceDashboardView({
   onOpenAlertReview: () => void;
   onDismissAlert: () => void;
   onOpenActiveTask: (reviewId: string) => void;
+  reviewRows: AdminReviewRow[];
+  qualityScore: ComplianceSummaryMetric;
+  trendPoints: TrendPoint[];
+  organisationRows: OrganisationComplianceRow[];
+  applicationRows: ApplicationInFlightRow[];
+  expiringLicenceRows: ExpiringLicenceRow[];
+  escalationRows: EscalationWatchlistRow[];
+  operationalStats: { breachesOpen: number | null; documentsPending: number | null; inspectionsNext30Days: number | null };
 }) {
   return (
     <div className="space-y-6">
-      {alertDismissed ? null : (
+      {alertDismissed || !alert.reviewId ? null : (
         <ComplianceAlertSection
           alert={alert}
           activeReviewId={activeReviewId}
@@ -445,6 +751,14 @@ export default function ComplianceDashboardView({
         />
       )}
       <ComplianceMetricsSection metrics={metrics} />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ComplianceScoreTrendSection qualityScore={qualityScore} />
+        <ComplianceRiskDistributionSection rows={reviewRows} />
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ComplianceTrendSection points={trendPoints} />
+        <ComplianceOrganisationBreakdownSection rows={organisationRows} />
+      </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.92fr)]">
         <ComplianceQueueSection
           rows={queueRows}
@@ -457,6 +771,12 @@ export default function ComplianceDashboardView({
           onOpenTask={onOpenActiveTask}
         />
       </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ComplianceApplicationsInFlightSection rows={applicationRows} />
+        <ComplianceEscalationWatchlistSection rows={escalationRows} onOpenReview={onOpenQueueReview} />
+      </div>
+      <ComplianceExpiringLicencesSection rows={expiringLicenceRows} />
+      <ComplianceOperationalStatsSection {...operationalStats} />
     </div>
   );
 }

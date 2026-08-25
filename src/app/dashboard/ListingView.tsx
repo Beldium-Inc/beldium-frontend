@@ -210,6 +210,7 @@ export default function ListingView() {
               columns={columns}
               dataSource={results as ListingRowItem[]}
               pagination={paginationConfig}
+              scroll={{ x: "max-content" }}
               onRow={(record) => ({
                 onClick: () => router.push(`/dashboard/listings/${record.id}`),
                 className: "cursor-pointer hover:bg-[#F8FAFF] transition-colors",

@@ -613,6 +613,122 @@ export async function getComplianceMinerDetail(minerId: string) {
   return data;
 }
 
+export type SiteOwnershipRecord = {
+  id: string;
+  site: string;
+  ownership_type: string;
+  holder_name: string;
+  agreement_reference: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  document: string | null;
+  notes: string | null;
+};
+
+export type MiningEquipmentRecord = {
+  id: string;
+  site: string;
+  name: string;
+  equipment_type: string | null;
+  capacity: string | null;
+  status: string | null;
+  last_serviced_at: string | null;
+};
+
+export type ProductionRecordRecord = {
+  id: string;
+  site: string;
+  record_date: string | null;
+  mineral_type: string | null;
+  quantity: string | null;
+  unit: string | null;
+  extraction_method: string | null;
+  notes: string | null;
+};
+
+export type LaboratoryResultRecord = {
+  id: string;
+  laboratory_name: string | null;
+  lab_reference: string | null;
+  grade_percentage: string | null;
+  result_summary: string | null;
+  report_document: string | null;
+  result_date: string | null;
+};
+
+export type MiningSampleRecord = {
+  id: string;
+  site: string;
+  sample_reference: string | null;
+  sampling_date: string | null;
+  sampling_method: string | null;
+  laboratory_result: LaboratoryResultRecord | null;
+};
+
+export type SiteInspectionRecord = {
+  id: string;
+  site: string;
+  scheduled_date: string | null;
+  visited_at: string | null;
+  status: string | null;
+  outcome: string | null;
+  findings: string | null;
+  photos: string[] | null;
+};
+
+export type SafetyRecordRecord = {
+  id: string;
+  site: string;
+  incident_date: string | null;
+  severity: string | null;
+  status: string | null;
+  description: string | null;
+  resolved_at: string | null;
+};
+
+export type MineralSourceProfileResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    id: string;
+    name: string;
+    country: string | null;
+    state_of_operation: string | null;
+    local_government_area: string | null;
+    latitude: string | null;
+    longitude: string | null;
+    mineral_type: string | null;
+    mining_method: string | null;
+    depth_range: string | null;
+    status: string;
+    operational_status: string | null;
+    compliance_score: string | null;
+    ownership_records: SiteOwnershipRecord[];
+    equipment: MiningEquipmentRecord[];
+    production_records: ProductionRecordRecord[];
+    samples: MiningSampleRecord[];
+    inspections: SiteInspectionRecord[];
+    safety_records: SafetyRecordRecord[];
+  };
+};
+
+export async function getComplianceMiningSiteSourceProfile(siteId: string) {
+  const accessToken = getBrowserAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Your browser session is not authenticated. Log in again.");
+  }
+
+  const { data } = await authApi.get<MineralSourceProfileResponse>(
+    getProxyUrl(`/mining-sites/${siteId}/source-profile/`),
+    {
+      headers: getWorkflowHeaders(accessToken),
+    },
+  );
+
+  return data;
+}
+
 export async function verifyMinerLicense({
   licenseId,
   verification_status,
@@ -793,6 +909,42 @@ export type PolicyAlertsResponse = {
 
 export async function getPolicyAlerts() {
   const { data } = await authApi.get<PolicyAlertsResponse>("/compliance/policy-alerts/");
+  return data;
+}
+
+export type ComplianceEscalationStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | string;
+
+export type ComplianceEscalationRecord = {
+  id: string;
+  review: string | null;
+  miner: string | null;
+  level: string | null;
+  primary_reason: string | null;
+  evidence_file: string | null;
+  status: ComplianceEscalationStatus;
+  analyst_notes: string | null;
+  assigned_to: string | null;
+  /** DRF StringRelatedField -> str(User), which is the user's email. */
+  escalated_by: string | null;
+  escalated_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ComplianceEscalationsResponse = {
+  status: string;
+  message: string | null;
+  data: {
+    results?: ComplianceEscalationRecord[];
+    count?: number;
+  } | ComplianceEscalationRecord[];
+};
+
+export async function getComplianceEscalations(params?: { status?: ComplianceEscalationStatus }) {
+  const { data } = await authApi.get<ComplianceEscalationsResponse>(
+    "/compliance/escalations/",
+    { params },
+  );
   return data;
 }
 

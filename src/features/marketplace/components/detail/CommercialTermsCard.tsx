@@ -20,7 +20,10 @@ export default function CommercialTermsCard({ listing }: { listing: PublicListin
           label="Quote validity"
           value={listing.quote_validity_days ? `${listing.quote_validity_days} days` : undefined}
         />
-        <Row label="Lead time" value={listing.lead_time_days ? `${listing.lead_time_days} days` : undefined} />
+        <Row
+          label="Lead time"
+          value={listing.estimated_lead_time_days ? `${listing.estimated_lead_time_days} days` : undefined}
+        />
       </div>
     </div>
   );

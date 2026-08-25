@@ -227,6 +227,14 @@ export async function declineRequest(id: string) {
   return data;
 }
 
+// `id` is the RFQAssignment id (same as OpenQueueItem.id). Moves the
+// assignment from pending -> quoted; the buyer then accepts/declines this
+// specific quote from the marketplace RFQ detail page.
+export async function submitQuote(id: string, payload: { quoted_price: number; quoted_quantity: number }) {
+  const { data } = await authApi.post(`/miner/dashboard/${id}/submit-quote/`, payload);
+  return data;
+}
+
 export async function downloadInvoice(orderId: string) {
   const { data } = await authApi.get(`/miner/dashboard/${orderId}/invoice/`, { responseType: "blob" });
   return data as Blob;

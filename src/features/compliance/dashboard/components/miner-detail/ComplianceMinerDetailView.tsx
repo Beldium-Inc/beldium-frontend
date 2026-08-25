@@ -36,10 +36,30 @@ import {
   ReviewInfoTile,
   ReviewDocumentRow,
 } from "@/src/features/compliance/dashboard/components/shared/ReviewTiles";
-import {
-  type CaseReviewTab,
-  CASE_REVIEW_TABS,
-} from "@/src/features/compliance/dashboard/components/reviews/constants";
+type CaseReviewTab =
+  | "overview"
+  | "sites"
+  | "licensing"
+  | "environmental-esg"
+  | "operational"
+  | "export-compliance"
+  | "documents"
+  | "internal-notes"
+  | "timeline"
+  | "audit-history";
+
+const CASE_REVIEW_TABS: { key: CaseReviewTab; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "sites", label: "Sites" },
+  { key: "licensing", label: "Licensing" },
+  { key: "environmental-esg", label: "Environmental & ESG" },
+  { key: "operational", label: "Operational" },
+  { key: "export-compliance", label: "Export Compliance" },
+  { key: "documents", label: "Documents" },
+  { key: "internal-notes", label: "Internal Notes" },
+  { key: "timeline", label: "Timeline" },
+  { key: "audit-history", label: "Audit History" },
+];
 
 export type CaseChecklistItem = {
   title: string;

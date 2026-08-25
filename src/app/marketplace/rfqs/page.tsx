@@ -12,10 +12,9 @@ import MarketplaceTopBar from "@/src/features/marketplace/components/Marketplace
 import MarketplaceHeader from "@/src/features/marketplace/components/MarketplaceHeader";
 import MarketplaceFooter from "@/src/features/marketplace/components/MarketplaceFooter";
 import { getBuyerRfqs, RfqRow } from "@/src/features/marketplace/rfqs/rfqs-api";
-import { formatNaira, mockAmountFor, mockOffersFor, mockStatusFor, MOCK_STATUS_STYLES } from "@/src/features/marketplace/rfqs/mock-offers";
+import { formatNaira, MOCK_STATUS_STYLES } from "@/src/features/marketplace/rfqs/mock-offers";
 
-function StatusPill({ rfqId }: { rfqId: string }) {
-  const status = mockStatusFor(rfqId);
+function StatusPill({ status }: { status: RfqRow["derived_status"] }) {
   const style = MOCK_STATUS_STYLES[status];
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${style.className}`}>
@@ -55,17 +54,17 @@ function RfqsContent() {
     {
       title: "Amount",
       key: "amount",
-      render: (_, record) => formatNaira(mockAmountFor(record).total),
+      render: (_, record) => (record.total_value ? formatNaira(Number(record.total_value)) : "—"),
     },
     {
       title: "Offers",
       key: "offers",
-      render: (_, record) => mockOffersFor(record).length,
+      render: (_, record) => record.offers_count,
     },
     {
       title: "Status",
       key: "status",
-      render: (_, record) => <StatusPill rfqId={record.id} />,
+      render: (_, record) => <StatusPill status={record.derived_status} />,
     },
     {
       title: "Expiry date",
@@ -92,7 +91,7 @@ function RfqsContent() {
               onClick={() => refetch()}
               className="!rounded-full"
             />
-            <Link href="/marketplace">
+            <Link href="/marketplace/rfqs/new">
               <Button type="primary">Request RFQ</Button>
             </Link>
           </div>
@@ -129,6 +128,7 @@ function RfqsContent() {
               loading={isLoading}
               columns={columns}
               dataSource={results}
+              scroll={{ x: "max-content" }}
               pagination={{ total: data?.data?.count, pageSize: 20 }}
               onRow={(record) => ({
                 onClick: () => router.push(`/marketplace/rfqs/${record.id}`),

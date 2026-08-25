@@ -243,6 +243,7 @@ export default function SitesPage() {
             columns={columns}
             dataSource={sites}
             pagination={false}
+            scroll={{ x: "max-content" }}
             onRow={(row) => ({
               onClick: () => setSelectedSiteId(row.id),
               className: "cursor-pointer",

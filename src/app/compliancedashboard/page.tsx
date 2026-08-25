@@ -12,6 +12,7 @@ import {
 import {
   claimComplianceReview,
   getComplianceDashboardSummary,
+  getComplianceEscalations,
   getComplianceMinerDetail,
   getComplianceMyTasks,
   getComplianceReviewDetail,
@@ -41,6 +42,7 @@ import {
   mapAdminReviewRows,
   mapComplianceQueueRows,
   mapComplianceActiveTaskCards,
+  mapEscalationWatchlist,
   buildSelectionFromItem,
   buildSelectionFromAlert,
   getWorkflowStatus,
@@ -223,6 +225,15 @@ export default function ComplianceDashboardPage() {
       hasAccessToken,
     retry: false,
   });
+  const complianceEscalationsQ = useQuery({
+    queryKey: ["complianceEscalations", { status: "OPEN" }],
+    queryFn: () => getComplianceEscalations({ status: "OPEN" }),
+    enabled:
+      persona === "compliance" &&
+      !isComplianceStaticSurface &&
+      hasAccessToken,
+    retry: false,
+  });
   const selectedReviewDetailQ = useQuery({
     queryKey: ["complianceReviewDetail", selectedReview?.reviewId],
     queryFn: () => getComplianceReviewDetail(selectedReview!.reviewId),
@@ -382,6 +393,11 @@ export default function ComplianceDashboardPage() {
     complianceMyTasksQ.data?.data?.results ?? [],
   );
   const complianceReviewRows = mapAdminReviewRows(adminReviewsQ.data?.data?.results ?? []);
+  const escalationData = complianceEscalationsQ.data?.data;
+  const escalationResults = Array.isArray(escalationData)
+    ? escalationData
+    : (escalationData?.results ?? []);
+  const escalationRows = mapEscalationWatchlist(escalationResults);
   const reviewLookup = new Map<string, ComplianceReviewItem>();
   for (const item of [
     ...(complianceQueueQ.data?.data?.results ?? []),
@@ -702,6 +718,18 @@ export default function ComplianceDashboardPage() {
                       onOpenAlertReview={openAlertReview}
                       onDismissAlert={dismissComplianceAlert}
                       onOpenActiveTask={openReviewById}
+                      reviewRows={complianceReviewRows}
+                      qualityScore={complianceSummary.quality_score}
+                      trendPoints={[]}
+                      organisationRows={[]}
+                      applicationRows={[]}
+                      expiringLicenceRows={[]}
+                      escalationRows={escalationRows}
+                      operationalStats={{
+                        breachesOpen: null,
+                        documentsPending: null,
+                        inspectionsNext30Days: null,
+                      }}
                     />
                   )}
                 </>

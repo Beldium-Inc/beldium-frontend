@@ -147,16 +147,16 @@ export default function CompliancePage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Compliance Documents</h1>
           <p className="text-sm md:text-base text-gray-500">Upload and manage your licenses and certifications.</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => setRequirementsOpen(true)}>View Requirements</Button>
-          <Button className="!h-12 !rounded-xl !px-8 !text-base" type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button className="w-full sm:w-auto" onClick={() => setRequirementsOpen(true)}>View Requirements</Button>
+          <Button className="w-full sm:w-auto !h-12 !rounded-xl !px-8 !text-base" type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>
             Upload Documents
           </Button>
         </div>
       </div>
 
       {!loading && hasExpired && (
-        <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-100 rounded-xl px-5 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-red-50 border border-red-100 rounded-xl px-5 py-4">
           <div className="flex items-center gap-3">
             <WarningOutlined className="text-[#960805]" />
             <div>
@@ -164,7 +164,7 @@ export default function CompliancePage() {
               <div className="text-xs text-[#960805]">One or more documents have expired and need updating.</div>
             </div>
           </div>
-          <Button className="!bg-[#960805]" type="primary" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
+          <Button className="w-full sm:w-auto !bg-[#960805]" type="primary" onClick={() => setUploadOpen(true)}>Upload Documents</Button>
         </div>
       )}
 
@@ -191,7 +191,8 @@ export default function CompliancePage() {
         {loading ? (
           <div className="p-6"><Skeleton active paragraph={{ rows: 5 }} /></div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b border-gray-100">
                 <th className="px-6 py-3 font-medium">Document Type</th>
@@ -235,6 +236,7 @@ export default function CompliancePage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -137,6 +137,41 @@ export type ComplianceMinerDetailState = {
   reviewDetail?: ComplianceReviewDetail | null;
 };
 
+export type EscalationWatchlistRow = {
+  id: string;
+  reviewId: string | null;
+  minerId: string;
+  company: string;
+  level: string;
+  note: string;
+  escalatedAt: string;
+};
+
+export type TrendPoint = { label: string; score: number };
+
+export type OrganisationComplianceRow = {
+  id: string;
+  name: string;
+  score: number;
+  riskTone: "green" | "amber" | "red";
+};
+
+export type ApplicationInFlightRow = {
+  id: string;
+  reference: string;
+  type: string;
+  status: StatusBadge;
+  dueInDays: number | null;
+};
+
+export type ExpiringLicenceRow = {
+  id: string;
+  minerCode: string;
+  licenceNumber: string;
+  expiryDate: string;
+  daysUntilExpiry: number;
+};
+
 export type ReviewDocumentKind = "pdf" | "image" | "file";
 
 export type ReviewDocumentFile = {
