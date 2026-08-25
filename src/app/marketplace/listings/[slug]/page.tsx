@@ -2,10 +2,13 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Skeleton, Tag } from "antd";
-import { CheckCircleFilled, ShareAltOutlined, BookOutlined } from "@ant-design/icons";
-import { getPublicListingDetail } from "@/src/features/marketplace/public-api";
+import { CheckCircleFilled, ShareAltOutlined, BookOutlined, BookFilled } from "@ant-design/icons";
+import { getPublicListingDetail, saveListing, unsaveListing } from "@/src/features/marketplace/public-api";
+import { useMarketplaceAuth } from "@/src/features/marketplace/auth/use-marketplace-auth";
+import { showToast } from "@/src/store/toast.store";
+import { useState } from "react";
 import MarketplaceTopBar from "@/src/features/marketplace/components/MarketplaceTopBar";
 import MarketplaceHeader from "@/src/features/marketplace/components/MarketplaceHeader";
 import MarketplaceFooter from "@/src/features/marketplace/components/MarketplaceFooter";
@@ -20,11 +23,37 @@ import ShippingDeliveryCard from "@/src/features/marketplace/components/detail/S
 
 export default function ListingDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
+  const { isAuthenticated } = useMarketplaceAuth();
+  const queryClient = useQueryClient();
+  const [savingToggle, setSavingToggle] = useState(false);
 
   const { data: listing, isLoading, isError } = useQuery({
     queryKey: ["marketplace", "listing-detail", slug],
     queryFn: () => getPublicListingDetail(slug),
   });
+
+  const handleToggleSave = async () => {
+    if (!isAuthenticated) {
+      showToast("Log in as a buyer to save listings.", "error");
+      return;
+    }
+    if (!listing) return;
+    try {
+      setSavingToggle(true);
+      if (listing.is_saved) {
+        await unsaveListing(slug);
+        showToast("Removed from saved", "success");
+      } else {
+        await saveListing(slug);
+        showToast("Listing saved", "success");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["marketplace", "listing-detail", slug] });
+    } catch {
+      showToast("Couldn't update saved listings. Please try again.", "error");
+    } finally {
+      setSavingToggle(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
@@ -68,7 +97,13 @@ export default function ListingDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button icon={<BookOutlined />}>Save</Button>
+                <Button
+                  icon={listing.is_saved ? <BookFilled className="text-[#101E3D]" /> : <BookOutlined />}
+                  loading={savingToggle}
+                  onClick={handleToggleSave}
+                >
+                  {listing.is_saved ? "Saved" : "Save"}
+                </Button>
                 <Button icon={<ShareAltOutlined />}>Share</Button>
               </div>
             </div>

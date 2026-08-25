@@ -145,9 +145,12 @@ export default function MinerDashboardPage() {
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <div className="text-xl md:text-2xl font-semibold">Open Queue</div>
+          <div className="text-xl md:text-2xl font-semibold">Recent Orders</div>
           <Link href="/dashboard?view=orders" className="text-blue-600">View all</Link>
         </div>
+        <p className="text-xs md:text-sm text-gray-500 -mt-2 mb-4">
+          Your latest requests and orders, newest first.
+        </p>
         <OpenQueueTable items={items} loading={queueQ.isLoading} />
         <div className="text-xs text-gray-500 mt-3">
           You have {queueQ.data?.data?.count || 0} orders (Displaying {queueQ.data?.data?.per_page || 10} per page)

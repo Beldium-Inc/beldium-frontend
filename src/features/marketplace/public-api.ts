@@ -1,4 +1,4 @@
-import { publicApi } from "@/src/lib/axiosInstance";
+import { authApi, publicApi } from "@/src/lib/axiosInstance";
 
 // Matches PublicListingSerializer (api-beldium-backend/miners/serializers.py)
 // and PublicListingViewSet (api-beldium-backend/miners/views.py). Only
@@ -41,6 +41,7 @@ export type PublicListing = {
   image: string | null;
   gallery_images: string[];
   seller: ListingSeller;
+  is_saved: boolean;
   created_at: string;
 };
 
@@ -112,10 +113,30 @@ export async function getMarketplaceCategories() {
 // so this hits a real, working endpoint - it returns exactly PublicListing,
 // nothing more. See PublicListingDetail below for the fields the detail page
 // design needs that PublicListingSerializer does NOT currently expose.
+//
+// Uses authApi, not publicApi: `is_saved` is only computed server-side when
+// the request carries a buyer's token (see get_serializer_context on
+// PublicListingViewSet) - publicApi never attaches one, so this would
+// always come back false for a signed-in buyer. The endpoint itself stays
+// AllowAny, so an anonymous request through authApi still works the same
+// as through publicApi, just without a token header.
 export async function getPublicListingDetail(slug: string) {
-  const { data } = await publicApi.get<{ status: string; message: string | null; data: PublicListing }>(
+  const { data } = await authApi.get<{ status: string; message: string | null; data: PublicListing }>(
     `/marketplace/listings/${slug}/`,
   );
+  return data.data;
+}
+
+export async function saveListing(slug: string) {
+  await authApi.post(`/marketplace/listings/${slug}/save/`);
+}
+
+export async function unsaveListing(slug: string) {
+  await authApi.post(`/marketplace/listings/${slug}/unsave/`);
+}
+
+export async function getSavedListings() {
+  const { data } = await authApi.get<PublicListingListResponse>("/marketplace/listings/saved/");
   return data.data;
 }
 

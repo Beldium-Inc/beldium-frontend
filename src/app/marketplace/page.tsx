@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Empty, Pagination, Select, Skeleton } from "antd";
+import { Empty, Input, Pagination, Select, Skeleton } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import {
   getMarketplaceCategories,
   getMarketplaceStats,
@@ -96,12 +97,25 @@ export default function MarketplacePage() {
                   ({meta?.count ?? 0}+ minerals found)
                 </span>
               </h2>
-              <Select
-                value={sort}
-                onChange={(v: SortOption) => setSort(v)}
-                className="w-full sm:w-56"
-                options={SORT_OPTIONS.map((o) => ({ label: `Sort by: ${o.label}`, value: o.value }))}
-              />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  prefix={<SearchOutlined className="text-gray-400" />}
+                  placeholder="Search product, miner and categories..."
+                  className="!rounded-full w-full sm:w-64"
+                  allowClear
+                />
+                <Select
+                  value={sort}
+                  onChange={(v: SortOption) => setSort(v)}
+                  className="w-full sm:w-56"
+                  options={SORT_OPTIONS.map((o) => ({ label: `Sort by: ${o.label}`, value: o.value }))}
+                />
+              </div>
             </div>
 
             {isError && (

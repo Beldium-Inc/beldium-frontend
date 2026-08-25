@@ -2,13 +2,14 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/src/store/ui/ui.store";
 import { AppRoutes } from "@/src/constants/routes";
 import { UserOutlined, CustomerServiceOutlined, LogoutOutlined } from "@ant-design/icons";
 import { normalizePath } from "@/src/utils";
 import Image from "next/image";
 import { Button, Tooltip } from "antd";
+import { getOrdersOverview } from "@/src/features/miner/dashboard/api";
 
 export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const pathname = usePathname();
@@ -17,6 +18,13 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { sidebarCollapsed, closeMobileSidebar } = useUIStore();
+
+  const ordersOverviewQ = useQuery({
+    queryKey: ["ordersOverview"],
+    queryFn: getOrdersOverview,
+    refetchInterval: 60000,
+  });
+  const incomingRfqCount = ordersOverviewQ.data?.data?.incoming_rfqs || 0;
 
   return (
     <aside
@@ -76,14 +84,28 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
                 }
               }}
               className={clsx(
-                "w-full flex cursor-pointer items-center gap-3 px-4 py-4 text-sm rounded-l-md transition-colors text-left",
+                "relative w-full flex cursor-pointer items-center gap-3 px-4 py-4 text-sm rounded-l-md transition-colors text-left",
                 isActive
                   ? "bg-secondary text-primary font-medium border-r-3"
                   : "text-slate-800 hover:bg-light-secondary hover:text-white",
               )}
             >
-              <Icon className="text-base" />
-              {!sidebarCollapsed && item.label}
+              <span className="relative">
+                <Icon className="text-base" />
+                {isOrders && incomingRfqCount > 0 && sidebarCollapsed ? (
+                  <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+                ) : null}
+              </span>
+              {!sidebarCollapsed && (
+                <span className="flex flex-1 items-center justify-between gap-2">
+                  {item.label}
+                  {isOrders && incomingRfqCount > 0 ? (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white">
+                      {incomingRfqCount > 99 ? "99+" : incomingRfqCount}
+                    </span>
+                  ) : null}
+                </span>
+              )}
             </button>
           );
         })}
